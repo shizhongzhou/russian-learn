@@ -225,7 +225,7 @@ function linesBlock(cls, title, sub, lines, opts = {}) {
   const block = h(`<article class="block ${cls}"><h2 lang="ru">${esc(title)}</h2><p class="sub">${esc(sub)}</p><div class="controls"></div><ol class="lines"></ol></article>`);
   const ol = block.querySelector(".lines");
   const items = lines.map(l => {
-    const li = h(`<li class="line">${l.who ? `<span class="who ${l.who === "B" ? "b" : ""}" aria-hidden="true">${l.who === "A" ? "А" : "Б"}</span>` : ""}<span class="ru" lang="ru">${esc(l.ru)}</span><span class="zh">${esc(l.zh)}</span></li>`);
+    const li = h(`<li class="line${l.who ? "" : " solo"}">${l.who ? `<span class="who ${l.who === "B" ? "b" : ""}" aria-hidden="true">${l.who === "A" ? "А" : "Б"}</span>` : ""}<span class="ru" lang="ru">${esc(l.ru)}</span><span class="zh">${esc(l.zh)}</span></li>`);
     const voice = l.who === "B" ? 1 : 0;
     li.onclick = () => playOne(li, l.ru, voice);
     ol.append(li);

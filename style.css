@@ -112,8 +112,8 @@ main:focus{outline:none}
 .line .who.b{background:var(--muted)}
 .line .ru{font-size:20px;line-height:1.5}
 .line .zh{grid-column:2;font-size:15px;color:var(--muted)}
-.news .line{grid-template-columns:1fr}
-.news .line .zh{grid-column:1}
+.line.solo{grid-template-columns:1fr}
+.line.solo .zh{grid-column:1}
 .hide-zh .zh{display:none}
 .hide-ru .ru{filter:blur(6px);user-select:none}
 .source{font-size:13px;color:var(--muted);margin:14px 0 0}
