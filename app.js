@@ -147,7 +147,7 @@ function renderHome() {
 }
 
 /* ---------- level ---------- */
-const TABS = [["words", "单词"], ["dialogues", "对话"], ["listening", "听力"], ["news", "新闻"]];
+const TABS = [["words", "单词"], ["grammar", "语法"], ["dialogues", "对话"], ["listening", "听力"], ["news", "新闻"]];
 function renderLevel(lv, tab) {
   if (!TABS.some(t => t[0] === tab)) tab = "words";
   const L = LEVELS[lv];
@@ -163,7 +163,7 @@ function renderLevel(lv, tab) {
   app.append(tabs);
   const panel = h(`<section role="tabpanel"><p class="empty">加载中…</p></section>`);
   app.append(panel);
-  const fn = { words: renderWords, dialogues: renderDialogues, listening: renderListening, news: renderNews }[tab];
+  const fn = { words: renderWords, grammar: renderGrammar, dialogues: renderDialogues, listening: renderListening, news: renderNews }[tab];
   fn(lv, panel).catch(e => { panel.innerHTML = `<p class="empty">内容加载失败，请刷新页面重试。（${esc(e.message)}）</p>`; });
 }
 
@@ -198,9 +198,12 @@ async function renderWords(lv, panel) {
     list.innerHTML = "";
     filtered.slice(page * PAGE, (page + 1) * PAGE).forEach(([r, i]) => {
       const [w, z, p, g] = r;
-      const li = h(`<li><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
+      const li = h(`<li class="wcard"><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
       const btn = li.firstElementChild;
       btn.onclick = () => playOne(btn, w);
+      const gb = h(`<button class="gbtn" aria-label="${esc(w)} 的语法信息">语法</button>`);
+      gb.onclick = () => openWord(lv, i, r);
+      li.append(gb);
       list.append(li);
     });
     if (!filtered.length) list.append(h(`<li class="empty">没有找到匹配的单词。换个关键词试试。</li>`));
@@ -304,6 +307,160 @@ async function renderNews(lv, panel) {
     panel.append(block);
   });
   syncRate();
+}
+
+/* ---------- inline Russian: wrap Cyrillic runs so they can be tapped to hear ---------- */
+const CYR = /[А-ЯЁа-яё́]+(?:[ \-][А-ЯЁа-яё́]+)*[?!]?/g;
+function rich(text) {
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(CYR, m => `<span class="say" lang="ru">${m}</span>`);
+}
+// one delegated listener: any .say anywhere speaks itself
+document.addEventListener("click", e => {
+  const el = e.target.closest(".say");
+  if (!el) return;
+  e.stopPropagation();
+  playOne(el, el.dataset.say || el.textContent.split(/[,/]/)[0]);
+});
+
+/* ---------- word grammar panel ---------- */
+const CASES = [
+  ["一格", "主格", "Именительный", "кто? что?"],
+  ["二格", "属格", "Родительный", "кого? чего?"],
+  ["三格", "与格", "Дательный", "кому? чему?"],
+  ["四格", "宾格", "Винительный", "кого? что?"],
+  ["五格", "工具格", "Творительный", "кем? чем?"],
+  ["六格", "前置格", "Предложный", "о ком? о чём?"],
+];
+const GOV = {
+  A: ["кого́? что?", "四格"], Aa: ["кого́?", "四格"], Ai: ["что?", "四格"],
+  G: ["кого́? чего́?", "二格"], Gi: ["чего́?", "二格"], Ga: ["кого́?", "二格"],
+  D: ["кому́? чему́?", "三格"], Da: ["кому́?", "三格"], Di: ["чему́?", "三格"],
+  I: ["кем? чем?", "五格"], Ia: ["кем?", "五格"], Ii: ["чем?", "五格"],
+  P: ["ком? чём?", "六格"], Pi: ["чём?", "六格"], Pa: ["ком?", "六格"],
+  N: ["кто? что?", "一格"],
+  inf: ["+ 不定式", ""], "что": ["+ что…", "从句"], "чтобы": ["+ чтобы…", "从句"], "ли": ["+ ли…", "从句"],
+  "как": ["+ как…", "从句"], "где": ["+ где / куда…", "从句"],
+};
+const PREPQ = { A: "кого́/что", Aa: "кого́", Ai: "что", G: "кого́/чего́", Gi: "чего́", Ga: "кого́", D: "кому́/чему́", Da: "кому́", Di: "чему́", I: "кем/чем", Ia: "кем", Ii: "чем", P: "ком/чём", Pi: "чём", Pa: "ком" };
+function govToken(t) {
+  if (t.includes("/") && t.includes("+")) return t.split("/").map(govToken).join(" / ");
+  const m = t.match(/^([а-яё\-]+)\+(\w+)$/i);
+  if (m) {
+    const c = GOV[m[2]];
+    return `<span class="gv"><span class="say" lang="ru">${esc(m[1])} ${esc(PREPQ[m[2]] || m[2])}</span>${c && c[1] ? `<em>${c[1]}</em>` : ""}</span>`;
+  }
+  const c = GOV[t];
+  if (!c) return `<span class="gv">${rich(t)}</span>`;
+  return `<span class="gv">${/[а-яё]/i.test(c[0]) ? `<span class="say" lang="ru">${esc(c[0])}</span>` : esc(c[0])}${c[1] ? `<em>${c[1]}</em>` : ""}</span>`;
+}
+function govHTML(gov) {
+  return gov.split(/\s*;\s*/).filter(Boolean).map(fr => `<li>${fr.split(/\s+/).map(govToken).join(" ")}</li>`).join("");
+}
+const cell = v => v ? v.split(/,\s*/).map(x => `<span class="say" lang="ru">${esc(x)}</span>`).join(" / ") : "—";
+
+let wd;
+function wordDialog() {
+  if (wd) return wd;
+  wd = h(`<dialog class="wd" aria-label="单词语法"><div class="wd-in"></div></dialog>`);
+  wd.addEventListener("click", e => { if (e.target === wd) wd.close(); });
+  wd.addEventListener("close", stopAll);
+  document.body.append(wd);
+  return wd;
+}
+async function openWord(lv, i, r) {
+  const d = wordDialog(), box = d.querySelector(".wd-in");
+  const [w, z, p, g, en] = r;
+  box.innerHTML = `<header class="wd-head"><div><button class="wd-word say ru" lang="ru">${esc(w)}</button>
+    <p class="wd-zh">${esc(z)}</p><p class="wd-pos">${POS[p] || ""}${g ? " · " + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") : ""} · <span class="en">${esc(en)}</span></p></div>
+    <button class="wd-x" aria-label="关闭">×</button></header><div class="wd-body"><p class="empty">加载中…</p></div>`;
+  box.querySelector(".wd-x").onclick = () => d.close();
+  if (!d.open) d.showModal();
+  let info;
+  try { info = (await getJSON(`data/gram/${lv}_${Math.floor(i / 500)}.json`))[i % 500] || {}; }
+  catch { box.querySelector(".wd-body").innerHTML = `<p class="empty">加载失败，请稍后再试。</p>`; return; }
+  box.querySelector(".wd-body").innerHTML = wordBody(info, p, w);
+}
+function wordBody(f, p, w) {
+  let o = "";
+  if (f.gov) o += `<section><h3>接格 · 支配关系</h3><ul class="govs">${govHTML(f.gov)}</ul></section>`;
+  if (f.ex) o += `<section><h3>常用搭配</h3><ul class="exs">${f.ex.split(/\s*;\s*/).map(x => { const [ru, zh] = x.split(/\s*=\s*/); return `<li><span class="say" lang="ru">${esc(ru)}</span>${zh ? `<span class="zh">${esc(zh)}</span>` : ""}</li>`; }).join("")}</ul></section>`;
+  if (f.note) o += `<p class="wd-note">${rich(f.note)}</p>`;
+  if (f.t === "n") {
+    const notes = [];
+    if (f.an) notes.push("动物名词：复数四格（阳性单数四格也是）= 二格");
+    else notes.push("非动物名词：四格同一格（阳性、中性、复数）");
+    if (f.ind) notes.push("不变格：所有格形式都一样");
+    if (f.sg) notes.push("只用单数");
+    if (f.pl) notes.push("只用复数");
+    const cols = f.sg ? [0] : f.pl ? [1] : [0, 1];
+    o += `<section><h3>变格</h3><p class="wd-sub">${notes.join("；")}。点击任意形式听发音。</p><div class="tw"><table class="ft"><thead><tr><th>格</th>${cols.map(c => `<th>${c ? "复数" : "单数"}</th>`).join("")}</tr></thead><tbody>` +
+      CASES.map((c, k) => `<tr><th><b>${c[0]}</b> ${c[1]}<small class="ru">${f.an && k === 0 ? "кто?" : !f.an && k === 0 ? "что?" : c[3]}</small></th>${cols.map(n => `<td>${cell(f.f[n][k])}</td>`).join("")}</tr>`).join("") + `</tbody></table></div></section>`;
+  } else if (f.t === "v") {
+    const pf = f.asp === "pf";
+    o = `<p class="wd-asp"><b>${pf ? "完成体" : "未完成体"}</b>${f.pa ? ` · 对应${pf ? "未完成体" : "完成体"}：${f.pa.split(/\s*,\s*/).map(x => `<span class="say" lang="ru">${esc(x)}</span>`).join("、")}` : ""}</p>` + o;
+    const P = ["я", "ты", "он / она", "мы", "вы", "они"];
+    const title = f.fut ? "将来时" : pf ? "简单将来时（完成体没有现在时）" : "现在时";
+    o += `<section><h3>${title}</h3><div class="tw"><table class="ft"><tbody>${P.map((x, k) => `<tr><th class="ru">${x}</th><td>${cell(f.pr[k])}</td></tr>`).join("")}</tbody></table></div>`;
+    if (!pf && !f.fut) o += `<p class="wd-sub">复合将来时：<span class="say" lang="ru">бу́ду ${esc(w)}</span>、<span class="say" lang="ru">бу́дешь ${esc(w)}</span>…（быть 的将来时 + 不定式）</p>`;
+    o += `</section><section><h3>过去时</h3><div class="tw"><table class="ft"><tbody>${["он", "она", "оно", "они"].map((x, k) => `<tr><th class="ru">${x}</th><td>${cell(f.pa_[k])}</td></tr>`).join("")}</tbody></table></div></section>`;
+    if (f.im && (f.im[0] || f.im[1])) o += `<section><h3>命令式</h3><div class="tw"><table class="ft"><tbody><tr><th>对 ты</th><td>${cell(f.im[0])}</td></tr><tr><th>对 вы</th><td>${cell(f.im[1])}</td></tr></tbody></table></div></section>`;
+  } else if (f.t === "a") {
+    const G = [["阳性", 0], ["中性", 2], ["阴性", 1], ["复数", 3]];
+    o += `<section><h3>长尾形式变格</h3><p class="wd-sub">四格有两个形式时：前者用于非动物名词，后者用于动物名词。</p><div class="tw"><table class="ft wide"><thead><tr><th>格</th>${G.map(x => `<th>${x[0]}</th>`).join("")}</tr></thead><tbody>` +
+      CASES.map((c, k) => `<tr><th><b>${c[0]}</b> ${c[1]}</th>${G.map(x => `<td>${cell(f.f[x[1]][k])}</td>`).join("")}</tr>`).join("") + `</tbody></table></div></section>`;
+    if (f.sh) o += `<section><h3>短尾形式</h3><div class="tw"><table class="ft"><tbody>${["阳性", "阴性", "中性", "复数"].map((x, k) => `<tr><th>${x}</th><td>${cell(f.sh[k])}</td></tr>`).join("")}</tbody></table></div><p class="wd-sub">短尾只作谓语：<span class="say" lang="ru">Он ${esc((f.sh[0] || "").split(",")[0])}.</span></p></section>`;
+    if (f.cmp || f.sup) o += `<section><h3>比较级 · 最高级</h3><div class="tw"><table class="ft"><tbody>${f.cmp ? `<tr><th>比较级</th><td>${cell(f.cmp)}</td></tr>` : ""}${f.sup ? `<tr><th>最高级</th><td>${cell(f.sup)}</td></tr>` : ""}</tbody></table></div></section>`;
+  }
+  if (!o) o = `<p class="empty">这个词不变化（副词、连接词、语气词等），没有变格或变位。</p>`;
+  return o;
+}
+
+/* ---------- grammar tab ---------- */
+async function renderGrammar(lv, panel) {
+  let d;
+  try { d = await getJSON(`data/grammar_${lv}.json`); }
+  catch { panel.innerHTML = `<p class="empty">${lv} 的语法页面正在编写中，很快上线。可以先看 A1 的语法。</p>`; return; }
+  panel.innerHTML = "";
+  panel.append(h(`<p class="sub">${esc(d.intro)}</p>`));
+  // mind map
+  const map = h(`<nav class="mindmap" aria-label="${lv} 语法思维导图"><div class="mm-root"><span>${lv}</span><small>语法</small></div><ul class="mm-groups"></ul></nav>`);
+  const ul = map.querySelector(".mm-groups");
+  let n = 0;
+  d.groups.forEach((g, gi) => {
+    const li = h(`<li class="mm-group" style="--hue:${gi}"><span class="mm-gname">${esc(g.name)}</span><ul class="mm-leaves"></ul></li>`);
+    g.topics.forEach(t => {
+      n++;
+      const b = h(`<li><button class="mm-leaf"><span class="mm-n">${n}</span>${esc(t.title)}</button></li>`);
+      b.firstElementChild.onclick = () => { const el = document.getElementById(`g-${t.id}`); el.open = true; el.scrollIntoView({ behavior: "smooth", block: "start" }); };
+      li.querySelector(".mm-leaves").append(b);
+    });
+    ul.append(li);
+  });
+  panel.append(map);
+  const tools = h(`<div class="controls g-tools"><button class="btn ghost">全部展开</button><button class="btn ghost">全部收起</button></div>`);
+  const [openAll, closeAll] = tools.children;
+  openAll.onclick = () => panel.querySelectorAll("details.topic").forEach(x => x.open = true);
+  closeAll.onclick = () => panel.querySelectorAll("details.topic").forEach(x => x.open = false);
+  panel.append(tools);
+  n = 0;
+  d.groups.forEach(g => g.topics.forEach(t => {
+    n++;
+    const el = h(`<details class="topic block" id="g-${t.id}"><summary><span class="mm-n">${n}</span><span class="t-title"><span class="t-zh">${esc(t.title)}</span>${t.ru ? `<span class="t-ru ru" lang="ru">${esc(t.ru)}</span>` : ""}<span class="t-brief">${esc(g.name)} · ${esc(t.brief || "")}</span></span></summary><div class="t-body"></div></details>`);
+    el.querySelector(".t-body").innerHTML = t.body.map(blockHTML).join("") + `<p class="t-top"><a href="#" class="totop">↑ 回到思维导图</a></p>`;
+    el.querySelector(".totop").onclick = e => { e.preventDefault(); map.scrollIntoView({ behavior: "smooth" }); };
+    panel.append(el);
+  }));
+}
+function blockHTML(b) {
+  if (b.h) return `<h3>${rich(b.h)}</h3>`;
+  if (b.p) return `<p>${rich(b.p)}</p>`;
+  if (b.tip) return `<p class="tip">${rich(b.tip)}</p>`;
+  if (b.list) return `<ul class="g-list">${b.list.map(x => `<li>${rich(x)}</li>`).join("")}</ul>`;
+  if (b.t) { const [head, ...rows] = b.t; return `<div class="tw"><table class="gt"><thead><tr>${head.map(x => `<th>${rich(x)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.map((x, i) => i ? `<td>${rich(x)}</td>` : `<th>${rich(x)}</th>`).join("")}</tr>`).join("")}</tbody></table></div>`; }
+  if (b.ex) return `<ol class="lines g-ex">${b.ex.map(([ru, zh]) => `<li class="line solo say" lang="ru" data-say="${esc(ru)}"><span class="ru">${esc(ru)}</span><span class="zh" lang="zh">${esc(zh)}</span></li>`).join("")}</ol>`;
+  return "";
 }
 
 route();
