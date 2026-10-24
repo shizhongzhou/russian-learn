@@ -249,3 +249,9 @@ details.topic summary .mm-n{margin-top:4px}
   .t-body{padding:0 14px 14px}
 }
 .ft tbody th{width:1%}
+.gt tbody th{white-space:normal;min-width:6em}
+@media (max-width:640px){
+  .gt{font-size:14px}
+  .gt td,.gt th{min-width:7.5em}
+  .gt tbody th{min-width:6em;max-width:9em}
+}
