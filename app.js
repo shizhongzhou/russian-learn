@@ -346,7 +346,7 @@ const GOV = {
 const PREPQ = { A: "кого́/что", Aa: "кого́", Ai: "что", G: "кого́/чего́", Gi: "чего́", Ga: "кого́", D: "кому́/чему́", Da: "кому́", Di: "чему́", I: "кем/чем", Ia: "кем", Ii: "чем", P: "ком/чём", Pi: "чём", Pa: "ком" };
 function govToken(t) {
   if (t.includes("/") && t.includes("+")) return t.split("/").map(govToken).join(" / ");
-  const m = t.match(/^([а-яё\-]+)\+(\w+)$/i);
+  const m = t.match(/^([а-яё\u0301\-]+)\+(\w+)$/i);
   if (m) {
     const c = GOV[m[2]];
     return `<span class="gv"><span class="say" lang="ru">${esc(m[1])} ${esc(PREPQ[m[2]] || m[2])}</span>${c && c[1] ? `<em>${c[1]}</em>` : ""}</span>`;
@@ -384,7 +384,8 @@ async function openWord(lv, i, r) {
 }
 function wordBody(f, p, w) {
   let o = "";
-  if (f.gov) o += `<section><h3>接格 · 支配关系</h3><ul class="govs">${govHTML(f.gov)}</ul></section>`;
+  if (f.gov === "—") { if (f.t === "v") o += `<section><h3>接格 · 支配关系</h3><p class="wd-sub">不及物：不直接带宾语。</p></section>`; }
+  else if (f.gov) o += `<section><h3>接格 · 支配关系</h3><ul class="govs">${govHTML(f.gov)}</ul></section>`;
   if (f.ex) o += `<section><h3>常用搭配</h3><ul class="exs">${f.ex.split(/\s*;\s*/).map(x => { const [ru, zh] = x.split(/\s*=\s*/); return `<li><span class="say" lang="ru">${esc(ru)}</span>${zh ? `<span class="zh">${esc(zh)}</span>` : ""}</li>`; }).join("")}</ul></section>`;
   if (f.note) o += `<p class="wd-note">${rich(f.note)}</p>`;
   if (f.t === "n") {
