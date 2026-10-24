@@ -198,7 +198,7 @@ async function renderWords(lv, panel) {
     list.innerHTML = "";
     filtered.slice(page * PAGE, (page + 1) * PAGE).forEach(([r, i]) => {
       const [w, z, p, g] = r;
-      const li = h(`<li><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" ? "性" : "") + "）" : ""}</span></span></button></li>`);
+      const li = h(`<li><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
       const btn = li.firstElementChild;
       btn.onclick = () => playOne(btn, w);
       list.append(li);
@@ -271,13 +271,18 @@ async function renderListening(lv, panel) {
     ex.questions.forEach(q => {
       const li = h(`<li><div class="q" lang="ru">${esc(q.q)}</div><div class="qz">${esc(q.qz)}</div><div class="opts"></div></li>`);
       const box = li.querySelector(".opts");
-      q.options.forEach((o, i) => {
+      // shuffle option order each time so the right answer isn't always in the same spot
+      const order = q.options.map((_, i) => i);
+      for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+      order.forEach(i => {
+        const o = q.options[i];
         const b = h(`<button lang="ru">${esc(o)}</button>`);
+        b.dataset.ok = i === q.answer ? 1 : "";
         b.onclick = () => {
           if (box.dataset.done) return;
           box.dataset.done = 1; done++;
           b.classList.add(i === q.answer ? "right" : "wrong");
-          box.children[q.answer].classList.add("right");
+          box.querySelector("[data-ok='1']").classList.add("right");
           if (i === q.answer) right++;
           if (done === ex.questions.length) score.textContent = `答对 ${right} / ${ex.questions.length} 题`;
         };
