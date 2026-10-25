@@ -41,6 +41,20 @@ jobs:
           npx cap sync ios
           ls ios/App
 
+      - name: Package the ready-to-open Xcode project
+        run: |
+          # everything Xcode needs, so a Mac can open it without npm/CocoaPods
+          rm -rf /tmp/pk && mkdir -p /tmp/pk/MaoMao-Xcode/native
+          cp -R ios /tmp/pk/MaoMao-Xcode/native/ios
+          for p in $(grep -o 'path: "[^"]*node_modules/[^"]*"' ios/App/CapApp-SPM/Package.swift | sed -E 's/.*node_modules\/([^"]*)"/\1/'); do
+            mkdir -p "/tmp/pk/MaoMao-Xcode/native/node_modules/$p"
+            cp -R "node_modules/$p/." "/tmp/pk/MaoMao-Xcode/native/node_modules/$p/"
+            rm -rf "/tmp/pk/MaoMao-Xcode/native/node_modules/$p/android" "/tmp/pk/MaoMao-Xcode/native/node_modules/$p/node_modules"
+          done
+          printf '用 Xcode 打开 native/ios/App/App.xcodeproj\n然后：Signing & Capabilities → Team 选你的 Apple ID → 选设备 → ▶\n' > /tmp/pk/MaoMao-Xcode/打开方法.txt
+          (cd /tmp/pk && zip -qry "$GITHUB_WORKSPACE/native/MaoMao-Xcode.zip" MaoMao-Xcode)
+          ls -la MaoMao-Xcode.zip; unzip -l MaoMao-Xcode.zip | tail -1
+
       - name: Build (unsigned)
         run: |
           cd ios/App
@@ -66,5 +80,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release view ios-latest >/dev/null 2>&1 || gh release create ios-latest --title "猫猫俄语通 iOS 安装包" --notes "自动构建的未签名 iOS 安装包（.ipa）。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。" --prerelease
-          gh release upload ios-latest MaoMaoRussian.ipa --clobber
+          gh release upload ios-latest MaoMaoRussian.ipa MaoMao-Xcode.zip --clobber
           gh release edit ios-latest --notes "自动构建的未签名 iOS 安装包（.ipa），构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。"
