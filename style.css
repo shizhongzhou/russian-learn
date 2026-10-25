@@ -438,7 +438,7 @@ main{max-width:720px}
 
 /* roaming cat */
 .roam{position:fixed;left:0;bottom:calc(66px + env(safe-area-inset-bottom));z-index:31;border:0;background:none;padding:0;width:60px;height:60px;cursor:pointer;
-  transform:translateX(16px);transition:transform 2.6s ease-in-out;line-height:0}
+  transform:translateX(20px);line-height:0}
 .roam .cat-svg{width:60px;height:60px}
 .roam[hidden]{display:none}
 .roam-cat{display:block;transform:scaleX(var(--flip,1))}
@@ -478,3 +478,54 @@ main{padding-bottom:40px}
 .alphabet button{min-width:0;padding:0}
 @media (max-width:560px){.card .alphabet{grid-template-columns:repeat(7,minmax(0,1fr))}.alphabet button{font-size:17px}}
 .room{width:100%;max-width:520px;margin:0 auto}
+.field input.need{border-color:#D9534F;box-shadow:0 0 0 3px rgba(217,83,79,.2)}
+
+/* side-view walking cat: four legs, tail, bob */
+.cat-side{display:block;overflow:visible}
+.cat-side .leg{transform-box:fill-box;transform-origin:50% 8%}
+.cat-side .tail{transform-box:view-box}
+.walking .cat-side .la{animation:legA .52s ease-in-out infinite}
+.walking .cat-side .lb{animation:legB .52s ease-in-out infinite}
+.walking .cat-side .bodyg,.walking .cat-side .headg{animation:bob .26s ease-in-out infinite alternate}
+.walking .cat-side .tail{animation:tailSway 1.1s ease-in-out infinite alternate}
+.running .cat-side .la{animation:legA .3s linear infinite}
+.running .cat-side .lb{animation:legB .3s linear infinite}
+.running .cat-side .bodyg,.running .cat-side .headg{animation:bob .15s ease-in-out infinite alternate}
+.running .cat-side .tail{animation:tailSway .5s ease-in-out infinite alternate}
+.jumping .cat-side .la{transform:rotate(-38deg)}
+.jumping .cat-side .lb{transform:rotate(42deg)}
+.jumping .cat-side .tail{transform:rotate(-10deg)}
+@keyframes legA{0%,100%{transform:rotate(-26deg)}50%{transform:rotate(24deg)}}
+@keyframes legB{0%,100%{transform:rotate(24deg)}50%{transform:rotate(-26deg)}}
+@keyframes bob{to{transform:translateY(-3px)}}
+@keyframes tailSway{from{transform:rotate(-7deg)}to{transform:rotate(9deg)}}
+.rc-flip{display:block;transform:scaleX(var(--flip,1))}
+.room-cat{transition:none}
+.room-cat .cat-side{width:128%;height:auto;margin-left:-14%;margin-top:22%}
+.roam .cat-side{width:84px;height:63px;margin-left:-12px}
+.roam{transition:none!important}
+@media (prefers-reduced-motion:reduce){.cat-side *{animation:none!important}}
+
+/* dictionaries picker */
+.dict-pick{display:flex;gap:6px;overflow-x:auto;padding:6px 0 2px;scrollbar-width:none}
+.dict-pick::-webkit-scrollbar{display:none}
+.dict-pick a{flex:none;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-size:13px;white-space:nowrap}
+.dict-pick a[aria-current]{background:var(--ink);color:var(--porcelain);border-color:var(--ink)}
+.dict-pick a.mine{border-color:#C2412F;color:#C2412F}
+.dict-pick a.mine[aria-current]{background:#C2412F;color:#fff}
+/* shadowing */
+.mats{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}
+.mat{display:flex;flex-direction:column;gap:2px;text-align:left;cursor:pointer;font:inherit;color:var(--ink)}
+.mat small{color:var(--muted);font-size:12px}.mat b{font:700 18px var(--ru,serif)}.mat span{font-size:13px;color:var(--muted)}
+.shadow-card .lines{list-style:none;margin:0;padding:0}
+.shadow-card li{display:block}
+.big-line{font-size:24px;line-height:1.45;margin:4px 0}
+.sh-ctrl{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.sh-ctrl .sw{display:flex;align-items:center;gap:6px;font-size:14px}
+.mic.big{position:static;width:64px;height:64px;margin-left:auto;background:var(--ink);color:var(--porcelain);border:0}
+.mic.big svg{width:28px;height:28px}
+.score{padding:2px 8px;border-radius:999px;background:var(--glaze)}
+.score.s3{background:#2F8F5B;color:#fff}.score.s2{background:#6BAF5B;color:#fff}.score.s1{background:#E3B23C;color:#2B2420}
+.breeds{max-height:300px;overflow-y:auto;padding:2px}
+@media (max-width:420px){.breeds{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.sh-ctrl .sw{white-space:nowrap}

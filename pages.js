@@ -50,7 +50,8 @@ function route() {
     case "welcome": tab = ""; roam = false; pageWelcome(); break;
     case "learn": tab = "learn"; pageLearn(); roamLines = LEARN_LINES; break;
     case "quiz": tab = "learn"; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
-    case "memo": tab = "learn"; pageMemo(LEVELS[p1] ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
+    case "memo": tab = "learn"; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
+    case "shadow": tab = "learn"; pageShadow(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["我在听你读哦", "Повтори́! 跟我读", "读得越像，猫粮越多"]; break;
     case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["慢慢写，我等你～", "写完有小鱼干吃！", "Пиши́! 写吧"]; break;
     case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["考试加油！", "我相信你", "Уда́чи! 祝你好运"]; break;
     case "meow": tab = "meow"; pageMeow(); roam = false; break;
@@ -73,7 +74,7 @@ const LEARN_LINES = ["加油！我在旁边陪你", "Ты молоде́ц! 你�
 /* ---------- welcome / register ---------- */
 function pageWelcome() {
   const S = Pet.state;
-  let step = 1, nick = "", breed = S.cat.breed || "ragdoll", name = S.cat.name || "团子";
+  let step = 1, nick = "", breed = S.cat.breed || "ragdoll", name = S.profile ? (S.cat.name || "") : "";
   const box = h(`<section class="welcome"></section>`);
   app.append(box);
   function draw() {
@@ -91,20 +92,22 @@ function pageWelcome() {
     } else {
       box.innerHTML = `<p class="step">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的猫</h1>
         <div class="pick-preview"><div class="pp-cat">${catSVG({ breed, stage: 1, mood: "happy", size: 170 })}</div>
-          <div class="pp-name">${esc(name)}</div><div class="pp-breed">${BREEDS[breed].name} · ${BREEDS[breed].desc}</div></div>
+          <div class="pp-name">${esc(name) || "（还没起名字）"}</div><div class="pp-breed">${BREEDS[breed].name} · ${BREEDS[breed].desc}</div></div>
         <div class="breeds" role="radiogroup" aria-label="猫咪品种">${Object.entries(BREEDS).map(([k, b]) => `<button role="radio" aria-checked="${k === breed}" data-b="${k}">${catSVG({ breed: k, stage: 1, mood: "happy", size: 54 })}<span>${b.short}</span></button>`).join("")}</div>
-        <label class="field"><span>给它起个名字</span><input id="cname" maxlength="8" value="${esc(name)}"></label>
+        <label class="field"><span>给它起个名字</span><input id="cname" maxlength="10" value="${esc(name)}" placeholder="输入它的名字"></label>
         <p class="hint">每只猫都从“小奶猫”开始，学得越多会戴上铃铛、蝴蝶结、花环。</p>
         <button class="btn big" id="done">就选它，开始学习</button>
         <button class="btn ghost" id="back">上一步</button>`;
       box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { breed = b.dataset.b; draw(); });
       const ci = box.querySelector("#cname");
-      ci.oninput = () => { name = ci.value.trim() || "团子"; box.querySelector(".pp-name").textContent = name; };
+      ci.oninput = () => { name = ci.value.trim(); box.querySelector(".pp-name").textContent = name || "（还没起名字）"; };
       box.querySelector("#back").onclick = () => { step = 1; draw(); };
       box.querySelector("#done").onclick = () => {
+        name = ci.value.trim();
+        if (!name) { ci.focus(); ci.placeholder = "先给它起个名字吧"; ci.classList.add("need"); return; }
         S.profile = S.profile || { nick, created: Date.now() };
         S.profile.nick = nick || S.profile.nick;
-        S.cat = { breed, name: name || "团子" };
+        S.cat = { breed, name };
         S.lastStudy = Date.now(); S.lastTick = Date.now();
         Pet.save();
         location.hash = "#/home";
@@ -116,17 +119,34 @@ function pageWelcome() {
 }
 
 /* ---------- home ---------- */
+/* floor spots have lv 0; cat-tree platforms are climbed one level at a time */
+const TREE_BASE = { x: 300, y: 270 };
 function roomSpots(v) {
   const s = [
-    { x: 180, y: 252, m: "walk" }, { x: 220, y: 270, m: "happy" }, { x: 140, y: 244, m: "walk" }, { x: 90, y: 276, m: "happy" },
-    { x: 124, y: 272, m: "eat" },
+    { x: 190, y: 256, m: "happy" }, { x: 230, y: 274, m: "happy" }, { x: 150, y: 248, m: "happy" }, { x: 84, y: 280, m: "happy" },
+    { x: 124, y: 274, m: "eat" },
   ];
-  if (v.decor.bed) s.push({ x: 62, y: 260, m: "sleep" });
-  if (v.tree >= 1) s.push({ x: 327, y: 192, m: "happy" });
-  if (v.tree >= 2) s.push({ x: 335, y: 114, m: "sleep" });
-  if (v.tree >= 3) s.push({ x: 300, y: 84, m: "happy" }, { x: 280, y: 50, m: "cheer" });
-  if (v.decor.toy) s.push({ x: 205, y: 276, m: "cheer" });
+  if (v.decor.bed) s.push({ x: 62, y: 262, m: "sleep" });
+  if (v.decor.toy) s.push({ x: 200, y: 280, m: "cheer" });
+  if (v.decor.scratch) s.push({ x: 262, y: 270, m: "cheer", say: "磨磨爪子～" });
+  if (v.tree >= 1) s.push({ x: 327, y: 192, m: "happy", lv: 1 });
+  if (v.tree >= 2) s.push({ x: 335, y: 114, m: "sleep", lv: 2 });
+  if (v.tree >= 3) s.push({ x: 300, y: 84, m: "happy", lv: 3 }, { x: 280, y: 50, m: "cheer", lv: 4, say: "看我爬得多高！" });
   return s;
+}
+function roomPath(spots, a, b) {
+  const tree = spots.filter(s => s.lv).sort((x, y) => x.lv - y.lv);
+  const segs = [];
+  const la = a.lv || 0, lb = b.lv || 0;
+  if (la && lb) {
+    const step = lb > la ? 1 : -1;
+    for (let l = la + step; step > 0 ? l <= lb : l >= lb; l += step) segs.push({ to: tree[l - 1], jump: true });
+    return segs;
+  }
+  if (la) { for (let l = la - 1; l >= 1; l--) segs.push({ to: tree[l - 1], jump: true }); segs.push({ to: TREE_BASE, jump: true }); }
+  if (lb) { if (!la) segs.push({ to: TREE_BASE }); for (let l = 1; l <= lb; l++) segs.push({ to: tree[l - 1], jump: true }); return segs; }
+  segs.push({ to: b });
+  return segs;
 }
 function roomBox(v, { cat = true, label = true } = {}) {
   const box = h(`<section class="room" aria-label="${esc(v.cat.name)}的小窝">${roomSVG({ scene: v.scene, tree: v.tree, decor: v.decor })}
@@ -135,37 +155,62 @@ function roomBox(v, { cat = true, label = true } = {}) {
   if (!cat) return box;
   const el = box.querySelector(".room-cat"), flip = el.querySelector(".rc-flip"), bub = el.querySelector(".rc-bubble");
   const spots = roomSpots(v);
-  let cur = v.sick ? (spots.find(s => s.m === "sleep") || spots[3]) : spots[0];
-  const put = (sp, mood) => {
-    el.style.left = (sp.x / 390 * 100) + "%"; el.style.top = (sp.y / 300 * 100) + "%";
-    flip.innerHTML = catSVG({ breed: v.cat.breed, stage: v.shownStage, mood, size: 120 });
-  };
-  put(cur, v.sick ? "sick" : v.mood === "hungry" ? "hungry" : "happy");
-  el.onclick = () => { if (Pet.state.settings.meow) meowSound(); Pet.pet(); say(["喵～", "呼噜呼噜", "Мур!"][Math.floor(Math.random() * 3)]); flip.innerHTML = catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: "cheer", size: 120 }); };
+  let cur = v.sick ? (spots.find(s => s.m === "sleep") || spots[3]) : spots[0], moving = false;
+  const pos = p => ({ left: (p.x / 390 * 100) + "%", top: (p.y / 300 * 100) + "%" });
+  const front = mood => { flip.style.setProperty("--flip", 1); flip.className = "rc-flip"; flip.innerHTML = catSVG({ breed: v.cat.breed, stage: Pet.view().shownStage, mood, size: 120 }); };
+  const side = (cls, dir) => { flip.style.setProperty("--flip", dir); flip.className = "rc-flip " + cls; flip.innerHTML = catSideSVG({ breed: v.cat.breed, stage: Pet.view().shownStage, size: 150 }); };
+  Object.assign(el.style, pos(cur));
+  front(v.sick ? "sick" : v.mood === "hungry" ? "hungry" : "happy");
+  el.onclick = () => { if (Pet.state.settings.meow) meowFor("pet"); Pet.pet(); say(["喵～", "呼噜呼噜", "Мур!"][Math.floor(Math.random() * 3)]); if (!moving) front("cheer"); };
   el.setAttribute("role", "button"); el.tabIndex = 0; el.setAttribute("aria-label", `${v.cat.name}，点一下摸摸它`);
   el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); el.click(); } };
   let bt;
   function say(t) { bub.textContent = t; bub.hidden = false; clearTimeout(bt); bt = setTimeout(() => bub.hidden = true, 2600); }
   if (v.sick) { setTimeout(() => say("我不舒服……带我去看医生吧"), 800); return box; }
   if (v.mood === "hungry") setTimeout(() => say(v.full < 30 ? "肚子饿了，咕～" : "好渴，想喝水"), 800);
-  const lines = { eat: "开饭啦～", sleep: "", happy: "", cheer: "看我爬得多高！", walk: "" };
+  const lines = { eat: "开饭啦～", sleep: "", happy: "", cheer: "" };
   const extra = ["今天也一起学吧", "Приве́т! 你来啦", "先复习单词好不好？", "在小窝里等你～"];
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return box;
-  later(() => {
-    if (!document.body.contains(el)) return;
-    let nx = spots[Math.floor(Math.random() * spots.length)];
-    if (nx === cur) nx = spots[(spots.indexOf(cur) + 1) % spots.length];
-    flip.style.setProperty("--flip", nx.x < cur.x ? -1 : 1);
-    put(nx, "walk"); cur = nx;
-    setTimeout(() => {
+  const W = () => box.clientWidth || 390;
+  async function go(target) {
+    moving = true;
+    let p = cur;
+    for (const sg of roomPath(spots, cur, target)) {
       if (!document.body.contains(el)) return;
-      const vv = Pet.view();
-      const m = vv.mood === "hungry" && nx.m !== "eat" ? "hungry" : nx.m === "walk" ? "happy" : nx.m;
-      flip.innerHTML = catSVG({ breed: vv.cat.breed, stage: vv.shownStage, mood: m, size: 120 });
-      const t = lines[nx.m] || (Math.random() < 0.4 ? extra[Math.floor(Math.random() * extra.length)] : "");
-      if (t) say(t);
-    }, 2300);
-  }, 5200);
+      const q = sg.to, dir = q.x < p.x ? -1 : 1;
+      const dx = (q.x - p.x) / 390 * W(), dy = (q.y - p.y) / 300 * (W() * 300 / 390), dist = Math.hypot(dx, dy);
+      const a = pos(p), b = pos(q);
+      if (sg.jump) {
+        side("jumping", dir);
+        const up = Math.min(p.y, q.y) - 34;
+        const mid = pos({ x: (p.x + q.x) / 2, y: up });
+        await el.animate([a, mid, b], { duration: 520 + dist * 1.2, easing: "ease-in-out" }).finished.catch(() => {});
+        Object.assign(el.style, b);
+        side("", dir); await new Promise(r => setTimeout(r, 260));
+      } else if (dist > 4) {
+        const run = dist > W() * 0.35 && Math.random() < 0.4;
+        side(run ? "running" : "walking", dir);
+        await el.animate([a, b], { duration: dist / (run ? 0.17 : 0.07), easing: "linear" }).finished.catch(() => {});
+        Object.assign(el.style, b);
+      }
+      p = q;
+    }
+    cur = target; moving = false;
+    const vv = Pet.view();
+    front(vv.mood === "hungry" && target.m !== "eat" ? "hungry" : target.m);
+    const t = target.say || lines[target.m] || (Math.random() < 0.35 ? extra[Math.floor(Math.random() * extra.length)] : "");
+    if (t) say(t);
+  }
+  const loop = () => {
+    if (!document.body.contains(el)) return;
+    if (!moving) {
+      let nx = spots[Math.floor(Math.random() * spots.length)];
+      if (nx === cur) nx = spots[(spots.indexOf(cur) + 1) % spots.length];
+      go(nx);
+    }
+  };
+  setTimeout(loop, 2200);
+  later(loop, 7000); // repeats until the page changes
   return box;
 }
 function pageHome() {
@@ -183,7 +228,7 @@ function pageHome() {
   box.append(h(`<section class="card goal"><div class="row"><h2>今日目标</h2><span>答对 ${v.daily.correct} / ${v.goal} 题${v.streak ? ` · 连续 ${v.streak} 天` : ""}</span></div>
     <div class="bar"><i style="width:${pct}%"></i></div>
     <p>${v.daily.done ? "今天的目标完成啦！奖励已发放" : `再答对 ${v.goal - v.daily.correct} 题，奖励 5 猫粮 + 3 水`}</p>
-    <a class="btn" href="#/quiz/${v.lastLevel}">开始每日测验 · ${v.lastLevel}</a></section>`));
+    <a class="btn" href="#/quiz/${v.lastLevel}">开始每日小测 · ${v.lastLevel}</a></section>`));
   const lp = v.lastPlace;
   box.append(h(`<a class="card dark cont" href="${lp ? `#/${lp.lv}/${lp.tab}` : "#/learn"}"><div><small>${lp ? `继续学习 · ${lp.lv}` : "开始学习"}</small><b>${lp ? lp.name : "从 A1 字母和单词开始"}</b></div><span class="play">${svgI(ICON.play)}</span></a>`));
   if (v.nextAt) box.append(h(`<a class="card next" href="#/meow"><div><b>下一阶段：${v.nextName}</b><small>再得 ${fmt(v.nextAt - v.growth)} 成长值 · 解锁${v.nextGift}</small></div></a>`));
@@ -205,19 +250,20 @@ function pageLearn() {
     const topics = Object.keys(Pet.state.topics).filter(k => k.startsWith(lv + ":")).length;
     const mastered = Pet.state.masteredCount[lv] || 0, ex = Pet.state.exams[lv];
     const M = [
-      ["#memo", "背单词", "选词库 · 背会一个得 1 猫粮", `已背会 ${fmt(mastered)} / ${fmt(total)}`, "M12 3 l2.6 5.6 6 .7 -4.5 4.1 1.2 6 -5.3 -3 -5.3 3 1.2 -6 -4.5 -4.1 6 -.7 z"],
+      ["#memo", "背单词", "等级词库 · 主题词典 · 生词本", `已背会 ${fmt(mastered)} / ${fmt(total)} · 1 词 1 猫粮`, "M12 3 l2.6 5.6 6 .7 -4.5 4.1 1.2 6 -5.3 -3 -5.3 3 1.2 -6 -4.5 -4.1 6 -.7 z"],
       ["words", "单词", `${fmt(total)} 词 · 点击发音`, `已听 ${fmt(heard)} 个`, "M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z M8 9h6 M8 13h4"],
       ["grammar", "语法", "思维导图 + 详解", `已学 ${topics} 个专题`, "M12 3 a2.5 2.5 0 1 0 .01 0 M5 16 a2.5 2.5 0 1 0 .01 0 M19 16 a2.5 2.5 0 1 0 .01 0 M12 7.5v4 M12 11.5 6.5 16 M12 11.5 17.5 16"],
       ["dialogues", "对话", "双声朗读 · 逐句翻译", "听完一段得 2 水", "M4 5h10v7H8l-4 3z M14 9h6v7l-3-2h-6v-2"],
       ["listening", "听力", "先听后答", "答对得猫粮", "M4 14v-2a8 8 0 0 1 16 0v2 M3 14h4v6H3z M17 14h4v6h-4z"],
       ["news", "新闻 · 阅读", "听、读、跟读", "读完一篇有奖励", "M3 4h18v16H3z M7 8h10 M7 12h10 M7 16h6"],
+      ["#shadow", "复读跟读", "听一句 · 跟着读 · 打分", "分越高猫粮越多，还可能掉零食", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3"],
       ["#write", "写作", "按题目写俄语短文", "写完得猫粮 + 小鱼干", "M4 20 L8 19 L19 8 L16 5 L5 16 Z M14 7 L17 10"],
-      ["#exam", "等级考试", "20 题 · 答对 16 题通过", ex && ex.passed ? `已通过 · 最好 ${ex.best}/20` : "通过得豪华罐头", "M6 3h12v18l-6-4-6 4z"],
+      ["#exam", "模拟考试", "ТРКИ 模拟 · 20 题，16 题通过", ex && ex.passed ? `已通过 · 最好 ${ex.best}/20` : "通过得豪华罐头", "M6 3h12v18l-6-4-6 4z"],
     ];
     body.innerHTML = `<section class="card lvcard"><div class="row"><div><span class="lv-big">${lv}</span> <b>${LEVELS[lv].title}</b></div><span>${Math.round(heard / total * 100)}%</span></div>
       <div class="bar"><i style="width:${Math.min(100, heard / total * 100)}%"></i></div><p>${LEVELS[lv].desc}</p></section>
       <div class="modules">${M.map(m => `<a class="mod" href="${m[0][0] === "#" ? `#/${m[0].slice(1)}/${lv}` : `#/${lv}/${m[0]}`}">${svgI(m[4], "stroke")}<b>${m[1]}</b><small>${m[2]}</small><em>${m[3]}</em></a>`).join("")}
-      <a class="mod dark" href="#/quiz/${lv}">${svgI("M12 3 a9 9 0 1 0 .01 0 M8.5 12.5l2.5 2.5 5-5.5", "stroke")}<b>每日测验</b><small>考今天学过的内容</small><em>今日已答对 ${Pet.state.daily.correct} 题</em></a></div>`;
+      <a class="mod dark" href="#/quiz/${lv}">${svgI("M12 3 a9 9 0 1 0 .01 0 M8.5 12.5l2.5 2.5 5-5.5", "stroke")}<b>每日小测</b><small>考今天学过的词 + 生词本 · 1 题 2 猫粮</small><em>今日已答对 ${Pet.state.daily.correct} 题</em></a></div>`;
     if (lv === "A1") {
       const alpha = h(`<section class="card"><h2>俄语字母表</h2><p class="hint">点一个字母，听它的名称和例词。</p><div class="alphabet"></div></section>`);
       const grid = alpha.querySelector(".alphabet");
@@ -236,12 +282,12 @@ function pageLearn() {
 /* ---------- daily quiz (generated from the level's word list) ---------- */
 async function pageQuiz(lv) {
   const box = h(`<div class="page quiz"><header class="subhead"><a class="iconbtn" href="#/learn" aria-label="返回学习">${svgI(ICON.back, "stroke")}</a>
-    <div class="grow"><small class="qsrc">${lv} · 每日测验</small><div class="bar thin"><i></i></div></div></header><div class="qbody"><p class="empty">出题中…</p></div></div>`);
+    <div class="grow"><small class="qsrc">${lv} · 每日小测</small><div class="bar thin"><i></i></div></div></header><div class="qbody"><p class="empty">出题中…</p></div></div>`);
   app.append(box);
   const rows = await getJSON(`data/words_${lv}.json`);
   const pool = rows.map((r, i) => ({ r, i })).filter(({ r }) => r[1] && r[1] !== "-" && /[一-鿿]/.test(r[1]));
   Pet.tick();
-  const todayIdx = new Set(Pet.state.todayWords.keys.filter(k => k.startsWith(lv + ":")).map(k => +k.split(":")[1]));
+  const todayIdx = new Set(Pet.state.todayWords.keys.concat(Object.keys(Pet.state.wrongWords || {})).filter(k => k.startsWith(lv + ":")).map(k => +k.split(":")[1]));
   const todayPool = pool.filter(p => todayIdx.has(p.i));
   const rnd = n => Math.floor(Math.random() * n);
   const shuffle = a => { for (let k = a.length - 1; k > 0; k--) { const j = rnd(k + 1); [a[k], a[j]] = [a[j], a[k]]; } return a; };
@@ -260,7 +306,7 @@ async function pageQuiz(lv) {
   }
   let k = 0, right = 0;
   const qb = box.querySelector(".qbody"), bar = box.querySelector(".bar i");
-  box.querySelector(".qsrc").textContent = fromToday ? `${lv} · 每日测验 · ${Math.min(fromToday, N)} 题来自今天学过的词` : `${lv} · 每日测验 · 今天还没学新词，随机出题`;
+  box.querySelector(".qsrc").textContent = fromToday ? `${lv} · 每日小测 · ${Math.min(fromToday, N)} 题来自今天学过的词` : `${lv} · 每日小测 · 今天还没学新词，随机出题`;
   function q() {
     bar.style.width = (k / N * 100) + "%";
     if (k >= N) return end();
@@ -276,7 +322,7 @@ async function pageQuiz(lv) {
       qb.dataset.done = String(k);
       const o = Q.opts[+b.dataset.j], ok = o === Q.t;
       qb.querySelectorAll("[data-j]").forEach(x => { if (Q.opts[+x.dataset.j] === Q.t) x.classList.add("right"); });
-      if (ok) { right++; Pet.reward("correct"); } else { b.classList.add("wrong"); Pet.wrong(); }
+      if (ok) { right++; Pet.reward("quiz"); } else { b.classList.add("wrong"); Pet.wrong(); Pet.missed(lv, Q.t.i); }
       if (Q.type === "zh") speak(Q.t.r[0]);
       Pet.heardWord(lv, Q.t.i);
       qb.querySelector(".qfb").innerHTML = `<div class="fb ${ok ? "ok" : "no"}"><b>${ok ? "答对了！" : "差一点～"}</b><span lang="ru" class="ru">${esc(Q.t.r[0])}</span> = ${esc(Q.t.r[1])}</div><button class="btn big" id="nx">${k + 1 < N ? "下一题" : "看结果"}</button>`;
@@ -287,9 +333,13 @@ async function pageQuiz(lv) {
   function end() {
     const v = Pet.view();
     qb.innerHTML = `<section class="card result"><div class="res-cat">${catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: right >= 7 ? "cheer" : "happy", size: 150 })}</div>
-      <h2>答对 ${right} / ${N} 题</h2><p>${esc(v.cat.name)}得到了 ${right} 颗猫粮，成长值 +${right * 10}</p>
+      <h2>答对 ${right} / ${N} 题</h2><p>${esc(v.cat.name)}得到了 ${right * 2} 颗猫粮，成长值 +${right * 12}${right >= 8 ? "，另有满分奖励！" : ""}</p>
       <p class="hint">今日已答对 ${v.daily.correct} / ${v.goal} 题</p>
       <div class="row2"><a class="btn" href="#/quiz/${lv}" onclick="setTimeout(route,0)">再来 10 题</a><a class="btn ghost" href="#/meow">去喂${esc(v.cat.name)}</a></div></section>`;
+    if (right >= 8) {
+      const k2 = Pet.today() + "|quizbonus" + (right === N ? "10" : "8");
+      if (!Pet.state.once[k2]) { Pet.state.once[k2] = 1; Pet.bonus({ g: 30, f: right === N ? 6 : 3, w: 2, text: right === N ? "小测满分" : "小测优秀", snackChance: right === N ? 0.6 : 0.3 }); }
+    }
     if (location.hash === `#/quiz/${lv}`) qb.querySelector('a.btn').onclick = e => { e.preventDefault(); route(); };
   }
   q();
@@ -331,7 +381,7 @@ function pageMeow() {
       const id = b.dataset.snack, it = SHOP.snack.find(x => x.id === id);
       Pet.state.inv[id]--; it.apply(Pet.state); Pet.save(); Pet.toast(`${esc(v.cat.name)}吃了${it.name}，好开心！`, "good"); if (Pet.state.settings.meow) meowSound(); flash("eat");
     });
-    box.querySelector("#pet").onclick = box.querySelector(".bigcat").onclick = () => { if (Pet.state.settings.meow) meowSound(); Pet.pet(); flash(v.sick ? "sick" : "cheer"); };
+    box.querySelector("#pet").onclick = box.querySelector(".bigcat").onclick = () => { if (Pet.state.settings.meow) meowFor(v.sick ? "sick" : "pet"); Pet.pet(); flash(v.sick ? "sick" : "cheer"); };
   }
   draw();
 }

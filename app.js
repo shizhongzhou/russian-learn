@@ -277,13 +277,17 @@ function scoreSpeech(target, heard) {
   if (!t.length) return 0;
   return Math.round(t.filter(w => hset.has(w)).length / t.length * 100);
 }
-function shadowLine(btn, li, ru, key) {
+function shadowLine(btn, li, ru, key, onScore) {
   stopAll();
   let fb = li.querySelector(".say-fb");
   if (!fb) { fb = h(`<div class="say-fb" aria-live="polite"></div>`); li.append(fb); }
   fb.onclick = e => e.stopPropagation();
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  const good = () => { if (Pet.once("speak:" + key, "speak", true)) Pet.cheer("你的俄语说得真好！"); };
+  const good = score => {
+    if (onScore) onScore(score);
+    const r = Pet.scored("speak:" + key, score);
+    if (r === 0) Pet.talk("这句今天已经拿过这个分数的奖励啦，换一句试试");
+  };
   if (SR) {
     const r = new SR();
     r.lang = "ru-RU"; r.interimResults = false; r.maxAlternatives = 3;
@@ -291,8 +295,9 @@ function shadowLine(btn, li, ru, key) {
     r.onresult = e => {
       const alts = [...e.results[0]].map(a => a.transcript);
       const best = alts.map(a => [a, scoreSpeech(ru, a)]).sort((a, b) => b[1] - a[1])[0];
-      fb.innerHTML = `识别到：<span lang="ru">${esc(best[0])}</span> · <b>${best[1]} 分</b>${best[1] >= 60 ? " 很棒！" : " 再试一次？"}`;
-      if (best[1] >= 60) good(); else Pet.talk("慢一点，再读一遍～");
+      const sc = best[1];
+      fb.innerHTML = `识别到：<span lang="ru">${esc(best[0])}</span> · <b class="score s${sc >= 90 ? 3 : sc >= 75 ? 2 : sc >= 60 ? 1 : 0}">${sc} 分</b> ${sc >= 90 ? "完美！+3 猫粮" : sc >= 75 ? "很棒！+2 猫粮" : sc >= 60 ? "不错 +1 猫粮，冲 90 分拿更多" : "再试一次？60 分以上有猫粮"}`;
+      if (sc >= 60) good(sc); else { Pet.talk("慢一点，再读一遍～"); if (onScore) onScore(sc); if (Pet.state.settings.meow) meowFor("wrong"); }
     };
     r.onerror = e => { fb.textContent = e.error === "not-allowed" ? "没有麦克风权限，请在浏览器设置里允许" : "没听清，再试一次"; };
     r.onend = () => btn.classList.remove("rec");
@@ -308,8 +313,8 @@ function shadowLine(btn, li, ru, key) {
     rec.onstop = () => {
       stream.getTracks().forEach(t => t.stop()); btn._rec = null; btn.classList.remove("rec");
       const url = URL.createObjectURL(new Blob(chunks, { type: rec.mimeType }));
-      fb.innerHTML = `<audio controls src="${url}"></audio><span>和原音比一比：</span><button class="btn small" data-ok>我读好了</button><button class="btn small ghost" data-again>再录一次</button>`;
-      fb.querySelector("[data-ok]").onclick = () => { good(); fb.querySelector("[data-ok]").disabled = true; };
+      fb.innerHTML = `<audio controls src="${url}"></audio><span>和原音比一比，给自己打分：</span><button class="btn small" data-s="92">很像</button><button class="btn small" data-s="78">还行</button><button class="btn small ghost" data-again>再录一次</button>`;
+      fb.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { good(+b.dataset.s); fb.querySelectorAll("[data-s]").forEach(x => x.disabled = true); });
       fb.querySelector("[data-again]").onclick = () => shadowLine(btn, li, ru, key);
     };
     rec.start();
