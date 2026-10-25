@@ -8,7 +8,7 @@ A=assets/android
 # icons
 for d in mdpi hdpi xhdpi xxhdpi xxxhdpi; do
   for k in ic_launcher ic_launcher_round ic_launcher_foreground; do
-    [ -d "$RES/mipmap-$d" ] && cp "$A/$k-$d.png" "$RES/mipmap-$d/$k.png"
+    if [ -d "$RES/mipmap-$d" ]; then cp "$A/$k-$d.png" "$RES/mipmap-$d/$k.png"; fi
   done
 done
 mkdir -p $RES/values
@@ -50,6 +50,6 @@ PY
 # version code = build number
 VC=${BUILD_NUMBER:-1}
 for g in android/app/build.gradle android/app/build.gradle.kts; do
-  [ -f "$g" ] && sed -i -E "s/versionCode( =)? [0-9]+/versionCode\1 $VC/; s/versionName( =)? \"[^\"]*\"/versionName\1 \"1.0.$VC\"/" "$g"
+  if [ -f "$g" ]; then sed -i -E "s/versionCode( =)? [0-9]+/versionCode\1 $VC/; s/versionName( =)? \"[^\"]*\"/versionName\1 \"1.0.$VC\"/" "$g"; fi
 done
 echo "Android project patched (versionCode $VC)"

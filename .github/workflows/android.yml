@@ -43,15 +43,15 @@ jobs:
 
       - name: Create the Android project
         run: |
-          npx cap add android
-          bash scripts/patch-android.sh
-          npx cap sync android
+          set -o pipefail
+          { npx cap add android && bash scripts/patch-android.sh && npx cap sync android; } 2>&1 | tee /tmp/step.log || { echo "::error title=create android::$(tail -25 /tmp/step.log | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"; exit 1; }
 
       - name: Build release APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew --no-daemon assembleRelease
+          set -o pipefail
+          ./gradlew --no-daemon assembleRelease 2>&1 | tee /tmp/gradle.log || { echo "::error title=gradle::$(grep -E 'error|FAIL|What went wrong|>' /tmp/gradle.log | tail -25 | sed 's/%/%25/g' | awk '{printf "%s%%0A",$0}')"; exit 1; }
           ls -la app/build/outputs/apk/release/
 
       - name: Sign APK
