@@ -52,7 +52,7 @@ async function pageMemo(src) {
     mb.innerHTML = `<p class="hint">${src === "mine" ? `生词本 ${Object.keys(S.wrongWords || {}).length} 个 · 答对就移出生词本` : `已背会 ${fmt(doneN + session)} / ${fmt(pool.length)}`} · 本次 ${session} 个 · 背会一个得 1 猫粮</p>
       <section class="card flash"><small>${t.lv} #${t.i + 1} · ${POS[t.r[2]] || ""}${t.r[3] ? " · " + esc(t.r[3]) : ""}</small>
         <button class="qword ru" lang="ru" aria-label="朗读 ${esc(t.r[0])}">${esc(t.r[0])} ${svgI(SPK, "fill")}</button>
-        <div class="flash-back" hidden><p class="qzh">${esc(t.r[1])}</p><p class="hint">${esc(t.r[4] || "")}</p></div></section>
+        <div class="flash-back" hidden><p class="qzh">${esc(t.r[1])}</p></div></section>
       <div class="row2"><button class="btn ghost big" id="no">还不认识</button><button class="btn big" id="yes">我记住了</button></div>`;
     const say = () => { speak(t.r[0]); Pet.heardWord(t.lv, t.i); };
     mb.querySelector(".qword").onclick = say; setTimeout(say, 200);

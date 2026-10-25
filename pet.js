@@ -29,7 +29,7 @@ const Pet = (() => {
 
   const today = (t = Date.now()) => { const d = new Date(t); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; };
   const fresh = () => ({
-    v: 1, profile: null, cat: { breed: "ragdoll", name: "" },
+    v: 1, profile: null, cat: { breed: "bluewhite", name: "" },
     growth: 0, food: 10, water: 10, full: 80, drink: 80, health: 100, happy: 80,
     lastStudy: Date.now(), lastTick: Date.now(), streak: 0, streakDay: "", studyDays: 0,
     owned: { scene_living: 1 }, scene: "living", tree: 0, decor: { bed: 0, toy: 0, scratch: 0, fish: 0, fountain: 0 }, layout: {},
@@ -81,10 +81,11 @@ const Pet = (() => {
     tick();
     const stage = stageOf(S.growth);
     const shown = Math.max(1, stage - (thin() ? 1 : 0));
-    const mood = S.sick ? "sick" : (S.full < 30 || S.drink < 30) ? "hungry" : "happy";
+    const idle = idleDays();
+    const mood = S.sick ? "sick" : (S.full < 30 || S.drink < 30) ? "hungry" : (idle >= 1 || S.happy < 35) ? "sad" : "happy";
     const next = STAGES[stage + 1];
     const status = S.sick ? (S.treated ? `正在康复：已坚持 ${S.recoverDays.length} / 3 天` : "生病了，需要去宠物医院")
-      : S.full < 30 ? "饿了，碗空了" : S.drink < 30 ? "渴了，想喝水" : thin() ? "瘦了一圈，多陪陪它" : S.happy < 40 ? "有点无聊，摸摸它吧" : "健康快乐";
+      : S.full < 30 ? "饿了，碗空了" : S.drink < 30 ? "渴了，想喝水" : thin() ? "瘦了一圈，多陪陪它" : idle >= 1 ? "想你了，好久没一起学习" : S.happy < 40 ? "有点无聊，摸摸它吧" : "健康快乐";
     return {
       ...S, stage, shownStage: shown, stageName: STAGE_NAMES[stage], mood, status,
       level: 1 + Math.floor(S.growth / 200), nextAt: next || null, nextName: STAGE_NAMES[stage + 1] || "",
@@ -259,7 +260,10 @@ const Pet = (() => {
     if (!roam || walking) return;
     const v = view();
     const m = moodOverride || mood || v.mood;
-    roam.querySelector(".roam-cat").innerHTML = catSVG({ breed: S.cat.breed, stage: v.shownStage, mood: m, size: 64 });
+    roam.querySelector(".roam-cat").innerHTML = m === "sleep" ? catLieSVG({ breed: S.cat.breed, stage: v.shownStage, size: 90 })
+      : m === "lie" ? catLieSVG({ breed: S.cat.breed, stage: v.shownStage, size: 90, awake: true })
+      : m === "eat" ? catSideSVG({ breed: S.cat.breed, stage: v.shownStage, size: 84, eat: true })
+      : catSVG({ breed: S.cat.breed, stage: v.shownStage, mood: m, size: 64 });
     roam.setAttribute("aria-label", `${S.cat.name}：${MOOD_NAMES[m] || ""}，点一下摸摸它`);
   }
   function setMood(m, ms) { moodOverride = m; drawRoam(); clearTimeout(moodTimer); moodTimer = setTimeout(() => { moodOverride = null; drawRoam(); }, ms); }
@@ -277,7 +281,7 @@ const Pet = (() => {
     const v = view();
     if (v.sick) { drawRoam("sick"); return; }
     const r = Math.random();
-    if (r < 0.22) { drawRoam(pick(["sleep", "happy", v.mood])); return; }
+    if (r < 0.26) { drawRoam(pick(["sleep", "lie", "happy", v.mood === "hungry" ? "hungry" : "sleep"])); return; }
     if (r < 0.32 && !reduce) { drawRoam(v.full < 60 ? "eat" : "happy"); talk(pick(["吃饭饭～", "我开动啦"])); return; }
     if (reduce) return;
     const W = Math.min(innerWidth, document.documentElement.clientWidth || innerWidth);

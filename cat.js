@@ -7,7 +7,7 @@
 const W_ = "#FBF8F4";
 const BREEDS = {
   ragdoll:  { name: "布偶猫", short: "布偶", desc: "灰白长毛、蓝眼睛，温柔黏人", base: W_, body: "#9A9CA4", cap: "#767982", maskL: "#7F828B", maskR: "#7F828B", blaze: W_, chest: W_, paw: W_, ear: "#6A6D76", tail: "#7F828B", tailTip: W_, iris: ["#3D6FB0", "#3D6FB0"], nose: "#F49AA4", fur: "long" },
-  bluewhite:{ name: "蓝白", short: "蓝白", desc: "灰蓝背、白肚皮，圆脸铜色眼睛", base: W_, body: "#8E99A6", cap: "#8E99A6", maskL: "#8E99A6", maskR: "#8E99A6", blaze: W_, chest: W_, paw: W_, ear: "#7F8B98", tail: "#8E99A6", tailTip: "#8E99A6", iris: ["#D98A2B", "#D98A2B"], nose: "#E89AA2" },
+  bluewhite:{ name: "蓝白", short: "蓝白", desc: "灰蓝长毛、白围脖、窄窄的白鼻梁，就像你家那只", base: "#FFFFFF", body: "#7F8895", cap: "#7A8390", maskL: "#7A8390", maskR: "#7A8390", blaze: "#FFFFFF", blazeThin: true, muzzle: "#FFFFFF", chest: "#FFFFFF", paw: "#FFFFFF", ear: "#6F7885", tail: "#7F8895", tailTip: "#8E97A3", iris: ["#4A3426", "#4A3426"], nose: "#F2A3AE", fur: "long", whisker: "#E8ECF0" },
   british:  { name: "蓝猫", short: "蓝猫", desc: "英短蓝猫，铜色眼睛，稳重安静", base: "#A0ACB7", body: "#97A3AF", cap: "#909DAA", chest: "#AAB5C0", paw: "#A0ACB7", ear: "#87949F", tail: "#909DAA", tailTip: "#909DAA", iris: ["#E09235", "#E09235"], nose: "#7C8796", whisker: "#E7EBEF" },
   lion:     { name: "狮子猫", short: "狮子", desc: "雪白长毛大围脖，一蓝一黄鸳鸯眼", base: "#FFFDF9", body: "#FBF7F1", chest: "#FFFFFF", paw: "#FFFDF9", ear: "#F3ECE3", tail: "#F6F0E8", tailTip: "#FFFFFF", iris: ["#5B8FD9", "#E3B23C"], nose: "#F2A0A8", fur: "long", mane: "#F1EAE0", whisker: "#D8D0C6" },
   orange:   { name: "橘猫", short: "橘猫", desc: "能吃能睡，长胖最快", base: "#F4B572", body: "#F0A961", stripes: "#D9822F", muzzle: "#FCEBD6", chest: "#FCEBD6", paw: "#FCEBD6", ear: "#E0913F", tail: "#E8993F", tailTip: "#FCEBD6", iris: ["#C9A13A", "#C9A13A"], nose: "#EE8C93", whisker: "#9B7454" },
@@ -27,7 +27,7 @@ const BREEDS = {
   exotic:   { name: "加菲猫", short: "加菲", desc: "异国短毛，扁扁的小脸", base: "#F2B36E", body: "#ECA862", stripes: "#DB8B3E", muzzle: "#F9DDB8", chest: "#FBE7CC", paw: "#F9DDB8", ear: "#DB8B3E", tail: "#ECA862", tailTip: "#DB8B3E", iris: ["#D9902F", "#D9902F"], nose: "#D9786E", fur: "long", face: "flat" },
 };
 const BREED_ORDER = Object.keys(BREEDS);
-const MOOD_NAMES = { happy: "开心", walk: "散步中", cheer: "欢呼", sleep: "睡觉", eat: "吃饭中", hungry: "饿了", sick: "生病了" };
+const MOOD_NAMES = { happy: "开心", sad: "想你了", walk: "散步中", cheer: "欢呼", sleep: "睡觉", lie: "趴着发呆", eat: "吃饭中", hungry: "饿了", sick: "生病了" };
 let _uid = 0;
 
 function shadeHex(hex, k) { // k<1 darker, >1 lighter
@@ -43,8 +43,8 @@ function catSVG({ breed = "ragdoll", stage = 2, mood = "happy", size = 120, labe
   stage = Math.max(1, Math.min(4, stage | 0 || 1));
   const hungry = mood === "hungry", sick = mood === "sick";
   const long = c.fur === "long";
-  const bodyRx = 30 + stage * 8 - (hungry ? 10 : 0), bodyRy = 28 + stage * 3, bodyCy = 186 - bodyRy + 6;
-  const headRx = 60 + stage * 1.5, headCy = 94, L = 100 - headRx, R = 100 + headRx;
+  const bodyRx = 27 + stage * 7.5 - (hungry ? 9 : 0), bodyRy = 25 + stage * 3, bodyCy = 186 - bodyRy + 6;
+  const headRx = 63 + stage * 1.2, headCy = 96, headRy = 58, L = 100 - headRx, R = 100 + headRx;
   const whisker = c.whisker || "#CFC8C0";
   const fill = (col, g) => c.shade && g ? `url(#${id}${g})` : col;
   // fluffy bib
@@ -64,15 +64,16 @@ function catSVG({ breed = "ragdoll", stage = 2, mood = "happy", size = 120, labe
   const tx = 100 + bodyRx - 6;
   const tail = `M${tx} 178 Q${tx + 36} 172 ${tx + 28} 136 Q${tx + 22} 118 ${tx + 34} 112`;
   const pawL = 100 - bodyRx * 0.42, pawR = 100 + bodyRx * 0.42;
-  const open = mood === "walk" || mood === "happy" || hungry;
+  const sad = mood === "sad";
+  const open = mood === "walk" || mood === "happy" || hungry || sad;
   const flat = c.face === "flat";
-  const eyeRx = flat ? 14.5 : 13, eyeRy = flat ? 16 : 15, eyeY = flat ? 98 : 100;
-  const eyeLine = sick ? "M62 102 Q74 108 86 102 M114 102 Q126 108 138 102"
-    : mood === "sleep" ? "M62 100 Q74 110 86 100 M114 100 Q126 110 138 100"
-    : "M62 104 Q74 90 86 104 M114 104 Q126 90 138 104";
-  const noseY = flat ? 108 : 112;
+  const eyeRx = flat ? 16 : 15, eyeRy = flat ? 17.5 : 17, eyeY = flat ? 102 : 104;
+  const eyeLine = sick ? "M62 106 Q74 112 86 106 M114 106 Q126 112 138 106"
+    : mood === "sleep" ? "M62 104 Q74 114 86 104 M114 104 Q126 114 138 104"
+    : "M62 108 Q74 94 86 108 M114 108 Q126 94 138 108";
+  const noseY = flat ? 114 : 119;
   const mouth = mood === "eat" ? `M92 ${noseY + 8} Q100 ${noseY + 16} 108 ${noseY + 8}` : mood === "cheer" ? `M90 ${noseY + 8} Q100 ${noseY + 24} 110 ${noseY + 8} Q100 ${noseY + 12} 90 ${noseY + 8} Z`
-    : (sick || hungry) ? `M92 ${noseY + 12} Q100 ${noseY + 8} 108 ${noseY + 12}` : `M88 ${noseY + 7} Q94 ${noseY + 14} 100 ${noseY + 7} Q106 ${noseY + 14} 112 ${noseY + 7}`;
+    : (sick || hungry || sad) ? `M92 ${noseY + 12} Q100 ${noseY + 8} 108 ${noseY + 12}` : `M88 ${noseY + 7} Q94 ${noseY + 14} 100 ${noseY + 7} Q106 ${noseY + 14} 112 ${noseY + 7}`;
   const blush = (sick || hungry) ? 0.15 : 0.4 + stage * 0.12;
   const star = "l2 -4 l2 4 l4 1 l-4 1 l-2 4 l-2 -4 l-4 -1 Z";
   const deco = !sick && !hungry;
@@ -102,9 +103,9 @@ function catSVG({ breed = "ragdoll", stage = 2, mood = "happy", size = 120, labe
   const tailRings = c.stripes ? `<path d="${tail}" fill="none" stroke="${c.stripes}" stroke-width="${long ? 19 : 15}" stroke-dasharray="5 9" stroke-linecap="butt" opacity=".85"/>` : "";
   const patches = (c.patches || []).map(([x, y, rx, ry, col]) => `<ellipse cx="${x}" cy="${y + (bodyCy - 160) * 0.6}" rx="${rx * (0.8 + stage * 0.08)}" ry="${ry}" fill="${col}"/>`).join("");
   const points = c.points ? `<ellipse cx="100" cy="108" rx="34" ry="28" fill="url(#${id}p)"/>` : "";
-  const liner = c.liner ? `<path d="M60 100 Q74 84 88 100 M112 100 Q126 84 140 100" fill="none" stroke="${shadeHex(c.shade, 0.6)}" stroke-width="2.2" opacity=".55"/>` : "";
-  const muzzle = c.muzzle ? `<path d="M74 106 Q100 92 126 106 Q132 128 100 136 Q68 128 74 106 Z" fill="${c.muzzle}"/>` : "";
-  const blaze = c.blaze ? (c.blazeThin ? `<path d="M100 72 L95 104 Q100 108 105 104 Z" fill="${c.blaze}"/>` : `<path d="M100 74 L88 112 Q100 122 112 112 Z" fill="${c.blaze}"/>`) : "";
+  const liner = c.liner ? `<path d="M60 104 Q74 88 88 104 M112 104 Q126 88 140 104" fill="none" stroke="${shadeHex(c.shade, 0.6)}" stroke-width="2.2" opacity=".55"/>` : "";
+  const muzzle = c.muzzle ? `<path d="M76 114 Q100 100 124 114 Q132 136 100 146 Q68 136 76 114 Z" fill="${c.muzzle}"/>` : "";
+  const blaze = c.blaze ? (c.blazeThin ? `<path d="M100 66 L94 112 Q100 117 106 112 Z" fill="${c.blaze}"/>` : `<path d="M100 76 L88 118 Q100 128 112 118 Z" fill="${c.blaze}"/>`) : "";
   const aria = label || `${c.name}，${MOOD_NAMES[mood] || ""}`;
   return `<svg class="cat-svg" width="${size}" height="${size}" viewBox="0 0 200 200" role="img" aria-label="${aria}"${sick ? ' style="filter:saturate(.35) brightness(1.04)"' : ""}>
 <defs>
@@ -113,7 +114,7 @@ function catSVG({ breed = "ragdoll", stage = 2, mood = "happy", size = 120, labe
 <linearGradient id="${id}t" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c.shade || c.body}"/><stop offset=".7" stop-color="${c.body}"/></linearGradient>
 <radialGradient id="${id}p"><stop offset="0" stop-color="${c.points || "#000"}" stop-opacity=".95"/><stop offset=".6" stop-color="${c.points || "#000"}" stop-opacity=".7"/><stop offset="1" stop-color="${c.points || "#000"}" stop-opacity="0"/></radialGradient>
 <clipPath id="${id}b"><ellipse cx="100" cy="${bodyCy}" rx="${bodyRx}" ry="${bodyRy}"/></clipPath>
-<clipPath id="${id}k"><ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="54"/></clipPath>
+<clipPath id="${id}k"><ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="${headRy}"/></clipPath>
 </defs>
 <ellipse cx="100" cy="193" rx="${bodyRx + 20}" ry="6" fill="#000" opacity=".1"/>
 ${mane}
@@ -126,28 +127,29 @@ ${bodyStripes}<g clip-path="url(#${id}b)">${patches}</g>
 ${stage >= 2 ? `<path d="M70 ${bodyCy - bodyRy + 6} Q100 ${bodyCy - bodyRy + 18} 130 ${bodyCy - bodyRy + 6}" fill="none" stroke="#D9534F" stroke-width="7" stroke-linecap="round"/><circle cx="100" cy="${bodyCy - bodyRy + 17}" r="7.5" fill="#F2C14E" stroke="#C9952A" stroke-width="1.5"/><path d="M96 ${bodyCy - bodyRy + 18} H104 M100 ${bodyCy - bodyRy + 18} V${bodyCy - bodyRy + 22}" stroke="#9A6D12" stroke-width="1.5" stroke-linecap="round"/>` : ""}
 <path d="${earOuter}" fill="${c.ear}"/>${earInner}${tufts}${earFluff}
 <path d="${cheek}" fill="${fill(c.base, "s")}"/>
-<ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="54" fill="${fill(c.base, "s")}"/>
+<ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="${headRy}" fill="${fill(c.base, "s")}"/>
 <g clip-path="url(#${id}k)">
 ${c.cap ? `<path d="${cap}" fill="${c.cap}"/>` : ""}
-${c.maskL ? `<ellipse cx="72" cy="98" rx="22" ry="20" fill="${c.maskL}" transform="rotate(-14 72 98)"/>` : ""}${c.maskR ? `<ellipse cx="128" cy="98" rx="22" ry="20" fill="${c.maskR}" transform="rotate(14 128 98)"/>` : ""}
+${c.maskL ? `<ellipse cx="72" cy="102" rx="24" ry="22" fill="${c.maskL}" transform="rotate(-14 72 102)"/>` : ""}${c.maskR ? `<ellipse cx="128" cy="102" rx="24" ry="22" fill="${c.maskR}" transform="rotate(14 128 102)"/>` : ""}
 ${blaze}${muzzle}${points}${st}
-<ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="54" fill="url(#${id}h)"/>
+<ellipse cx="100" cy="${headCy}" rx="${headRx}" ry="${headRy}" fill="url(#${id}h)"/>
 </g>
 <path d="M96 42 Q100 30 106 34 Q101 38 100 46 Z" fill="${c.cap || c.base}"/>
 ${liner}
 ${open ? `<ellipse cx="74" cy="${eyeY}" rx="${eyeRx}" ry="${eyeRy}" fill="${c.iris[0]}"/><ellipse cx="126" cy="${eyeY}" rx="${eyeRx}" ry="${eyeRy}" fill="${c.iris[1]}"/>
-<ellipse cx="74" cy="${eyeY + 3}" rx="${eyeRx - 5}" ry="${eyeRy - 4}" fill="#1B1718"/><ellipse cx="126" cy="${eyeY + 3}" rx="${eyeRx - 5}" ry="${eyeRy - 4}" fill="#1B1718"/>
-<circle cx="79" cy="${eyeY - 5}" r="5" fill="#fff"/><circle cx="131" cy="${eyeY - 5}" r="5" fill="#fff"/><circle cx="70" cy="${eyeY + 7}" r="2.4" fill="#fff"/><circle cx="122" cy="${eyeY + 7}" r="2.4" fill="#fff"/>
+<ellipse cx="74" cy="${eyeY + 2}" rx="${eyeRx - 3.5}" ry="${eyeRy - 3}" fill="#1B1718"/><ellipse cx="126" cy="${eyeY + 2}" rx="${eyeRx - 3.5}" ry="${eyeRy - 3}" fill="#1B1718"/>
+<ellipse cx="79" cy="${eyeY - 6}" rx="6" ry="6.5" fill="#fff"/><ellipse cx="131" cy="${eyeY - 6}" rx="6" ry="6.5" fill="#fff"/><circle cx="69" cy="${eyeY + 8}" r="3" fill="#fff"/><circle cx="121" cy="${eyeY + 8}" r="3" fill="#fff"/><circle cx="82" cy="${eyeY + 4}" r="1.6" fill="#fff" opacity=".8"/><circle cx="134" cy="${eyeY + 4}" r="1.6" fill="#fff" opacity=".8"/>
 ${stage >= 3 && deco ? `<path d="M66 ${eyeY - 11} ${star}" fill="#fff"/><path d="M118 ${eyeY - 11} ${star}" fill="#fff"/>` : ""}`
     : `<path d="${eyeLine}" fill="none" stroke="#1B1718" stroke-width="4.5" stroke-linecap="round"/>`}
 <path d="M96 ${noseY} Q100 ${noseY - 3} 104 ${noseY} Q102 ${noseY + 4} 100 ${noseY + 5} Q98 ${noseY + 4} 96 ${noseY} Z" fill="${c.nose}"/>
 <path d="${mouth}" fill="${mood === "cheer" ? "#E76F7C" : "none"}" stroke="${c.base === "#2F2A2C" || c.base === "#463F42" ? "#C8BFC2" : "#5A4A48"}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-<ellipse cx="60" cy="118" rx="11" ry="6.5" fill="#F59AA0" opacity="${blush}"/><ellipse cx="140" cy="118" rx="11" ry="6.5" fill="#F59AA0" opacity="${blush}"/>
-<path d="M46 112 L26 107 M46 118 L26 120 M154 112 L174 107 M154 118 L174 120" stroke="${whisker}" stroke-width="1.6" stroke-linecap="round"/>
+<ellipse cx="58" cy="125" rx="12" ry="7" fill="#F59AA0" opacity="${blush}"/><ellipse cx="142" cy="125" rx="12" ry="7" fill="#F59AA0" opacity="${blush}"/>
+<path d="M44 118 L24 113 M44 124 L24 127 M156 118 L176 113 M156 124 L176 127" stroke="${whisker}" stroke-width="1.6" stroke-linecap="round"/>
 ${stage >= 3 && deco ? `<path d="M136 40 L122 30 Q118 40 122 50 Z M136 40 L150 30 Q154 40 150 50 Z" fill="#F07C9A"/><circle cx="136" cy="40" r="4.5" fill="#D9557A"/>` : ""}
 ${stage >= 4 && deco ? `<circle cx="72" cy="46" r="6" fill="#fff"/><circle cx="72" cy="46" r="2.6" fill="#F2C14E"/><circle cx="86" cy="40" r="6" fill="#F7A8C4"/><circle cx="86" cy="40" r="2.6" fill="#fff"/><circle cx="100" cy="38" r="6.5" fill="#A8C8F0"/><circle cx="100" cy="38" r="2.8" fill="#fff"/><circle cx="114" cy="40" r="6" fill="#FFE08A"/><circle cx="114" cy="40" r="2.6" fill="#F28C5A"/><path d="M64 50 q4 -4 8 0 M106 34 q4 -4 8 0" stroke="#6DB36D" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M28 70 l3 -7 l3 7 l7 3 l-7 3 l-3 7 l-3 -7 l-7 -3 Z M170 60 l2 -5 l2 5 l5 2 l-5 2 l-2 5 l-2 -5 l-5 -2 Z" fill="#F2C14E"/>` : ""}
 ${mood === "eat" || hungry ? `<path d="M62 178 H138 Q134 198 100 198 Q66 198 62 178 Z" fill="#D9534F"/><ellipse cx="100" cy="178" rx="38" ry="7" fill="#B8433F"/>${mood === "eat" ? `<circle cx="86" cy="175" r="5" fill="#C9874A"/><circle cx="98" cy="173" r="5" fill="#B87A40"/><circle cx="110" cy="175" r="5" fill="#C9874A"/><circle cx="104" cy="170" r="4.5" fill="#D59658"/>` : ""}` : ""}
-${hungry ? `<path d="M160 74 Q166 84 160 90 Q154 84 160 74 Z" fill="#7FB3D9"/><text x="146" y="150" font-size="18" font-family="sans-serif" font-weight="700" fill="#9A4A12">咕～</text><path d="M60 80 L84 86 M140 80 L116 86" stroke="#5A4A48" stroke-width="3" stroke-linecap="round"/>` : ""}
+${sad ? `<path d="M62 ${eyeY + 16} q-4 8 0 12 q4 -4 0 -12 Z" fill="#8EC5EC"/><path d="M60 ${eyeY - 15} Q70 ${eyeY - 19} 82 ${eyeY - 23} M140 ${eyeY - 15} Q130 ${eyeY - 19} 118 ${eyeY - 23}" fill="none" stroke="#5A4A48" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>` : ""}
+${hungry ? `<path d="M160 74 Q166 84 160 90 Q154 84 160 74 Z" fill="#7FB3D9"/><text x="146" y="150" font-size="18" font-family="sans-serif" font-weight="700" fill="#9A4A12">咕～</text><path d="M60 ${eyeY - 15} Q70 ${eyeY - 19} 82 ${eyeY - 23} M140 ${eyeY - 15} Q130 ${eyeY - 19} 118 ${eyeY - 23}" fill="none" stroke="#5A4A48" stroke-width="2.6" stroke-linecap="round" opacity=".7"/>` : ""}
 ${sick ? `<rect x="110" y="120" width="30" height="7" rx="3.5" fill="#fff" stroke="#5A6B7A" stroke-width="1.5" transform="rotate(20 110 120)"/><circle cx="138" cy="132" r="4.5" fill="#D94A3D"/><path d="M162 70 Q168 80 162 86 Q156 80 162 70 Z" fill="#7FB3D9"/><rect x="72" y="52" width="56" height="14" rx="5" fill="#fff" stroke="#A9C4DA" stroke-width="1.5"/>` : ""}
 ${mood === "sleep" ? `<g fill="#6B7A8A" font-family="sans-serif" font-weight="700"><text x="158" y="48" font-size="22">z</text><text x="176" y="30" font-size="16">z</text></g>` : ""}
 ${mood === "cheer" ? `<g fill="#F07C9A"><path d="M30 44 c-4 -6 -12 -2 -8 4 l8 8 l8 -8 c4 -6 -4 -10 -8 -4 Z"/><path d="M172 56 c-3 -5 -10 -2 -7 3 l7 7 l7 -7 c3 -5 -4 -8 -7 -3 Z"/></g>` : ""}
@@ -155,7 +157,7 @@ ${mood === "cheer" ? `<g fill="#F07C9A"><path d="M30 44 c-4 -6 -12 -2 -8 4 l8 8 
 }
 
 /* ---------- side view (walking / running / jumping), facing right ---------- */
-function catSideSVG({ breed = "ragdoll", stage = 2, size = 120, label = "" } = {}) {
+function catSideSVG({ breed = "ragdoll", stage = 2, size = 120, label = "", eat = false } = {}) {
   const c = BREEDS[breed] || BREEDS.ragdoll;
   const id = "s" + (++_uid);
   stage = Math.max(1, Math.min(4, stage | 0 || 1));
@@ -185,7 +187,7 @@ ${stripes}<g clip-path="url(#${id}b)">${patches}</g>
 ${long ? `<path d="M${bcx + brx * 0.2} ${bcy + bry * 0.8} l5 8 l5 -6 l5 8 l5 -6 l5 7 l5 -8" fill="${c.chest}"/>` : ""}
 </g>
 ${leg(bcx - brx + 30, "la near", legC, c.paw)}${leg(bcx + brx - 12, "lb near", legC, c.paw)}
-<g class="headg">
+<g class="headg${eat ? " chewing" : ""}" style="transform-origin:${hx - 30}px ${hy + 34}px">
 ${c.mane ? `<circle cx="${hx}" cy="${hy + 4}" r="${46 + stage}" fill="${c.mane}"/>` : ""}
 <path d="${c.ears === "fold" ? `M${hx - 30} ${hy - 22} Q${hx - 28} ${hy - 40} ${hx - 12} ${hy - 36} Z M${hx + 8} ${hy - 34} Q${hx + 22} ${hy - 42} ${hx + 28} ${hy - 26} Z` : `M${hx - 34} ${hy - 16} Q${hx - 40} ${hy - 58} ${hx - 22} ${hy - 50} Q${hx - 12} ${hy - 44} ${hx - 6} ${hy - 32} Z M${hx + 6} ${hy - 32} Q${hx + 18} ${hy - 58} ${hx + 30} ${hy - 44} Q${hx + 34} ${hy - 30} ${hx + 32} ${hy - 18} Z`}" fill="${c.ear}"/>
 ${c.ears === "tuft" ? `<path d="M${hx - 36} ${hy - 52} l-3 -13 l8 10 Z M${hx + 21} ${hy - 52} l3 -13 l-8 10 Z" fill="${c.ear}"/>` : ""}
@@ -212,6 +214,56 @@ ${stage >= 3 ? `<path d="M${hx + 22} ${hy - 34} l-12 -8 q-3 8 0 15 Z M${hx + 22}
 ${stage >= 4 ? `<circle cx="${hx - 20}" cy="${hy - 32}" r="5" fill="#fff"/><circle cx="${hx - 8}" cy="${hy - 37}" r="5" fill="#F7A8C4"/><circle cx="${hx + 4}" cy="${hy - 38}" r="5" fill="#A8C8F0"/>` : ""}
 </g>
 ${stage >= 2 ? `<path d="M${hx - 26} ${hy + 28} Q${hx - 18} ${hy + 40} ${hx - 2} ${hy + 36}" fill="none" stroke="#D9534F" stroke-width="6" stroke-linecap="round"/><circle cx="${hx - 12}" cy="${hy + 41}" r="5.5" fill="#F2C14E" stroke="#C9952A" stroke-width="1.2"/>` : ""}
+</svg>`;
+}
+
+
+/* ---------- lying down (sleeping loaf), facing right ---------- */
+function catLieSVG({ breed = "ragdoll", stage = 2, size = 120, label = "", awake = false } = {}) {
+  const c = BREEDS[breed] || BREEDS.ragdoll;
+  const id = "l" + (++_uid);
+  stage = Math.max(1, Math.min(4, stage | 0 || 1));
+  const long = c.fur === "long";
+  const bx = 112, by = 112, brx = 62 + stage * 4, bry = 30 + stage * 2;
+  const hx = bx + brx - 18, hy = 100, hr = 38 + stage;
+  const dark = c.base === "#2F2A2C" || c.base === "#463F42";
+  return `<svg class="cat-lie" width="${size}" height="${size * 0.65}" viewBox="0 0 240 156" role="img" aria-label="${label || c.name + (awake ? "，趴着" : "，趴着睡觉")}">
+<defs><clipPath id="${id}b"><ellipse cx="${bx}" cy="${by}" rx="${brx}" ry="${bry}"/></clipPath><clipPath id="${id}k"><circle cx="${hx}" cy="${hy}" r="${hr}"/></clipPath>
+<radialGradient id="${id}h" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".35"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".1"/></radialGradient></defs>
+<ellipse cx="${bx + 8}" cy="${by + bry + 4}" rx="${brx + 26}" ry="7" fill="#000" opacity=".1"/>
+<g class="breath" style="transform-origin:${bx}px ${by + bry}px">
+<ellipse cx="${bx}" cy="${by}" rx="${brx}" ry="${bry}" fill="${c.body}"/>
+${c.cap && !c.stripes ? `<path d="M${bx - brx} ${by + 4} Q${bx - 10} ${by - bry * 2} ${bx + brx} ${by - 2} Q${bx} ${by - 6} ${bx - brx} ${by + 4} Z" fill="${c.cap}" clip-path="url(#${id}b)"/>` : ""}
+${c.stripes ? `<g stroke="${c.stripes}" stroke-width="5" stroke-linecap="round" fill="none" clip-path="url(#${id}b)">${[0, 1, 2, 3].map(i => `<path d="M${bx - brx + 22 + i * 22} ${by - bry} q6 14 0 26"/>`).join("")}</g>` : ""}
+<g clip-path="url(#${id}b)">${(c.patches || []).map(([x, y, rx, ry, col], i) => `<ellipse cx="${bx - 26 + i * 30}" cy="${by - 8 + i * 4}" rx="${rx}" ry="${ry}" fill="${col}"/>`).join("")}</g>
+<ellipse cx="${bx + brx * 0.3}" cy="${by + bry * 0.55}" rx="${brx * 0.5}" ry="${bry * 0.45}" fill="${c.chest}" opacity="${c.chest === c.body ? 0 : 1}"/>
+</g>
+<path d="M${bx - brx + 6} ${by + 6} Q${bx - brx - 18} ${by + bry + 6} ${bx - 10} ${by + bry + 6} Q${bx + 40} ${by + bry + 6} ${bx + 56} ${by + bry - 2}" fill="none" stroke="${c.tail}" stroke-width="${long ? 17 : 13}" stroke-linecap="round"/>
+${c.stripes ? `<path d="M${bx - brx + 6} ${by + 6} Q${bx - brx - 18} ${by + bry + 6} ${bx - 10} ${by + bry + 6} Q${bx + 40} ${by + bry + 6} ${bx + 56} ${by + bry - 2}" fill="none" stroke="${c.stripes}" stroke-width="${long ? 17 : 13}" stroke-dasharray="5 9" opacity=".85"/>` : ""}
+<circle cx="${bx + 56}" cy="${by + bry - 2}" r="${long ? 9 : 7}" fill="${c.tailTip}"/>
+<ellipse cx="${hx + 6}" cy="${by + bry - 4}" rx="17" ry="8" fill="${c.points || c.paw}"/><ellipse cx="${hx + 26}" cy="${by + bry - 2}" rx="15" ry="7.5" fill="${c.points || c.paw}"/>
+<g class="headg">
+${c.mane ? `<circle cx="${hx}" cy="${hy + 4}" r="${hr + 10}" fill="${c.mane}"/>` : ""}
+<path d="${c.ears === "fold" ? `M${hx - 30} ${hy - 20} Q${hx - 28} ${hy - 38} ${hx - 12} ${hy - 34} Z M${hx + 8} ${hy - 32} Q${hx + 22} ${hy - 40} ${hx + 28} ${hy - 24} Z` : `M${hx - 34} ${hy - 14} Q${hx - 40} ${hy - 54} ${hx - 22} ${hy - 48} Q${hx - 12} ${hy - 42} ${hx - 6} ${hy - 30} Z M${hx + 6} ${hy - 30} Q${hx + 18} ${hy - 54} ${hx + 30} ${hy - 42} Q${hx + 34} ${hy - 28} ${hx + 32} ${hy - 16} Z`}" fill="${c.ear}"/>
+${c.ears === "fold" ? "" : `<path d="M${hx - 30} ${hy - 20} Q${hx - 32} ${hy - 44} ${hx - 22} ${hy - 40} Q${hx - 16} ${hy - 34} ${hx - 12} ${hy - 28} Z M${hx + 12} ${hy - 28} Q${hx + 20} ${hy - 46} ${hx + 26} ${hy - 36} Q${hx + 28} ${hy - 28} ${hx + 26} ${hy - 20} Z" fill="${c.points ? shadeHex(c.points, 1.6) : "#F7B9BC"}"/>`}
+<circle cx="${hx}" cy="${hy}" r="${hr}" fill="${c.base}"/>
+<g clip-path="url(#${id}k)">
+${c.cap ? `<path d="M${hx - 44} ${hy + 6} Q${hx} ${hy - 70} ${hx + 44} ${hy + 6} Q${hx + 16} ${hy - 6} ${hx} ${hy - 14} Q${hx - 16} ${hy - 6} ${hx - 44} ${hy + 6} Z" fill="${c.cap}"/>` : ""}
+${c.maskL ? `<ellipse cx="${hx - 14}" cy="${hy + 4}" rx="16" ry="14" fill="${c.maskL}"/>` : ""}${c.maskR ? `<ellipse cx="${hx + 14}" cy="${hy + 4}" rx="16" ry="14" fill="${c.maskR}"/>` : ""}
+${c.blaze ? `<path d="M${hx} ${hy - 18} L${hx - 5} ${hy + 12} Q${hx} ${hy + 16} ${hx + 5} ${hy + 12} Z" fill="${c.blaze}"/>` : ""}
+${c.muzzle ? `<ellipse cx="${hx}" cy="${hy + 20}" rx="20" ry="13" fill="${c.muzzle}"/>` : ""}
+${c.points ? `<circle cx="${hx}" cy="${hy + 8}" r="26" fill="${c.points}" opacity=".75"/>` : ""}
+${c.stripes ? `<path d="M${hx - 8} ${hy - 30} l3 12 M${hx} ${hy - 34} v14 M${hx + 8} ${hy - 30} l-3 12" stroke="${c.stripes}" stroke-width="3.5" stroke-linecap="round"/>` : ""}
+<circle cx="${hx}" cy="${hy}" r="${hr}" fill="url(#${id}h)"/>
+</g>
+${awake ? `<ellipse cx="${hx - 14}" cy="${hy + 4}" rx="8" ry="9" fill="${c.iris[0]}"/><ellipse cx="${hx + 14}" cy="${hy + 4}" rx="8" ry="9" fill="${c.iris[1]}"/><ellipse cx="${hx - 14}" cy="${hy + 5}" rx="5.5" ry="7" fill="#1B1718"/><ellipse cx="${hx + 14}" cy="${hy + 5}" rx="5.5" ry="7" fill="#1B1718"/><circle cx="${hx - 11}" cy="${hy}" r="2.6" fill="#fff"/><circle cx="${hx + 17}" cy="${hy}" r="2.6" fill="#fff"/>`
+  : `<path d="M${hx - 22} ${hy + 4} Q${hx - 14} ${hy + 11} ${hx - 6} ${hy + 4} M${hx + 6} ${hy + 4} Q${hx + 14} ${hy + 11} ${hx + 22} ${hy + 4}" fill="none" stroke="${dark ? "#E8E0E2" : "#1B1718"}" stroke-width="3" stroke-linecap="round"/>`}
+<path d="M${hx - 3} ${hy + 14} Q${hx} ${hy + 12} ${hx + 3} ${hy + 14} Q${hx + 1.5} ${hy + 17} ${hx} ${hy + 18} Q${hx - 1.5} ${hy + 17} ${hx - 3} ${hy + 14} Z" fill="${c.nose}"/>
+<path d="M${hx - 6} ${hy + 21} Q${hx - 3} ${hy + 24} ${hx} ${hy + 21} Q${hx + 3} ${hy + 24} ${hx + 6} ${hy + 21}" fill="none" stroke="${dark ? "#C8BFC2" : "#5A4A48"}" stroke-width="1.6" stroke-linecap="round"/>
+<ellipse cx="${hx - 24}" cy="${hy + 16}" rx="7" ry="4.5" fill="#F59AA0" opacity=".55"/><ellipse cx="${hx + 24}" cy="${hy + 16}" rx="7" ry="4.5" fill="#F59AA0" opacity=".55"/>
+${stage >= 3 ? `<path d="M${hx + 22} ${hy - 32} l-11 -7 q-3 7 0 14 Z M${hx + 22} ${hy - 32} l11 -7 q3 7 0 14 Z" fill="#F07C9A"/><circle cx="${hx + 22}" cy="${hy - 32}" r="3.2" fill="#D9557A"/>` : ""}
+</g>
+${awake ? "" : `<g class="zzz" fill="#7C8BA0" font-family="sans-serif" font-weight="700"><text x="${hx + 30}" y="${hy - 40}" font-size="18">z</text><text x="${hx + 44}" y="${hy - 56}" font-size="13">z</text></g>`}
 </svg>`;
 }
 
@@ -307,51 +359,48 @@ function audio() {
   if (!AC) return null;
   if (!_ac) {
     _ac = new AC();
-    _master = _ac.createDynamicsCompressor(); _master.connect(_ac.destination);
+    _master = _ac.createGain(); _master.gain.value = 0.9; _master.connect(_ac.destination);
   }
   if (_ac.state === "suspended") _ac.resume();
   return _ac;
 }
+/* soft kitten voice: warm few-harmonic source, gentle attack/release, light formant colour, low volume */
 const MEOWS = {
-  //  f0 contour [time 0..1, Hz], formant glide F1/F2 [start, mid, end], duration
-  meow:   { dur: 0.75, f0: [[0, 540], [0.25, 820], [0.6, 700], [1, 440]], f1: [500, 950, 560], f2: [2300, 1600, 1000], vib: 7 },
-  mew:    { dur: 0.38, f0: [[0, 880], [0.4, 1080], [1, 820]], f1: [600, 1000, 700], f2: [2600, 1900, 1500], vib: 9 },
-  mrrp:   { dur: 0.42, f0: [[0, 380], [0.6, 520], [1, 470]], f1: [320, 520, 600], f2: [1100, 1300, 1500], trill: 26 },
-  happy:  { dur: 0.55, f0: [[0, 620], [0.2, 900], [0.55, 960], [1, 720]], f1: [550, 1000, 800], f2: [2400, 1800, 1500], vib: 8 },
-  sad:    { dur: 0.95, f0: [[0, 680], [0.3, 600], [1, 360]], f1: [520, 820, 450], f2: [2100, 1400, 850], vib: 5 },
-  whine:  { dur: 1.1, f0: [[0, 520], [0.35, 760], [0.55, 640], [0.8, 700], [1, 420]], f1: [450, 900, 500], f2: [2200, 1500, 900], vib: 6 },
+  //  pitch contour [t 0..1, Hz], formant glide [start, mid, end], duration, vibrato Hz
+  mew:   { dur: 0.32, f0: [[0, 820], [0.35, 1020], [1, 860]], fm: [900, 1300, 1000], vib: 0 },
+  meow:  { dur: 0.52, f0: [[0, 700], [0.3, 920], [0.7, 860], [1, 640]], fm: [800, 1250, 900], vib: 5 },
+  happy: { dur: 0.42, f0: [[0, 760], [0.25, 980], [0.55, 1060], [1, 940]], fm: [900, 1400, 1200], vib: 6 },
+  mrrp:  { dur: 0.36, f0: [[0, 520], [0.6, 700], [1, 680]], fm: [600, 800, 900], trill: 22 },
+  sad:   { dur: 0.6, f0: [[0, 820], [0.4, 760], [1, 560]], fm: [900, 1100, 750], vib: 4 },
+  eat:   { dur: 0.16, f0: [[0, 560], [1, 520]], fm: [700, 700, 700], vib: 0, chain: 3 },
 };
+let _wave;
 function playMeow(kind = "meow") {
   try {
     const ac = audio(); if (!ac) return;
     if (kind === "purr") return purr(ac);
     const m = MEOWS[kind] || MEOWS.meow;
-    const k = 0.9 + Math.random() * 0.22, d = m.dur * (0.9 + Math.random() * 0.2);
-    const t = ac.currentTime + 0.01;
-    const src = ac.createOscillator(); src.type = "sawtooth";
-    m.f0.forEach(([p, f], i) => i ? src.frequency.linearRampToValueAtTime(f * k, t + p * d) : src.frequency.setValueAtTime(f * k, t));
-    // vibrato or trill
-    const lfo = ac.createOscillator(), lg = ac.createGain();
-    lfo.frequency.value = m.trill || m.vib || 6; lg.gain.value = m.trill ? 0 : 10;
-    lfo.connect(lg); lg.connect(src.frequency);
-    const env = ac.createGain(); env.gain.setValueAtTime(0.0001, t);
-    env.gain.exponentialRampToValueAtTime(0.5, t + 0.05); env.gain.setValueAtTime(0.5, t + d * 0.7); env.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    if (m.trill) { const tg = ac.createGain(); tg.gain.value = 0.4; lfo.connect(tg); tg.connect(env.gain); }
-    const out = ac.createGain(); out.gain.value = 0.9;
-    const mk = (F, q, g) => {
-      const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = q;
-      bp.frequency.setValueAtTime(F[0], t); bp.frequency.linearRampToValueAtTime(F[1], t + d * 0.35); bp.frequency.linearRampToValueAtTime(F[2], t + d);
-      const gg = ac.createGain(); gg.gain.value = g; src.connect(bp); bp.connect(gg); gg.connect(env);
-    };
-    mk(m.f1, 5, 1.6); mk(m.f2, 8, 0.9); mk([3200, 3000, 2600], 10, 0.35);
-    // breathy onset
-    const nb = ac.createBuffer(1, ac.sampleRate * 0.12, ac.sampleRate), ch = nb.getChannelData(0);
-    for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
-    const ns = ac.createBufferSource(); ns.buffer = nb; const nf = ac.createBiquadFilter(); nf.type = "highpass"; nf.frequency.value = 2500;
-    const ng = ac.createGain(); ng.gain.value = 0.05; ns.connect(nf); nf.connect(ng); ng.connect(out);
-    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 5200;
-    env.connect(lp); lp.connect(out); out.connect(_master);
-    src.start(t); lfo.start(t); ns.start(t); src.stop(t + d + 0.05); lfo.stop(t + d + 0.05);
+    if (!_wave) _wave = ac.createPeriodicWave(new Float32Array([0, 0, 0, 0, 0, 0]), new Float32Array([0, 1, 0.42, 0.16, 0.07, 0.03]));
+    const reps = m.chain || 1;
+    for (let rI = 0; rI < reps; rI++) {
+      const k = 0.94 + Math.random() * 0.14, d = m.dur * (0.9 + Math.random() * 0.2);
+      const t = ac.currentTime + 0.02 + rI * (d + 0.09);
+      const src = ac.createOscillator(); src.setPeriodicWave(_wave);
+      m.f0.forEach(([p, f], i) => i ? src.frequency.linearRampToValueAtTime(f * k, t + p * d) : src.frequency.setValueAtTime(f * k, t));
+      const lfo = ac.createOscillator(), lg = ac.createGain();
+      lfo.frequency.value = m.trill || m.vib || 5; lg.gain.value = m.trill ? 0 : (m.vib ? 7 : 0);
+      lfo.connect(lg); lg.connect(src.frequency);
+      const env = ac.createGain(); env.gain.setValueAtTime(0.0001, t);
+      env.gain.exponentialRampToValueAtTime(0.22, t + Math.min(0.07, d * 0.3));
+      env.gain.setValueAtTime(0.22, t + d * 0.55); env.gain.exponentialRampToValueAtTime(0.0001, t + d);
+      if (m.trill) { const tg = ac.createGain(); tg.gain.value = 0.09; lfo.connect(tg); tg.connect(env.gain); }
+      const peak = ac.createBiquadFilter(); peak.type = "peaking"; peak.Q.value = 2.2; peak.gain.value = 7;
+      peak.frequency.setValueAtTime(m.fm[0], t); peak.frequency.linearRampToValueAtTime(m.fm[1], t + d * 0.35); peak.frequency.linearRampToValueAtTime(m.fm[2], t + d);
+      const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2600; lp.Q.value = 0.5;
+      const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = 260;
+      src.connect(peak); peak.connect(lp); lp.connect(hp); hp.connect(env); env.connect(_master);
+      src.start(t); lfo.start(t); src.stop(t + d + 0.05); lfo.stop(t + d + 0.05);
+    }
   } catch {}
 }
 function purr(ac) {
@@ -359,17 +408,17 @@ function purr(ac) {
   const b = ac.createBuffer(1, ac.sampleRate * d, ac.sampleRate), ch = b.getChannelData(0);
   for (let i = 0; i < ch.length; i++) ch[i] = Math.random() * 2 - 1;
   const n = ac.createBufferSource(); n.buffer = b;
-  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 280;
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 360;
   const am = ac.createGain(); am.gain.value = 0;
   const lfo = ac.createOscillator(); lfo.frequency.value = 24; const lg = ac.createGain(); lg.gain.value = 0.6;
   lfo.connect(lg); lg.connect(am.gain);
-  const env = ac.createGain(); env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(0.9, t + 0.2); env.gain.setValueAtTime(0.9, t + d - 0.3); env.gain.exponentialRampToValueAtTime(0.0001, t + d);
+  const env = ac.createGain(); env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(0.55, t + 0.2); env.gain.setValueAtTime(0.55, t + d - 0.3); env.gain.exponentialRampToValueAtTime(0.0001, t + d);
   n.connect(lp); lp.connect(am); am.connect(env); env.connect(_master);
   n.start(t); lfo.start(t); n.stop(t + d); lfo.stop(t + d);
 }
 /* pick a meow that fits the moment */
 function meowFor(what) {
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  playMeow({ correct: pick(["happy", "meow", "mew", "mrrp"]), wrong: pick(["sad", "mew", "whine"]), pet: pick(["purr", "mrrp", "purr"]), hungry: pick(["whine", "meow"]), sick: "sad" }[what] || pick(["meow", "mew", "mrrp"]));
+  playMeow({ correct: pick(["happy", "mew", "mrrp", "happy"]), wrong: pick(["sad", "mew"]), pet: pick(["purr", "mrrp", "purr"]), hungry: pick(["meow", "sad"]), sick: "sad", eat: "eat" }[what] || pick(["meow", "mew", "mrrp"]));
 }
 function meowSound() { meowFor("correct"); }

@@ -569,3 +569,75 @@ html[data-scene=night]{--hero:#C7B8F2;--on-hero:#171C38}
 .mod.dark small,.card.dark small{color:color-mix(in srgb,var(--on-hero) 80%,var(--hero))}
 html[data-scene=night] .mod.dark em,html[data-scene=night] .mod.dark .ic{color:#4B3496}
 .install ol{margin:6px 0 4px;padding-left:20px;line-height:1.9}#moveBox{width:100%;margin-top:10px;font:12px monospace;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface);color:var(--ink)}
+
+/* lying / eating poses */
+.cat-lie{display:block;overflow:visible}
+.cat-lie .breath{transform-box:view-box;animation:breathe 3.2s ease-in-out infinite}
+.cat-lie .zzz{animation:zzz 2.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scaleY(1.04)}}
+@keyframes zzz{0%,100%{opacity:.3;transform:translateY(4px)}50%{opacity:1;transform:translateY(-4px)}}
+.cat-side .headg{transform-box:view-box}
+.cat-side .headg.chewing{animation:chew .42s ease-in-out infinite alternate}
+@keyframes chew{from{transform:translate(8px,30px) rotate(14deg)}to{transform:translate(8px,35px) rotate(20deg)}}
+.room-cat .cat-lie{width:150%;height:auto;margin-left:-25%;margin-top:40%}
+.roam .cat-lie{width:90px;height:58px;margin-left:-15px;margin-top:4px}
+@media (prefers-reduced-motion:reduce){.cat-lie *,.cat-side .headg{animation:none!important}}
+
+/* feeding scene */
+.feed-ov{position:fixed;inset:0;z-index:60;background:rgba(20,16,14,.45);display:grid;place-items:center;padding:16px;animation:fadeIn .2s}
+.feed-ov.out{opacity:0;transition:opacity .25s}
+@keyframes fadeIn{from{opacity:0}}
+.feed-card{width:min(360px,100%);background:var(--surface);border-radius:24px;padding:16px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.feed-stage{position:relative;height:200px;border-radius:18px;overflow:hidden;background:linear-gradient(180deg,var(--glaze) 0 62%,color-mix(in srgb,var(--glaze) 70%,#C9A27A) 62%)}
+.feed-dish{position:absolute;left:calc(50% + 22px);bottom:12px;width:120px;height:90px;transform:translateX(-50%)}
+.feed-cat{position:absolute;bottom:10px;left:50%;line-height:0;transform:translateX(-80%);width:170px}
+.feed-cat .cat-side{width:170px;height:auto}
+.feed-cat.walking{animation:walkIn 1.3s linear both}
+@keyframes walkIn{from{left:-30%}to{left:50%}}
+.feed-cat.done{transform:translateX(-75%);bottom:4px}
+.feed-cat.done .cat-svg{width:150px;height:150px}
+.feed-say{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:var(--hero);color:var(--on-hero);border-radius:12px;padding:4px 12px;font-size:14px;white-space:nowrap;animation:fadeIn .2s}
+.feed-say[hidden]{display:none}
+.feed-cap{margin:10px 0 6px;font-weight:700}
+.falling ellipse{animation:fall .7s cubic-bezier(.5,0,1,1) var(--d) both}
+@keyframes fall{from{transform:translate(var(--x),0);opacity:1}to{transform:translate(var(--x),52px);opacity:0}}
+.food.eaten > *{animation:eatAway 2.3s linear both}
+.food.eaten .bits .bit{animation:eatAway 2s linear var(--d) both}
+.food.eaten .can,.food.eaten .tube{animation:none}
+@keyframes eatAway{to{opacity:0;transform:translateY(3px) scale(.6)}}
+.ripple{animation:ripple 1s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes ripple{from{transform:scale(.4);opacity:1}to{transform:scale(2.6);opacity:0}}
+@media (prefers-reduced-motion:reduce){.feed-ov *{animation:none!important}}
+
+/* intro */
+.intro{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background:radial-gradient(circle at 50% 38%,var(--surface),var(--porcelain) 70%);overflow:hidden;cursor:pointer;transition:opacity .45s,transform .45s}
+.intro.bye{opacity:0;transform:scale(1.04);pointer-events:none}
+.intro-cat{height:190px;display:flex;align-items:flex-end;justify-content:center;line-height:0}
+.intro-cat.walk{animation:introWalk 1.5s cubic-bezier(.25,.6,.4,1) both}
+.intro-cat.walk .cat-side .la{animation:legA .4s ease-in-out infinite}
+.intro-cat.walk .cat-side .lb{animation:legB .4s ease-in-out infinite}
+.intro-cat.walk .cat-side .bodyg,.intro-cat.walk .cat-side .headg{animation:bob .2s ease-in-out infinite alternate}
+.intro-cat.walk .cat-side .tail{animation:tailSway .8s ease-in-out infinite alternate}
+@keyframes introWalk{from{transform:translateX(-80vw)}to{transform:translateX(0)}}
+.intro-cat.sit{animation:introHop .55s cubic-bezier(.3,1.6,.6,1)}
+@keyframes introHop{40%{transform:translateY(-22px)}}
+.intro-title{text-align:center;opacity:0;transform:translateY(16px)}
+.intro-title b{display:block;font:400 40px/1.2 var(--display);color:var(--ink);letter-spacing:2px}
+.intro-title small{color:var(--muted);font-size:15px}
+.intro.hello .intro-title,.intro.still .intro-title{animation:titleIn .6s cubic-bezier(.3,1.4,.6,1) forwards}
+@keyframes titleIn{to{opacity:1;transform:none}}
+.intro-bubble{position:absolute;top:calc(50% - 170px);left:50%;transform:translateX(-50%) scale(.6);opacity:0;background:var(--hero);color:var(--on-hero);border-radius:16px;padding:6px 14px;font-size:15px;white-space:nowrap}
+.intro.hello .intro-bubble{animation:bubbleIn .4s .15s cubic-bezier(.3,1.6,.6,1) forwards}
+@keyframes bubbleIn{to{opacity:1;transform:translateX(-50%) scale(1)}}
+.intro-paws{position:absolute;bottom:16%;left:0;right:0;display:flex;justify-content:center;gap:34px;opacity:.35}
+.intro-paws span{font-size:14px;opacity:0;animation:pawIn .2s calc(var(--k) * .25s) forwards;filter:grayscale(1)}
+@keyframes pawIn{to{opacity:1}}
+.intro-sky i{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--orange);opacity:.5;animation:floaty 3s ease-in-out infinite}
+.intro-sky i:nth-child(1){left:14%;top:22%}.intro-sky i:nth-child(2){left:82%;top:18%;background:#F07C9A;animation-delay:.4s}
+.intro-sky i:nth-child(3){left:72%;top:72%;animation-delay:.8s}.intro-sky i:nth-child(4){left:20%;top:76%;background:#9FD0F0;animation-delay:1.2s}
+.intro-sky i:nth-child(5){left:50%;top:12%;background:#F07C9A;width:6px;height:6px}
+@keyframes floaty{50%{transform:translateY(-12px)}}
+.feed-card.back h2{margin:4px 0 6px}.feed-card.back p{line-height:1.7;margin:0 0 14px}
+.back-cat{line-height:0;display:flex;justify-content:center}
+.room-btn{left:auto;right:12px;bottom:auto;top:12px}

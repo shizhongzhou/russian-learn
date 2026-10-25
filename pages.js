@@ -83,12 +83,12 @@ const LEARN_LINES = ["加油！我在旁边陪你", "Ты молоде́ц! 你�
 /* ---------- welcome / register ---------- */
 function pageWelcome() {
   const S = Pet.state;
-  let step = 1, nick = "", breed = S.cat.breed || "ragdoll", name = S.profile ? (S.cat.name || "") : "";
+  let step = 1, nick = "", breed = S.cat.breed || "bluewhite", name = S.profile ? (S.cat.name || "") : "";
   const box = h(`<section class="welcome"></section>`);
   app.append(box);
   function draw() {
     if (step === 1) {
-      box.innerHTML = `<div class="welcome-cat">${catSVG({ breed: "ragdoll", stage: 3, mood: "cheer", size: 180 })}</div>
+      box.innerHTML = `<div class="welcome-cat">${catSVG({ breed: "bluewhite", stage: 3, mood: "cheer", size: 180 })}</div>
         <h1 class="display">猫猫俄语通</h1>
         <p class="lead">学俄语，养一只猫。你学得越多，它吃得越饱、长得越可爱；不学习它会饿、会生病。</p>
         <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周"></label>
@@ -139,7 +139,7 @@ function roomSpots(v) {
 function roomSpots0(v) {
   const s = [
     { x: 190, y: 256, m: "happy" }, { x: 230, y: 274, m: "happy" }, { x: 150, y: 248, m: "happy" }, { x: 84, y: 280, m: "happy" },
-    { x: 124, y: 274, m: "eat" },
+    { x: 92, y: 272, m: "eat", say: "开饭啦～" }, { x: 170, y: 262, m: "lie" }, { x: 240, y: 284, m: "sleep" },
   ];
   if (v.decor.bed) s.push({ x: 62, y: 262, m: "sleep", item: "bed" });
   if (v.decor.toy) s.push({ x: 200, y: 280, m: "cheer", item: "toy" });
@@ -172,7 +172,14 @@ function roomBox(v, { cat = true, label = true } = {}) {
   const spots = roomSpots(v);
   let cur = v.sick ? (spots.find(s => s.m === "sleep") || spots[3]) : spots[0], moving = false;
   const pos = p => ({ left: (p.x / 390 * 100) + "%", top: (p.y / 300 * 100) + "%" });
-  const front = mood => { flip.style.setProperty("--flip", 1); flip.className = "rc-flip"; flip.innerHTML = catSVG({ breed: v.cat.breed, stage: Pet.view().shownStage, mood, size: 120 }); };
+  const front = mood => {
+    const st = Pet.view().shownStage;
+    flip.style.setProperty("--flip", 1); flip.className = "rc-flip";
+    if (mood === "sleep") flip.innerHTML = catLieSVG({ breed: v.cat.breed, stage: st, size: 150 });
+    else if (mood === "lie") flip.innerHTML = catLieSVG({ breed: v.cat.breed, stage: st, size: 150, awake: true });
+    else if (mood === "eat") { flip.className = "rc-flip"; flip.innerHTML = catSideSVG({ breed: v.cat.breed, stage: st, size: 150, eat: true }); }
+    else flip.innerHTML = catSVG({ breed: v.cat.breed, stage: st, mood, size: 120 });
+  };
   const side = (cls, dir) => { flip.style.setProperty("--flip", dir); flip.className = "rc-flip " + cls; flip.innerHTML = catSideSVG({ breed: v.cat.breed, stage: Pet.view().shownStage, size: 150 }); };
   Object.assign(el.style, pos(cur));
   front(v.sick ? "sick" : v.mood === "hungry" ? "hungry" : "happy");
@@ -183,7 +190,7 @@ function roomBox(v, { cat = true, label = true } = {}) {
   function say(t) { bub.textContent = t; bub.hidden = false; clearTimeout(bt); bt = setTimeout(() => bub.hidden = true, 2600); }
   if (v.sick) { setTimeout(() => say("我不舒服……带我去看医生吧"), 800); return box; }
   if (v.mood === "hungry") setTimeout(() => say(v.full < 30 ? "肚子饿了，咕～" : "好渴，想喝水"), 800);
-  const lines = { eat: "开饭啦～", sleep: "", happy: "", cheer: "" };
+  const lines = { eat: "开饭啦～", sleep: "", happy: "", cheer: "", lie: "" };
   const extra = ["今天也一起学吧", "Приве́т! 你来啦", "先复习单词好不好？", "在小窝里等你～"];
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) return box;
   const W = () => box.clientWidth || 390;
@@ -390,11 +397,11 @@ function pageMeow() {
       ${Object.entries(v.inv).filter(([, n]) => n > 0).length ? `<section class="card inv"><h2>背包里的零食</h2><div class="invs">${Object.entries(v.inv).filter(([, n]) => n > 0).map(([id, n]) => `<button data-snack="${id}">${Pet.SNACK_NAMES[id]} ×${n}<small>喂给它</small></button>`).join("")}</div></section>` : ""}
       <p class="hint">学习赚猫粮和水；写作、考试还能得到零食。1 天不学会饿、2 天会渴，3 天开始变瘦，7 天会生病，要买药看医生。${v.streak ? `已连续学习 ${v.streak} 天。` : ""}</p>`;
     const flash = (m2, ms = 1400) => { mood = m2; draw(); setTimeout(() => { mood = null; draw(); }, ms); };
-    box.querySelector("#feed").onclick = () => { if (Pet.feed()) { flash("eat"); Pet.toast("饱食 +8"); } };
-    box.querySelector("#water").onclick = () => { if (Pet.giveWater()) { flash("happy"); Pet.toast("水分 +10"); } };
+    box.querySelector("#feed").onclick = () => { if (Pet.feed()) { feedScene("kibble", draw); Pet.toast("饱食 +8"); } };
+    box.querySelector("#water").onclick = () => { if (Pet.giveWater()) { feedScene("water", draw); Pet.toast("水分 +10"); } };
     box.querySelectorAll("[data-snack]").forEach(b => b.onclick = () => {
       const id = b.dataset.snack, it = SHOP.snack.find(x => x.id === id);
-      Pet.state.inv[id]--; it.apply(Pet.state); Pet.save(); Pet.toast(`${esc(v.cat.name)}吃了${it.name}，好开心！`, "good"); if (Pet.state.settings.meow) meowSound(); flash("eat");
+      Pet.state.inv[id]--; it.apply(Pet.state); Pet.save(); Pet.toast(`${esc(v.cat.name)}吃了${it.name}，好开心！`, "good"); feedScene(id, draw);
     });
     box.querySelector("#pet").onclick = box.querySelector(".bigcat").onclick = () => { if (Pet.state.settings.meow) meowFor(v.sick ? "sick" : "pet"); Pet.pet(); flash(v.sick ? "sick" : "cheer"); };
   }
@@ -468,7 +475,7 @@ function pageShop(tab) {
           Pet.save(); Pet.toast(`获得了${it.name}，喵～`); draw(); return;
         }
         const ok = Pet.buy(it.kind ? it : { ...it, apply: s => { s.owned[it.id] = 1; if (s.decor[it.id] !== undefined) s.decor[it.id] = 1; } });
-        if (ok) { if (Pet.state.settings.meow) meowSound(); Pet.toast(it.kind === "snack" ? `${esc(Pet.state.cat.name)}吃了${it.name}，好开心！` : it.kind === "med" ? `用了${it.name}` : `买到了${it.name}，去装扮小窝里摆放吧`, "good"); }
+        if (ok) { if (it.kind === "snack") feedScene(it.id); else if (Pet.state.settings.meow) meowFor("correct"); Pet.toast(it.kind === "snack" ? `${esc(Pet.state.cat.name)}吃了${it.name}，好开心！` : it.kind === "med" ? `用了${it.name}` : `买到了${it.name}，去装扮小窝里摆放吧`, "good"); }
         draw();
       };
       list.append(row);
@@ -572,6 +579,7 @@ function pageAccount() {
         <label><span>每日目标</span><select id="goal">${[10, 20, 30, 50].map(n => `<option value="${n}" ${n === S.goal ? "selected" : ""}>答对 ${n} 题</option>`).join("")}</select></label>
         <label><span>答对时喵叫</span><input type="checkbox" id="meowOn" ${S.settings.meow ? "checked" : ""}></label>
         <label><span>猫咪在页面里走动</span><input type="checkbox" id="roamOn" ${S.settings.roam ? "checked" : ""}></label>
+        <label><span>猫咪想你时提醒我${IS_NATIVE ? "" : "<small>（App 版可用）</small>"}</span><input type="checkbox" id="notifyOn" ${S.settings.notify !== false ? "checked" : ""}></label>
       </section>
       ${IS_NATIVE ? "" : `<section class="card install"><h2>装到 iPhone 上</h2>
         <ol><li>用 <b>Safari</b> 打开这个网站</li><li>点底部的 <b>分享</b> 按钮 <span aria-hidden="true">⬆︎</span></li><li>选 <b>添加到主屏幕</b> → 添加</li></ol>
@@ -595,6 +603,12 @@ function pageAccount() {
         if (!data.profile || !data.cat) throw 0;
         localStorage.setItem("mm_pet_v1", JSON.stringify(data)); location.hash = "#/home"; location.reload();
       } catch { mh.textContent = "进度码不对，请完整复制后再试。"; }
+    };
+    box.querySelector("#notifyOn").onchange = async e => {
+      S.settings.notify = e.target.checked; Pet.save();
+      if (!IS_NATIVE) { if (e.target.checked) Pet.toast("网页版没法在关掉后提醒；装上 App 版就能收到猫咪的消息"); return; }
+      const ok = await REMIND.schedule(true);
+      Pet.toast(!e.target.checked ? "已关闭提醒" : ok ? "好的！不学习时猫咪会来找你" : "请在手机设置里允许“猫猫俄语通”的通知", ok || !e.target.checked ? "good" : "warn");
     };
     box.querySelector("#nick").onchange = e => { S.profile.nick = e.target.value.trim() || S.profile.nick; Pet.save(); };
     box.querySelector("#cname").onchange = e => { S.cat.name = e.target.value.trim() || S.cat.name; Pet.save(); Pet.toast(`以后就叫它“${esc(S.cat.name)}”啦`); };

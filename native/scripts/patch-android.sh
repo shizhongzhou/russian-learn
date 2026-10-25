@@ -30,6 +30,12 @@ cat > $RES/values/mm_colors.xml <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
 <resources><color name="mm_splash_bg">#F6F1E9</color></resources>
 XML
+# status-bar icon for reminders (white cat head)
+cat > $RES/drawable/ic_stat_cat.xml <<'XML'
+<vector xmlns:android="http://schemas.android.com/apk/res/android" android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+  <path android:fillColor="#FFFFFFFF" android:pathData="M4,3 L9,7.2 Q12,6.4 15,7.2 L20,3 L20.6,10.5 Q22,13 21,15.8 Q19.2,21 12,21 Q4.8,21 3,15.8 Q2,13 3.4,10.5 Z M8.5,12.5 A1.3,1.5 0 1 0 8.51,12.5 Z M15.5,12.5 A1.3,1.5 0 1 0 15.51,12.5 Z"/>
+</vector>
+XML
 # app name
 sed -i -E 's#<string name="app_name">[^<]*</string>#<string name="app_name">猫猫俄语通</string>#; s#<string name="title_activity_main">[^<]*</string>#<string name="title_activity_main">猫猫俄语通</string>#' $RES/values/strings.xml
 # permissions + package visibility for speech recognition and text-to-speech

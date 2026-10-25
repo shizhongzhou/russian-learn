@@ -12,5 +12,11 @@
     "backgroundColor": "#F6F1E9",
     "adjustMarginsForEdgeToEdge": "force",
     "allowMixedContent": false
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_cat",
+      "iconColor": "#E9A15E"
+    }
   }
 }

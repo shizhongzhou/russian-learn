@@ -220,7 +220,7 @@ async function renderWords(lv, panel) {
     list.innerHTML = "";
     filtered.slice(page * PAGE, (page + 1) * PAGE).forEach(([r, i]) => {
       const [w, z, p, g] = r;
-      const li = h(`<li class="wcard"><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
+      const li = h(`<li class="wcard"><button class="word">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
       const btn = li.firstElementChild;
       btn.onclick = () => { playOne(btn, w); Pet.heardWord(lv, i); };
       const gb = h(`<button class="gbtn" aria-label="${esc(w)} 的语法信息">语法</button>`);
