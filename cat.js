@@ -217,13 +217,29 @@ ${stage >= 2 ? `<path d="M${hx - 26} ${hy + 28} Q${hx - 18} ${hy + 40} ${hx - 2}
 
 /* ---------- room scenes ---------- */
 const SCENES = {
-  living: { name: "温馨客厅", wall: "#F6E7D6", wall2: "#EFD8C0", trim: "#E2C3A0", floor: "#D9B184", floor2: "#CDA273", rug: "#E8A3A0", rug2: "#F3C5C0" },
-  window: { name: "阳光窗台", wall: "#FCF1D8", wall2: "#F5E2B8", trim: "#EBCF96", floor: "#E3C08C", floor2: "#D6AF79", rug: "#9CC9B8", rug2: "#C6E3D7" },
-  winter: { name: "冬日壁炉", wall: "#E8EBF1", wall2: "#D8DEE8", trim: "#C2CCDA", floor: "#C99D72", floor2: "#B98C62", rug: "#7FA5C9", rug2: "#B1CAE2" },
-  moscow: { name: "莫斯科阁楼", wall: "#EADCC9", wall2: "#DDC9AF", trim: "#C4A783", floor: "#B98C64", floor2: "#A77B55", rug: "#C9564A", rug2: "#E08A7E" },
-  night:  { name: "星空屋顶", wall: "#2E3A66", wall2: "#26315A", trim: "#46538A", floor: "#5A4F70", floor2: "#4D4363", rug: "#8E7BC2", rug2: "#B3A4DE" },
+  living: { treeC: "#8FA9C9", name: "温馨客厅", wall: "#F6E7D6", wall2: "#EFD8C0", trim: "#E2C3A0", floor: "#D9B184", floor2: "#CDA273", rug: "#E8A3A0", rug2: "#F3C5C0" },
+  window: { treeC: "#93B872", name: "阳光窗台", wall: "#FCF1D8", wall2: "#F5E2B8", trim: "#EBCF96", floor: "#E3C08C", floor2: "#D6AF79", rug: "#9CC9B8", rug2: "#C6E3D7" },
+  winter: { treeC: "#7E9CC0", name: "冬日壁炉", wall: "#E8EBF1", wall2: "#D8DEE8", trim: "#C2CCDA", floor: "#C99D72", floor2: "#B98C62", rug: "#7FA5C9", rug2: "#B1CAE2" },
+  moscow: { treeC: "#C46A58", name: "莫斯科阁楼", wall: "#EADCC9", wall2: "#DDC9AF", trim: "#C4A783", floor: "#B98C64", floor2: "#A77B55", rug: "#C9564A", rug2: "#E08A7E" },
+  night:  { treeC: "#8E7BC2", name: "星空屋顶", wall: "#2E3A66", wall2: "#26315A", trim: "#46538A", floor: "#5A4F70", floor2: "#4D4363", rug: "#8E7BC2", rug2: "#B3A4DE" },
 };
-function roomSVG({ scene = "living", tree = 0, decor = {}, label = "" } = {}) {
+/* movable furniture: default bounding boxes (svg units) — layout stores [dx, dy] offsets */
+const ITEM_BOX = {
+  bed: [14, 241, 110, 274], scratch: [226, 196, 262, 264], toy: [182, 146, 250, 284], fish: [14, 166, 82, 214], fountain: [174, 232, 198, 276],
+  tree1: [294, 188, 360, 279], tree2: [294, 110, 372, 279], tree3: [248, 6, 382, 279],
+};
+const ITEM_NAMES = { bed: "猫窝", scratch: "猫抓板", toy: "逗猫棒", fish: "鱼缸", fountain: "饮水机", tree: "猫爬架" };
+function clampItem(item, dx, dy, tree) {
+  const b = ITEM_BOX[item === "tree" ? "tree" + Math.max(1, tree) : item];
+  if (!b) return [0, 0];
+  dx = Math.max(-b[0], Math.min(390 - b[2], dx));
+  const minBottom = item === "fish" ? 150 : item === "tree" ? 262 : 228;   // bottom edge must stay on the floor (fish tank may sit on the wall shelf)
+  dy = Math.max(minBottom - b[3], Math.min(299 - b[3], dy));
+  if (b[1] + dy < 2) dy = 2 - b[1];
+  return [Math.round(dx), Math.round(dy)];
+}
+function roomSVG({ scene = "living", tree = 0, decor = {}, layout = {}, label = "" } = {}) {
+  const wrap = (k, inner) => { const [dx, dy] = clampItem(k, ...(layout[k] || [0, 0]), tree); return `<g data-item="${k}" transform="translate(${dx} ${dy})">${inner}</g>`; };
   const s = SCENES[scene] || SCENES.living;
   const id = "r" + (++_uid);
   const win = (x, y, w, hh, sky = "#BFE0F2", extra = "") => `<g><rect x="${x - 6}" y="${y - 6}" width="${w + 12}" height="${hh + 12}" rx="10" fill="#fff"/><rect x="${x}" y="${y}" width="${w}" height="${hh}" rx="6" fill="url(#${id}sky)"/>${extra}<path d="M${x + w / 2} ${y} V${y + hh} M${x} ${y + hh / 2} H${x + w}" stroke="#fff" stroke-width="5"/><rect x="${x - 10}" y="${y + hh + 4}" width="${w + 20}" height="8" rx="3" fill="${s.trim}"/></g>`;
@@ -253,9 +269,10 @@ function roomSVG({ scene = "living", tree = 0, decor = {}, label = "" } = {}) {
       <path d="M0 210 L60 176 L130 192 L200 168 L270 188 L330 172 L390 190 V210 Z" fill="#3A4778"/><path d="M90 186 h10 v-14 h6 v14" fill="#F2C14E" opacity=".7"/>`,
   }[scene] || "";
   const planks = [0, 1, 2, 3].map(i => `<path d="M0 ${226 + i * 20} H390" stroke="${s.floor2}" stroke-width="2"/>`).join("") + [40, 150, 270, 90, 210, 330].map((x, i) => `<path d="M${x} ${210 + Math.floor(i / 3) * 40 + (i % 2) * 20} v20" stroke="${s.floor2}" stroke-width="2"/>`).join("");
-  const t1 = `<rect x="318" y="198" width="18" height="72" rx="4" fill="#E2C69A"/><path d="M318 206 h18 M318 216 h18 M318 226 h18 M318 236 h18 M318 246 h18 M318 256 h18" stroke="#BF9C68" stroke-width="2"/><rect x="294" y="188" width="66" height="13" rx="6" fill="#8FA9C9"/><rect x="294" y="188" width="66" height="5" rx="2.5" fill="#A8BFDA"/><rect x="298" y="266" width="60" height="13" rx="5" fill="#8FA9C9"/>`;
-  const t2 = `<rect x="322" y="120" width="16" height="70" rx="4" fill="#E2C69A"/><path d="M322 130 h16 M322 142 h16 M322 154 h16 M322 166 h16 M322 178 h16" stroke="#BF9C68" stroke-width="2"/><rect x="298" y="110" width="74" height="13" rx="6" fill="#8FA9C9"/><rect x="298" y="110" width="74" height="5" rx="2.5" fill="#A8BFDA"/><path d="M366 123 q4 14 -2 22" stroke="#F07C9A" stroke-width="2" fill="none"/><circle cx="364" cy="147" r="4" fill="#F2C14E"/>`;
-  const t3 = `<rect x="272" y="56" width="16" height="140" rx="4" fill="#E2C69A"/><path d="M272 70 h16 M272 86 h16 M272 102 h16 M272 118 h16 M272 134 h16 M272 150 h16 M272 166 h16 M272 182 h16" stroke="#BF9C68" stroke-width="2"/><rect x="298" y="26" width="80" height="58" rx="12" fill="#8FA9C9"/><path d="M294 30 L338 6 L382 30 Z" fill="#7A93B5"/><ellipse cx="338" cy="58" rx="16" ry="15" fill="#4E6487"/><rect x="294" y="82" width="88" height="10" rx="5" fill="#7A93B5"/><rect x="250" y="46" width="60" height="11" rx="5" fill="#8FA9C9"/><rect x="250" y="46" width="60" height="4" rx="2" fill="#A8BFDA"/><path d="M300 92 L322 120 M378 92 L338 120" stroke="#E2C69A" stroke-width="5"/><path d="M248 150 Q270 170 292 150" stroke="#F07C9A" stroke-width="3" fill="#F7C6D2"/>`;
+  const tc = s.treeC || "#8FA9C9", tl = shadeHex(tc, 1.25), td = shadeHex(tc, 0.85), tdd = shadeHex(tc, 0.6);
+  const t1 = `<rect x="318" y="198" width="18" height="72" rx="4" fill="#E2C69A"/><path d="M318 206 h18 M318 216 h18 M318 226 h18 M318 236 h18 M318 246 h18 M318 256 h18" stroke="#BF9C68" stroke-width="2"/><rect x="294" y="188" width="66" height="13" rx="6" fill="${tc}"/><rect x="294" y="188" width="66" height="5" rx="2.5" fill="${tl}"/><rect x="298" y="266" width="60" height="13" rx="5" fill="${tc}"/>`;
+  const t2 = `<rect x="322" y="120" width="16" height="70" rx="4" fill="#E2C69A"/><path d="M322 130 h16 M322 142 h16 M322 154 h16 M322 166 h16 M322 178 h16" stroke="#BF9C68" stroke-width="2"/><rect x="298" y="110" width="74" height="13" rx="6" fill="${tc}"/><rect x="298" y="110" width="74" height="5" rx="2.5" fill="${tl}"/><path d="M366 123 q4 14 -2 22" stroke="#F07C9A" stroke-width="2" fill="none"/><circle cx="364" cy="147" r="4" fill="#F2C14E"/>`;
+  const t3 = `<rect x="272" y="56" width="16" height="140" rx="4" fill="#E2C69A"/><path d="M272 70 h16 M272 86 h16 M272 102 h16 M272 118 h16 M272 134 h16 M272 150 h16 M272 166 h16 M272 182 h16" stroke="#BF9C68" stroke-width="2"/><rect x="298" y="26" width="80" height="58" rx="12" fill="${tc}"/><path d="M294 30 L338 6 L382 30 Z" fill="${td}"/><ellipse cx="338" cy="58" rx="16" ry="15" fill="${tdd}"/><rect x="294" y="82" width="88" height="10" rx="5" fill="${td}"/><rect x="250" y="46" width="60" height="11" rx="5" fill="${tc}"/><rect x="250" y="46" width="60" height="4" rx="2" fill="${tl}"/><path d="M300 92 L322 120 M378 92 L338 120" stroke="#E2C69A" stroke-width="5"/><path d="M248 150 Q270 170 292 150" stroke="#F07C9A" stroke-width="3" fill="#F7C6D2"/>`;
   return `<svg class="room-svg" viewBox="0 0 390 300" preserveAspectRatio="xMidYMid slice" role="img" aria-label="${label || "猫咪小窝：" + s.name}">
 <defs>
 <linearGradient id="${id}w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${s.wall2}"/><stop offset="1" stop-color="${s.wall}"/></linearGradient>
@@ -273,13 +290,13 @@ ${back}
 <ellipse cx="150" cy="262" rx="114" ry="26" fill="url(#${id}rug)"/><ellipse cx="150" cy="262" rx="92" ry="17" fill="none" stroke="#fff" stroke-width="2" opacity=".55" stroke-dasharray="6 6"/>
 <g><ellipse cx="116" cy="279" rx="18" ry="3" fill="#000" opacity=".12"/><path d="M100 266 H132 Q130 279 116 279 Q102 279 100 266 Z" fill="#D9534F"/><ellipse cx="116" cy="266" rx="16" ry="3.5" fill="#B8433F"/><circle cx="111" cy="264" r="2.6" fill="#C9874A"/><circle cx="119" cy="264" r="2.6" fill="#C9874A"/><circle cx="115" cy="262" r="2.4" fill="#D59658"/>
 <ellipse cx="152" cy="279" rx="18" ry="3" fill="#000" opacity=".12"/><path d="M136 266 H168 Q166 279 152 279 Q138 279 136 266 Z" fill="#5C93C9"/><ellipse cx="152" cy="266" rx="16" ry="3.5" fill="#9FD0F0"/><path d="M146 265 q4 -2 8 0" stroke="#fff" stroke-width="1.2" fill="none"/></g>
-${decor.bed ? `<ellipse cx="62" cy="266" rx="48" ry="8" fill="#000" opacity=".1"/><ellipse cx="62" cy="260" rx="46" ry="19" fill="#C76F5B"/><ellipse cx="62" cy="254" rx="35" ry="11" fill="#F6D9C8"/><path d="M30 254 q32 10 64 0" stroke="#E9BFAA" stroke-width="2" fill="none"/>` : ""}
-${decor.scratch ? `<rect x="236" y="196" width="16" height="64" rx="3" fill="#D9B98A"/><path d="M236 204 h16 M236 212 h16 M236 220 h16 M236 228 h16 M236 236 h16 M236 244 h16 M236 252 h16" stroke="#B8955F" stroke-width="2"/><rect x="226" y="256" width="36" height="8" rx="3" fill="#A97D52"/>` : ""}
-${decor.toy ? `<path d="M196 214 Q210 160 232 150" stroke="#8A6A4A" stroke-width="3" fill="none"/><path d="M232 150 q10 6 4 16 q10 -2 10 10" stroke="#F07C9A" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="246" cy="178" r="4" fill="#F7A8C4"/><circle cx="190" cy="276" r="8" fill="#F2C14E"/><path d="M184 272 l12 8 M196 272 l-12 8" stroke="#D9534F" stroke-width="2"/>` : ""}
-${decor.fish ? `<rect x="18" y="166" width="60" height="44" rx="12" fill="#BFE6EE" stroke="#fff" stroke-width="3"/><path d="M24 196 q30 -6 48 0 v10 h-48 Z" fill="#E9D3A6"/><path d="M36 184 q8 -8 16 0 q-8 8 -16 0 Z M52 184 l6 -5 v10 Z" fill="#F28C5A"/><circle cx="64" cy="176" r="2" fill="#fff"/><circle cx="60" cy="170" r="1.4" fill="#fff"/><rect x="14" y="208" width="68" height="6" rx="3" fill="#8A6A4A"/>` : ""}
-${decor.fountain ? `<rect x="174" y="250" width="24" height="26" rx="7" fill="#E3EEF6" stroke="#5C93C9" stroke-width="2"/><path d="M186 250 q-6 -12 0 -18 q6 6 0 18" fill="#9FD0F0"/>` : ""}
-${tree >= 1 ? t1 : ""}${tree >= 2 ? t2 : ""}${tree >= 3 ? t3 : ""}
-<rect width="390" height="300" fill="url(#${id}light)"/>
+${decor.bed ? wrap("bed", `<ellipse cx="62" cy="266" rx="48" ry="8" fill="#000" opacity=".1"/><ellipse cx="62" cy="260" rx="46" ry="19" fill="#C76F5B"/><ellipse cx="62" cy="254" rx="35" ry="11" fill="#F6D9C8"/><path d="M30 254 q32 10 64 0" stroke="#E9BFAA" stroke-width="2" fill="none"/>`) : ""}
+${decor.scratch ? wrap("scratch", `<rect x="236" y="196" width="16" height="64" rx="3" fill="#D9B98A"/><path d="M236 204 h16 M236 212 h16 M236 220 h16 M236 228 h16 M236 236 h16 M236 244 h16 M236 252 h16" stroke="#B8955F" stroke-width="2"/><rect x="226" y="256" width="36" height="8" rx="3" fill="#A97D52"/>`) : ""}
+${decor.toy ? wrap("toy", `<path d="M196 214 Q210 160 232 150" stroke="#8A6A4A" stroke-width="3" fill="none"/><path d="M232 150 q10 6 4 16 q10 -2 10 10" stroke="#F07C9A" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="246" cy="178" r="4" fill="#F7A8C4"/><circle cx="190" cy="276" r="8" fill="#F2C14E"/><path d="M184 272 l12 8 M196 272 l-12 8" stroke="#D9534F" stroke-width="2"/>`) : ""}
+${decor.fish ? wrap("fish", `<rect x="18" y="166" width="60" height="44" rx="12" fill="#BFE6EE" stroke="#fff" stroke-width="3"/><path d="M24 196 q30 -6 48 0 v10 h-48 Z" fill="#E9D3A6"/><path d="M36 184 q8 -8 16 0 q-8 8 -16 0 Z M52 184 l6 -5 v10 Z" fill="#F28C5A"/><circle cx="64" cy="176" r="2" fill="#fff"/><circle cx="60" cy="170" r="1.4" fill="#fff"/><rect x="14" y="208" width="68" height="6" rx="3" fill="#8A6A4A"/>`) : ""}
+${decor.fountain ? wrap("fountain", `<rect x="174" y="250" width="24" height="26" rx="7" fill="#E3EEF6" stroke="#5C93C9" stroke-width="2"/><path d="M186 250 q-6 -12 0 -18 q6 6 0 18" fill="#9FD0F0"/>`) : ""}
+${tree >= 1 ? wrap("tree", t1 + (tree >= 2 ? t2 : "") + (tree >= 3 ? t3 : "")) : ""}
+<rect width="390" height="300" fill="url(#${id}light)" pointer-events="none"/>
 </svg>`;
 }
 

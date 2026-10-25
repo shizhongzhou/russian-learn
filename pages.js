@@ -17,8 +17,17 @@ let pageTimers = [];
 const later = (fn, ms) => { const t = setInterval(fn, ms); pageTimers.push(t); return t; };
 
 /* ---------- chrome: top bar + bottom tabs ---------- */
+const THEME_BG = { living: "#F6F1E9", window: "#F6EDC4", winter: "#DFE8F2", moscow: "#F1DCCB", night: "#10142C" };
+function applyTheme(scene) {
+  const root = document.documentElement;
+  if (root.dataset.scene === scene) return;
+  root.dataset.scene = scene;
+  const dark = scene === "night" || matchMedia("(prefers-color-scheme: dark)").matches;
+  document.querySelector('meta[name="theme-color"]').content = dark ? getComputedStyle(root).getPropertyValue("--porcelain").trim() : THEME_BG[scene] || THEME_BG.living;
+}
 function chrome(active) {
   const v = Pet.view();
+  applyTheme(v.profile ? v.scene : "living");
   const bar = document.getElementById("appbar");
   bar.querySelector(".brand-mark").innerHTML = catSVG({ breed: v.cat.breed, stage: 2, mood: "happy", size: 34, label: "" });
   bar.querySelector(".res").innerHTML = v.profile ? `<a class="chip" href="#/shop" aria-label="猫粮 ${v.food}，去小卖部">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}，去小卖部">${WATER_I}${fmt(v.water)}</a>` : "";
@@ -120,18 +129,24 @@ function pageWelcome() {
 
 /* ---------- home ---------- */
 /* floor spots have lv 0; cat-tree platforms are climbed one level at a time */
-const TREE_BASE = { x: 300, y: 270 };
 function roomSpots(v) {
+  const L = v.layout || {};
+  const off = (k, p) => { const [dx, dy] = clampItem(k, ...(L[k] || [0, 0]), v.tree); return { ...p, x: p.x + dx, y: p.y + dy }; };
+  const s = roomSpots0(v).map(p => p.item ? off(p.item, p) : p);
+  s.base = off("tree", { x: 300, y: 270 });
+  return s;
+}
+function roomSpots0(v) {
   const s = [
     { x: 190, y: 256, m: "happy" }, { x: 230, y: 274, m: "happy" }, { x: 150, y: 248, m: "happy" }, { x: 84, y: 280, m: "happy" },
     { x: 124, y: 274, m: "eat" },
   ];
-  if (v.decor.bed) s.push({ x: 62, y: 262, m: "sleep" });
-  if (v.decor.toy) s.push({ x: 200, y: 280, m: "cheer" });
-  if (v.decor.scratch) s.push({ x: 262, y: 270, m: "cheer", say: "磨磨爪子～" });
-  if (v.tree >= 1) s.push({ x: 327, y: 192, m: "happy", lv: 1 });
-  if (v.tree >= 2) s.push({ x: 335, y: 114, m: "sleep", lv: 2 });
-  if (v.tree >= 3) s.push({ x: 300, y: 84, m: "happy", lv: 3 }, { x: 280, y: 50, m: "cheer", lv: 4, say: "看我爬得多高！" });
+  if (v.decor.bed) s.push({ x: 62, y: 262, m: "sleep", item: "bed" });
+  if (v.decor.toy) s.push({ x: 200, y: 280, m: "cheer", item: "toy" });
+  if (v.decor.scratch) s.push({ x: 262, y: 270, m: "cheer", say: "磨磨爪子～", item: "scratch" });
+  if (v.tree >= 1) s.push({ x: 327, y: 192, m: "happy", lv: 1, item: "tree" });
+  if (v.tree >= 2) s.push({ x: 335, y: 114, m: "sleep", lv: 2, item: "tree" });
+  if (v.tree >= 3) s.push({ x: 300, y: 84, m: "happy", lv: 3, item: "tree" }, { x: 280, y: 50, m: "cheer", lv: 4, say: "看我爬得多高！", item: "tree" });
   return s;
 }
 function roomPath(spots, a, b) {
@@ -143,13 +158,13 @@ function roomPath(spots, a, b) {
     for (let l = la + step; step > 0 ? l <= lb : l >= lb; l += step) segs.push({ to: tree[l - 1], jump: true });
     return segs;
   }
-  if (la) { for (let l = la - 1; l >= 1; l--) segs.push({ to: tree[l - 1], jump: true }); segs.push({ to: TREE_BASE, jump: true }); }
-  if (lb) { if (!la) segs.push({ to: TREE_BASE }); for (let l = 1; l <= lb; l++) segs.push({ to: tree[l - 1], jump: true }); return segs; }
+  if (la) { for (let l = la - 1; l >= 1; l--) segs.push({ to: tree[l - 1], jump: true }); segs.push({ to: spots.base, jump: true }); }
+  if (lb) { if (!la) segs.push({ to: spots.base }); for (let l = 1; l <= lb; l++) segs.push({ to: tree[l - 1], jump: true }); return segs; }
   segs.push({ to: b });
   return segs;
 }
 function roomBox(v, { cat = true, label = true } = {}) {
-  const box = h(`<section class="room" aria-label="${esc(v.cat.name)}的小窝">${roomSVG({ scene: v.scene, tree: v.tree, decor: v.decor })}
+  const box = h(`<section class="room" aria-label="${esc(v.cat.name)}的小窝">${roomSVG({ scene: v.scene, tree: v.tree, decor: v.decor, layout: v.layout || {} })}
     ${cat ? `<div class="room-cat"><span class="rc-bubble" hidden></span><span class="rc-flip"></span></div>` : ""}
     ${label ? `<div class="room-tag">${esc(v.cat.name)} · Lv.${v.level} · ${v.stageName}</div>` : ""}</section>`);
   if (!cat) return box;
@@ -467,16 +482,20 @@ function pageDress() {
   const box = h(`<div class="page dress"><header class="subhead"><a class="iconbtn" href="#/home" aria-label="返回主页">${svgI(ICON.back, "stroke")}</a><h1 class="display small grow">装扮小窝</h1><a class="btn small ghost" href="#/shop/gear">去小卖部</a></header>
     <div class="dress-room"></div><div class="seg" role="tablist" aria-label="装扮分类"></div><div class="items"></div></div>`);
   app.append(box);
-  let cur = "scene";
+  let cur = "scene", editing = false;
   function draw() {
     const v = Pet.view(), S = Pet.state;
     const r = box.querySelector(".dress-room");
-    r.innerHTML = ""; r.append(roomBox(v, { label: false }));
+    r.innerHTML = ""; r.append(roomBox(v, { label: false, cat: !editing }));
+    const placed = Object.keys(ITEM_NAMES).filter(k => k === "tree" ? S.tree : S.decor[k]);
+    r.append(h(`<div class="arrange"><button class="btn small ${editing ? "" : "ghost"}" id="arr">${editing ? "摆好了" : "✥ 自由摆放家具"}</button>${editing ? `<span class="hint">拖动猫爬架、猫窝等到想要的位置</span><button class="btn small ghost" id="rst">恢复默认</button>` : placed.length ? "" : `<span class="hint">先在下面摆放家具，再来调整位置</span>`}</div>`));
+    r.querySelector("#arr").onclick = () => { editing = !editing; if (!editing) Pet.toast("新的摆放已保存", "good"); draw(); };
+    if (editing) { r.querySelector("#rst").onclick = () => { S.layout = {}; Pet.save(); draw(); }; makeDraggable(r.querySelector(".room-svg"), S); }
     box.querySelector(".seg").innerHTML = [["scene", "场景"], ["tree", "猫爬架"], ["decor", "家具"]].map(([k, l]) => `<button role="tab" aria-selected="${k === cur}" data-t="${k}">${l}</button>`).join("");
     box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { cur = b.dataset.t; draw(); });
     const list = box.querySelector(".items"); list.innerHTML = "";
     let rows;
-    if (cur === "scene") rows = Object.entries(SCENES).map(([k, s]) => ({ name: s.name, own: k === "living" || S.owned["scene_" + k], on: S.scene === k, color: s.rug, set: () => { S.scene = k; } }));
+    if (cur === "scene") rows = Object.entries(SCENES).map(([k, s]) => ({ name: s.name, own: k === "living" || S.owned["scene_" + k], on: S.scene === k, color: s.rug, set: () => { S.scene = k; applyTheme(k); Pet.toast(`换成了“${s.name}”，整个应用也换上了同款配色`, "good"); } }));
     else if (cur === "tree") rows = [["不放猫爬架", 0, "#EDE3D5"], ["猫抓柱", 1, "#E2C69A"], ["二层猫爬架", 2, "#8FA9C9"], ["豪华猫爬架 · 带小屋", 3, "#5D7499"]].map(([n, t, c]) => ({ name: n, own: t === 0 || S.owned["tree" + t], on: S.tree === t, color: c, set: () => { S.tree = t; } }));
     else rows = [["bed", "软软猫窝", "#C76F5B"], ["toy", "逗猫棒和小球", "#F07C9A"], ["scratch", "剑麻猫抓板", "#D9B98A"], ["fish", "小鱼缸", "#5CB8C9"], ["fountain", "循环饮水机", "#5C93C9"]].map(([k, n, c]) => ({ name: n, own: S.owned[k], on: !!S.decor[k], color: c, toggle: true, set: () => { S.decor[k] = S.decor[k] ? 0 : 1; } }));
     rows.forEach(it => {
@@ -488,6 +507,22 @@ function pageDress() {
     });
   }
   draw();
+}
+
+/* drag furniture inside the room svg; offsets saved in S.layout */
+function makeDraggable(svg, S) {
+  svg.classList.add("editing");
+  const pt = e => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+  svg.querySelectorAll("[data-item]").forEach(g => {
+    const k = g.dataset.item;
+    g.setAttribute("tabindex", "0"); g.setAttribute("role", "button"); g.setAttribute("aria-label", `移动${ITEM_NAMES[k]}（方向键也可以移动）`);
+    let start = null;
+    const set = (dx, dy) => { [dx, dy] = clampItem(k, dx, dy, S.tree); S.layout[k] = [dx, dy]; g.setAttribute("transform", `translate(${dx} ${dy})`); };
+    g.onpointerdown = e => { e.preventDefault(); g.setPointerCapture(e.pointerId); const p = pt(e), cur = S.layout[k] || [0, 0]; start = { x: p.x - cur[0], y: p.y - cur[1] }; g.classList.add("drag"); };
+    g.onpointermove = e => { if (!start) return; const p = pt(e); set(p.x - start.x, p.y - start.y); };
+    g.onpointerup = g.onpointercancel = () => { if (!start) return; start = null; g.classList.remove("drag"); Pet.save(); };
+    g.onkeydown = e => { const d = { ArrowLeft: [-8, 0], ArrowRight: [8, 0], ArrowUp: [0, -6], ArrowDown: [0, 6] }[e.key]; if (!d) return; e.preventDefault(); const c = S.layout[k] || [0, 0]; set(c[0] + d[0], c[1] + d[1]); Pet.save(); };
+  });
 }
 
 /* ---------- vet ---------- */

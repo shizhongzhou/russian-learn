@@ -32,7 +32,7 @@ const Pet = (() => {
     v: 1, profile: null, cat: { breed: "ragdoll", name: "" },
     growth: 0, food: 10, water: 10, full: 80, drink: 80, health: 100, happy: 80,
     lastStudy: Date.now(), lastTick: Date.now(), streak: 0, streakDay: "", studyDays: 0,
-    owned: { scene_living: 1 }, scene: "living", tree: 0, decor: { bed: 0, toy: 0, scratch: 0, fish: 0, fountain: 0 },
+    owned: { scene_living: 1 }, scene: "living", tree: 0, decor: { bed: 0, toy: 0, scratch: 0, fish: 0, fountain: 0 }, layout: {},
     sick: false, treated: false, recoverDays: [],
     heard: {}, heardCount: {}, topics: {}, daily: { date: "", correct: 0, done: false },
     totalCorrect: 0, totalAnswered: 0, inv: {}, mastered: {}, masteredCount: {}, todayWords: { date: "", keys: [] },
