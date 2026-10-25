@@ -7,7 +7,7 @@ command -v node >/dev/null || { echo "需要先安装 Node.js：https://nodejs.o
 command -v xcodebuild >/dev/null || { echo "需要先在 App Store 安装 Xcode，并打开一次同意协议"; exit 1; }
 if ! command -v pod >/dev/null; then
   echo "安装 CocoaPods（可能需要输入电脑密码）…"
-  if command -v brew >/dev/null; then brew install cocoapods; else sudo gem install cocoapods; fi
+  if command -v brew >/dev/null; then HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods; else sudo gem install cocoapods; fi
 fi
 echo "① 安装 Capacitor…"
 npm install --no-audit --no-fund --legacy-peer-deps
