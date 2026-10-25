@@ -575,7 +575,8 @@ function pageAccount() {
       </section>
       ${IS_NATIVE ? "" : `<section class="card install"><h2>装到 iPhone 上</h2>
         <ol><li>用 <b>Safari</b> 打开这个网站</li><li>点底部的 <b>分享</b> 按钮 <span aria-hidden="true">⬆︎</span></li><li>选 <b>添加到主屏幕</b> → 添加</li></ol>
-        <p class="hint">之后从桌面图标打开，就是全屏的“猫猫俄语通”，离线也能用。想装原生版（发音打分更准），见 <a href="https://github.com/shizhongzhou/russian-learn/releases/tag/ios-latest" target="_blank" rel="noopener">iOS 安装包</a>。</p></section>`}
+        <p class="hint">之后从桌面图标打开，就是全屏的“猫猫俄语通”，离线也能用。想装原生版（发音打分更准），见 <a href="https://github.com/shizhongzhou/russian-learn/releases/tag/ios-latest" target="_blank" rel="noopener">iOS 安装包</a>。</p>
+        <h2>安卓手机</h2><p class="hint">直接下载安装包：<a href="https://github.com/shizhongzhou/russian-learn/releases/download/android-latest/MaoMaoRussian.apk">MaoMaoRussian.apk</a>，下载后点开安装（第一次要允许“安装未知应用”）。</p></section>`}
       <section class="card"><h2>搬家：导出 / 导入进度</h2><p class="hint">网页版和 App 的进度是分开保存的。在旧的地方点“导出”，到新的地方点“导入”并粘贴，猫咪就搬过来了。</p>
         <div class="row2"><button class="btn ghost" id="exp">导出进度</button><button class="btn ghost" id="imp">导入进度</button></div>
         <textarea id="moveBox" rows="3" hidden placeholder="把导出的进度码粘贴到这里"></textarea><p class="hint" id="moveHint"></p></section>

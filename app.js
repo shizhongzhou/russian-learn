@@ -27,7 +27,16 @@ const store = {
 };
 
 /* ---------- speech ---------- */
-const synth = window.speechSynthesis;
+/* inside the iOS / Android app: native plugins + fresh content from the website */
+const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const SITE = "https://shizhongzhou.github.io/russian-learn/";
+function capPlugin(name) {
+  if (!IS_NATIVE) return null;
+  const C = window.Capacitor;
+  try { return (C.Plugins && C.Plugins[name]) || (C.registerPlugin && C.registerPlugin(name)) || (window.capacitorExports && window.capacitorExports.registerPlugin(name)) || null; } catch { return null; }
+}
+const TTS = capPlugin("TextToSpeech");   // native voice in the app (Android's web view has no speechSynthesis)
+const synth = TTS ? null : window.speechSynthesis;
 let ruVoices = [];
 let rate = store.get("rate", 1);
 let playToken = 0;
@@ -45,7 +54,11 @@ function loadVoices() {
   } else warn.hidden = true;
 }
 function score(v) { return (/google|natural|neural|premium|enhanced|milena|yuri|katya|svetlana|dmitry/i.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1); }
-if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
+if (TTS) {
+  TTS.isLanguageSupported({ lang: "ru-RU" }).then(r => {
+    if (r && r.supported === false) { const w = document.getElementById("voice-warning"); w.hidden = false; w.textContent = "手机里没有俄语朗读语音。请到 设置 → 系统 → 语言 → 文字转语音 里下载俄语（Русский）语音包。"; }
+  }).catch(() => {});
+} else if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
 else {
   const warn = document.getElementById("voice-warning");
   warn.hidden = false; warn.textContent = "当前浏览器不支持语音朗读（Web Speech API）。请换用 Chrome、Edge 或 Safari。";
@@ -54,6 +67,7 @@ else {
 const clean = s => s.replace(/́/g, "").replace(/[«»—]/g, " ");
 
 function speak(text, { voice = 0, rate: r = rate } = {}) {
+  if (TTS) return TTS.speak({ text: clean(text), lang: "ru-RU", rate: r, pitch: voice === 1 ? 0.75 : 1, volume: 1, category: "playback" }).catch(() => {});
   return new Promise(resolve => {
     if (!synth) return resolve();
     const u = new SpeechSynthesisUtterance(clean(text));
@@ -66,7 +80,7 @@ function speak(text, { voice = 0, rate: r = rate } = {}) {
     synth.speak(u);
   });
 }
-function stopAll() { playToken++; if (synth) synth.cancel(); document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing")); }
+function stopAll() { playToken++; if (TTS) TTS.stop().catch(() => {}); if (synth) synth.cancel(); document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing")); }
 
 async function playSequence(items) { // items: [{el, text, voice}]
   stopAll();
@@ -100,14 +114,6 @@ syncRate();
 
 /* ---------- data ---------- */
 const cache = {};
-/* inside the iOS app: native plugins + fresh content from the website */
-const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const SITE = "https://shizhongzhou.github.io/russian-learn/";
-function capPlugin(name) {
-  if (!IS_NATIVE) return null;
-  const C = window.Capacitor;
-  try { return (C.Plugins && C.Plugins[name]) || (C.registerPlugin && C.registerPlugin(name)) || (window.capacitorExports && window.capacitorExports.registerPlugin(name)) || null; } catch { return null; }
-}
 const fetchJSON = (url, ms) => {
   const ctl = new AbortController(), t = ms && setTimeout(() => ctl.abort(), ms);
   return fetch(url, { signal: ctl.signal, cache: "no-cache" }).then(r => { clearTimeout(t); if (!r.ok) throw new Error(url); return r.json(); });

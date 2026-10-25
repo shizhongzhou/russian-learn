@@ -1,0 +1,82 @@
+name: Build Android app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build
+  cancel-in-progress: true
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: native
+    env:
+      BUILD_NUMBER: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Copy the website into the app
+        run: bash scripts/prepare-web.sh
+
+      - name: Create the Android project
+        run: |
+          npx cap add android
+          bash scripts/patch-android.sh
+          npx cap sync android
+
+      - name: Build release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew --no-daemon assembleRelease
+          ls -la app/build/outputs/apk/release/
+
+      - name: Sign APK
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          KS_PASS_SECRET: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          # use the private keystore from repo secrets if it exists, otherwise the bundled public one
+          if [ -n "${KS_B64:-}" ]; then echo "$KS_B64" | base64 -d > /tmp/ks.jks; KS=/tmp/ks.jks; PASS="$KS_PASS_SECRET"; else KS=android-signing/maomao-public.jks; PASS=maomao-public; fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          IN=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          "$BT/zipalign" -f -p 4 "$IN" aligned.apk
+          "$BT/apksigner" sign --ks "$KS" --ks-key-alias maomao --ks-pass "pass:$PASS" --key-pass "pass:$PASS" --out MaoMaoRussian.apk aligned.apk
+          "$BT/apksigner" verify --print-certs MaoMaoRussian.apk | head -3
+          ls -la MaoMaoRussian.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaoMaoRussian-apk
+          path: native/MaoMaoRussian.apk
+
+      - name: Publish to the "android-latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --title "猫猫俄语通 安卓安装包" --notes "安卓 APK" --prerelease
+          gh release upload android-latest MaoMaoRussian.apk --clobber
+          gh release edit android-latest --notes "猫猫俄语通 安卓安装包（构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}）。在手机上下载 MaoMaoRussian.apk，点开安装；第一次需要允许“安装未知来源应用”。"

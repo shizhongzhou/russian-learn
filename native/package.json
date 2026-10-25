@@ -9,7 +9,9 @@
   "dependencies": {
     "@capacitor/core": "latest",
     "@capacitor/ios": "latest",
-    "@capacitor-community/speech-recognition": "latest"
+    "@capacitor-community/speech-recognition": "latest",
+    "@capacitor/android": "latest",
+    "@capacitor-community/text-to-speech": "latest"
   },
   "devDependencies": {
     "@capacitor/cli": "latest"
