@@ -1,23 +1,18 @@
 #!/usr/bin/env bash
 # One-step setup on a Mac: builds the iOS project and opens it in Xcode.
+# Uses Swift Package Manager (built into Xcode) — no CocoaPods/Homebrew needed.
 # In Xcode: Signing & Capabilities → Team = your Apple ID, pick your iPhone, press ▶.
 set -euo pipefail
 cd "$(dirname "$0")"
 command -v node >/dev/null || { echo "需要先安装 Node.js：https://nodejs.org （下载 LTS 版安装后重新运行）"; exit 1; }
 command -v xcodebuild >/dev/null || { echo "需要先在 App Store 安装 Xcode，并打开一次同意协议"; exit 1; }
-if ! command -v pod >/dev/null; then
-  echo "安装 CocoaPods…"
-  if command -v conda >/dev/null; then conda install -y -c conda-forge cocoapods || true; fi
-  if ! command -v pod >/dev/null && command -v brew >/dev/null; then HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods || true; fi
-  if ! command -v pod >/dev/null; then sudo gem install cocoapods || true; fi
-  command -v pod >/dev/null || { echo "CocoaPods 没装上，请把这段输出截图发给 Claude"; exit 1; }
-fi
 echo "① 安装 Capacitor…"
 npm install --no-audit --no-fund --legacy-peer-deps
 echo "② 复制网页内容…"
 bash scripts/prepare-web.sh
 echo "③ 生成 iOS 工程…"
-if [ ! -d ios ]; then npx cap add ios --packagemanager CocoaPods || npx cap add ios; fi
+if [ -f ios/App/Podfile ]; then rm -rf ios; fi   # older CocoaPods-based project → regenerate
+if [ ! -d ios ]; then npx cap add ios --packagemanager SPM; fi
 bash scripts/patch-ios.sh
 npx cap sync ios
 echo "④ 打开 Xcode…"
