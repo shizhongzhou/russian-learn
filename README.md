@@ -1,4 +1,3 @@
-/opt/homebrew/Library/Homebrew/cmd/shellenv.sh: line 27: /bin/ps: Operation not permitted
 # 俄语阶梯 · Русский шаг за шагом
 
 免费的俄语学习网站，面向中文学习者：<https://shizhongzhou.github.io/russian-learn/>
@@ -21,7 +20,7 @@
 - **听力**：先只听不看，再答题，最后显示原文和翻译核对。
 - **新闻**：根据近期真实新闻按该级难度改写的俄文短文，逐句中文翻译，可选慢速 / 正常 / 倍速朗读。
 
-朗读使用浏览器自带的俄语语音（Web Speech API）。电脑上推荐 Chrome 或 Edge；手机上如果没有声音，请在系统“文字转语音输出”设置中下载并启用俄语语音包，然后刷新页面。安卓浏览器若语音队列未启动，页面会自动尝试恢复并显示错误提示。
+朗读使用浏览器自带的俄语语音（Web Speech API）。电脑上推荐 Chrome 或 Edge；手机上如果没有声音，请在系统设置中下载俄语语音包。
 
 ## 文件结构
 
