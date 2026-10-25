@@ -233,6 +233,4 @@ async function pageExam(lv) {
   };
 }
 
-/* ---------- boot ---------- */
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
-route();
+/* boot happens at the end of feed.js (the last script) */

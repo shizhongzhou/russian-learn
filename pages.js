@@ -61,6 +61,9 @@ function route() {
     case "quiz": tab = "learn"; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
     case "memo": tab = "learn"; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
     case "shadow": tab = "learn"; pageShadow(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["我在听你读哦", "Повтори́! 跟我读", "读得越像，猫粮越多"]; break;
+    case "trki": tab = "learn"; pageTrki(p1); roamLines = ["考试加油！", "Уда́чи! 祝你好运", "我相信你"]; break;
+    case "library": tab = "learn"; pageLibrary(); roamLines = ["今天读哪本书？", "读 5 页就有猫粮哦"]; break;
+    case "read": tab = "learn"; pageReader(p1); roam = false; break;
     case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["慢慢写，我等你～", "写完有小鱼干吃！", "Пиши́! 写吧"]; break;
     case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["考试加油！", "我相信你", "Уда́чи! 祝你好运"]; break;
     case "meow": tab = "meow"; pageMeow(); roam = false; break;
@@ -280,7 +283,9 @@ function pageLearn() {
       ["news", "新闻 · 阅读", "听、读、跟读", "读完一篇有奖励", "M3 4h18v16H3z M7 8h10 M7 12h10 M7 16h6"],
       ["#shadow", "复读跟读", "听一句 · 跟着读 · 打分", "分越高猫粮越多，还可能掉零食", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3"],
       ["#write", "写作", "按题目写俄语短文", "写完得猫粮 + 小鱼干", "M4 20 L8 19 L19 8 L16 5 L5 16 Z M14 7 L17 10"],
-      ["#exam", "模拟考试", "ТРКИ 模拟 · 20 题，16 题通过", ex && ex.passed ? `已通过 · 最好 ${ex.best}/20` : "通过得豪华罐头", "M6 3h12v18l-6-4-6 4z"],
+      ["#trki", "ТРКИ-2 模拟", "阅读·写作·语法·听力·口语", Pet.state.trki ? `已通过 ${Object.values(Pet.state.trki).filter(x => x.passed).length} / 5 部分` : "全真题型，66% 及格", "M4 4h16v16H4z M8 9h8 M8 13h8 M8 17h5"],
+      ["#library", "我的书架", "导入自己的 PDF 教材", "选中俄语可朗读、查词", "M5 4h4v16H5z M10 4h4v16h-4z M15 5l4 1-3 14-4-1z"],
+      ["#exam", "词汇测验", "本级单词 20 题，16 题通过", ex && ex.passed ? `已通过 · 最好 ${ex.best}/20` : "通过得豪华罐头", "M6 3h12v18l-6-4-6 4z"],
     ];
     body.innerHTML = `<section class="card lvcard"><div class="row"><div><span class="lv-big">${lv}</span> <b>${LEVELS[lv].title}</b></div><span>${Math.round(heard / total * 100)}%</span></div>
       <div class="bar"><i style="width:${Math.min(100, heard / total * 100)}%"></i></div><p>${LEVELS[lv].desc}</p></section>

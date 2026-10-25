@@ -51,6 +51,10 @@ function feedScene(kind = "kibble", onDone) {
   setTimeout(() => { if (document.body.contains(ov)) close(); }, 6000 * T + 600);
 }
 
+/* ---------- boot ---------- */
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+route();
+
 /* ========== intro: shown every time the app opens ========== */
 (function intro() {
   const S = Pet.state;
