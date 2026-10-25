@@ -6,8 +6,11 @@ cd "$(dirname "$0")"
 command -v node >/dev/null || { echo "需要先安装 Node.js：https://nodejs.org （下载 LTS 版安装后重新运行）"; exit 1; }
 command -v xcodebuild >/dev/null || { echo "需要先在 App Store 安装 Xcode，并打开一次同意协议"; exit 1; }
 if ! command -v pod >/dev/null; then
-  echo "安装 CocoaPods（可能需要输入电脑密码）…"
-  if command -v brew >/dev/null; then HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods; else sudo gem install cocoapods; fi
+  echo "安装 CocoaPods…"
+  if command -v conda >/dev/null; then conda install -y -c conda-forge cocoapods || true; fi
+  if ! command -v pod >/dev/null && command -v brew >/dev/null; then HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods || true; fi
+  if ! command -v pod >/dev/null; then sudo gem install cocoapods || true; fi
+  command -v pod >/dev/null || { echo "CocoaPods 没装上，请把这段输出截图发给 Claude"; exit 1; }
 fi
 echo "① 安装 Capacitor…"
 npm install --no-audit --no-fund --legacy-peer-deps
