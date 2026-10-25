@@ -1,0 +1,63 @@
+name: iOS SPM test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ios-spm-test.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-spm
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Copy the website into the app
+        run: bash scripts/prepare-web.sh
+
+      - name: Create the iOS project
+        run: |
+          npx cap add ios --packagemanager SPM 2>&1 | tee /tmp/add.log; grep -iE "warn|error|not support|skip" /tmp/add.log | sed "s/^/::warning::/" || true
+          bash scripts/patch-ios.sh
+          npx cap sync ios
+          ls ios/App; grep -rl "SpeechRecognition\|TextToSpeech\|LocalNotifications" ios/App/CapApp-SPM/Package.swift && cat ios/App/CapApp-SPM/Package.swift | sed "s/^/::notice::/" | head -40 || true
+
+      - name: Build (unsigned)
+        run: |
+          cd ios/App
+          if [ -d App.xcworkspace ]; then TARGET="-workspace App.xcworkspace"; else TARGET="-project App.xcodeproj"; fi
+          xcodebuild $TARGET -scheme App -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION=1.0 CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build 2>&1 | tee /tmp/b.log | tail -40; test ${PIPESTATUS[0]} -eq 0 || { grep -E "error:" /tmp/b.log | head -20 | sed "s/^/::error::/"; exit 1; }
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry ../../MaoMaoRussian.ipa Payload
+          ls -la ../../MaoMaoRussian.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaoMaoRussian-ipa
+          path: native/MaoMaoRussian.ipa
+
