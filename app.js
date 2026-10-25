@@ -100,8 +100,26 @@ syncRate();
 
 /* ---------- data ---------- */
 const cache = {};
+/* inside the iOS app: native plugins + fresh content from the website */
+const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+const SITE = "https://shizhongzhou.github.io/russian-learn/";
+function capPlugin(name) {
+  if (!IS_NATIVE) return null;
+  const C = window.Capacitor;
+  try { return (C.Plugins && C.Plugins[name]) || (C.registerPlugin && C.registerPlugin(name)) || (window.capacitorExports && window.capacitorExports.registerPlugin(name)) || null; } catch { return null; }
+}
+const fetchJSON = (url, ms) => {
+  const ctl = new AbortController(), t = ms && setTimeout(() => ctl.abort(), ms);
+  return fetch(url, { signal: ctl.signal, cache: "no-cache" }).then(r => { clearTimeout(t); if (!r.ok) throw new Error(url); return r.json(); });
+};
 async function getJSON(path) {
-  if (!cache[path]) cache[path] = fetch(path).then(r => { if (!r.ok) throw new Error(path); return r.json(); });
+  if (!cache[path]) {
+    // news is updated weekly on the website — the app fetches it online and falls back to the bundled copy
+    cache[path] = IS_NATIVE && /content_/.test(path)
+      ? fetchJSON(SITE + path, 4000).catch(() => fetchJSON(path))
+      : fetchJSON(path);
+    cache[path].catch(() => { delete cache[path]; });
+  }
   return cache[path];
 }
 
@@ -288,16 +306,45 @@ function shadowLine(btn, li, ru, key, onScore) {
     const r = Pet.scored("speak:" + key, score);
     if (r === 0) Pet.talk("这句今天已经拿过这个分数的奖励啦，换一句试试");
   };
+  const NSR = capPlugin("SpeechRecognition");
+  const showScore = alts => {
+    const best = alts.map(a => [a, scoreSpeech(ru, a)]).sort((a, b) => b[1] - a[1])[0] || ["", 0];
+    const sc = best[1];
+    fb.innerHTML = `识别到：<span lang="ru">${esc(best[0] || "（没听清）")}</span> · <b class="score s${sc >= 90 ? 3 : sc >= 75 ? 2 : sc >= 60 ? 1 : 0}">${sc} 分</b> ${sc >= 90 ? "完美！+3 猫粮" : sc >= 75 ? "很棒！+2 猫粮" : sc >= 60 ? "不错 +1 猫粮，冲 90 分拿更多" : "再试一次？60 分以上有猫粮"}`;
+    if (sc >= 60) good(sc); else { Pet.talk("慢一点，再读一遍～"); if (onScore) onScore(sc); if (Pet.state.settings.meow) meowFor("wrong"); }
+  };
+  if (NSR) {
+    if (btn._finish) { btn._finish(); return; }
+    (async () => {
+      let last = [], done = false, quiet, cap, sub;
+      const finish = async () => {
+        if (done) return; done = true; clearTimeout(quiet); clearTimeout(cap);
+        try { await NSR.stop(); } catch {}
+        try { sub && (await sub).remove(); } catch {}
+        btn._finish = null; btn.classList.remove("rec");
+        showScore(last);
+      };
+      try {
+        const perm = await NSR.requestPermissions();
+        if (perm && perm.speechRecognition && perm.speechRecognition !== "granted") { fb.textContent = "请在 设置 → 猫猫俄语通 里允许麦克风和语音识别"; return; }
+        btn._finish = finish; btn.classList.add("rec"); fb.textContent = "请跟读…读完停顿一下会自动打分（也可以再点一次麦克风）";
+        sub = NSR.addListener("partialResults", d => {
+          if (d && d.matches && d.matches.length) { last = d.matches; fb.innerHTML = `听到：<span lang="ru">${esc(last[0])}</span>…`; }
+          clearTimeout(quiet); quiet = setTimeout(finish, 1500);
+        });
+        cap = setTimeout(finish, 15000);
+        const res = await NSR.start({ language: "ru-RU", maxResults: 5, partialResults: true, popup: false });
+        if (res && res.matches && res.matches.length) { last = res.matches; finish(); }
+      } catch (e) { if (!done) { done = true; btn._finish = null; btn.classList.remove("rec"); fb.textContent = "没听清，再试一次"; } }
+    })();
+    return;
+  }
   if (SR) {
     const r = new SR();
     r.lang = "ru-RU"; r.interimResults = false; r.maxAlternatives = 3;
     btn.classList.add("rec"); fb.textContent = "请跟读…";
     r.onresult = e => {
-      const alts = [...e.results[0]].map(a => a.transcript);
-      const best = alts.map(a => [a, scoreSpeech(ru, a)]).sort((a, b) => b[1] - a[1])[0];
-      const sc = best[1];
-      fb.innerHTML = `识别到：<span lang="ru">${esc(best[0])}</span> · <b class="score s${sc >= 90 ? 3 : sc >= 75 ? 2 : sc >= 60 ? 1 : 0}">${sc} 分</b> ${sc >= 90 ? "完美！+3 猫粮" : sc >= 75 ? "很棒！+2 猫粮" : sc >= 60 ? "不错 +1 猫粮，冲 90 分拿更多" : "再试一次？60 分以上有猫粮"}`;
-      if (sc >= 60) good(sc); else { Pet.talk("慢一点，再读一遍～"); if (onScore) onScore(sc); if (Pet.state.settings.meow) meowFor("wrong"); }
+      showScore([...e.results[0]].map(a => a.transcript));
     };
     r.onerror = e => { fb.textContent = e.error === "not-allowed" ? "没有麦克风权限，请在浏览器设置里允许" : "没听清，再试一次"; };
     r.onend = () => btn.classList.remove("rec");

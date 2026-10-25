@@ -1,0 +1,17 @@
+{
+  "name": "maomao-russian-ios",
+  "private": true,
+  "version": "1.0.0",
+  "description": "猫猫俄语通 iOS app (Capacitor wrapper around the website)",
+  "scripts": {
+    "prepare-web": "bash scripts/prepare-web.sh"
+  },
+  "dependencies": {
+    "@capacitor/core": "latest",
+    "@capacitor/ios": "latest",
+    "@capacitor-community/speech-recognition": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}

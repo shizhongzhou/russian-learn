@@ -1,0 +1,11 @@
+{
+  "appId": "io.github.shizhongzhou.maomao",
+  "appName": "猫猫俄语通",
+  "webDir": "www",
+  "backgroundColor": "#F6F1E9",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#F6F1E9",
+    "allowsLinkPreview": false
+  }
+}

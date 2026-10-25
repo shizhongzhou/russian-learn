@@ -568,3 +568,4 @@ html[data-scene=night]{--hero:#C7B8F2;--on-hero:#171C38}
 }
 .mod.dark small,.card.dark small{color:color-mix(in srgb,var(--on-hero) 80%,var(--hero))}
 html[data-scene=night] .mod.dark em,html[data-scene=night] .mod.dark .ic{color:#4B3496}
+.install ol{margin:6px 0 4px;padding-left:20px;line-height:1.9}#moveBox{width:100%;margin-top:10px;font:12px monospace;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface);color:var(--ink)}

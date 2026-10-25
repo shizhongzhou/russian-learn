@@ -573,8 +573,28 @@ function pageAccount() {
         <label><span>答对时喵叫</span><input type="checkbox" id="meowOn" ${S.settings.meow ? "checked" : ""}></label>
         <label><span>猫咪在页面里走动</span><input type="checkbox" id="roamOn" ${S.settings.roam ? "checked" : ""}></label>
       </section>
+      ${IS_NATIVE ? "" : `<section class="card install"><h2>装到 iPhone 上</h2>
+        <ol><li>用 <b>Safari</b> 打开这个网站</li><li>点底部的 <b>分享</b> 按钮 <span aria-hidden="true">⬆︎</span></li><li>选 <b>添加到主屏幕</b> → 添加</li></ol>
+        <p class="hint">之后从桌面图标打开，就是全屏的“猫猫俄语通”，离线也能用。想装原生版（发音打分更准），见 <a href="https://github.com/shizhongzhou/russian-learn/releases/tag/ios-latest" target="_blank" rel="noopener">iOS 安装包</a>。</p></section>`}
+      <section class="card"><h2>搬家：导出 / 导入进度</h2><p class="hint">网页版和 App 的进度是分开保存的。在旧的地方点“导出”，到新的地方点“导入”并粘贴，猫咪就搬过来了。</p>
+        <div class="row2"><button class="btn ghost" id="exp">导出进度</button><button class="btn ghost" id="imp">导入进度</button></div>
+        <textarea id="moveBox" rows="3" hidden placeholder="把导出的进度码粘贴到这里"></textarea><p class="hint" id="moveHint"></p></section>
       <section class="card dark sync"><b>云端同步</b><p>现在账号和进度只保存在这台设备上。登录同步、换手机不丢猫，正在开发中。</p></section>
       <section class="card"><h2>数据</h2><button class="btn ghost" id="reset">清除本机数据，重新开始</button><p class="hint" id="resetHint"></p></section>`;
+    const mb = box.querySelector("#moveBox"), mh = box.querySelector("#moveHint");
+    box.querySelector("#exp").onclick = async () => {
+      const code = "MM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(Pet.state))));
+      mb.hidden = false; mb.value = code; mb.select();
+      try { await navigator.clipboard.writeText(code); mh.textContent = "进度码已复制，到新的地方点“导入进度”粘贴即可。"; } catch { mh.textContent = "请长按上面的进度码全选复制。"; }
+    };
+    box.querySelector("#imp").onclick = () => {
+      if (mb.hidden || !mb.value.startsWith("MM1:") || mb.dataset.mode !== "imp") { mb.hidden = false; mb.value = ""; mb.dataset.mode = "imp"; mb.focus(); mh.textContent = "粘贴进度码后再点一次“导入进度”。"; return; }
+      try {
+        const data = JSON.parse(decodeURIComponent(escape(atob(mb.value.trim().slice(4)))));
+        if (!data.profile || !data.cat) throw 0;
+        localStorage.setItem("mm_pet_v1", JSON.stringify(data)); location.hash = "#/home"; location.reload();
+      } catch { mh.textContent = "进度码不对，请完整复制后再试。"; }
+    };
     box.querySelector("#nick").onchange = e => { S.profile.nick = e.target.value.trim() || S.profile.nick; Pet.save(); };
     box.querySelector("#cname").onchange = e => { S.cat.name = e.target.value.trim() || S.cat.name; Pet.save(); Pet.toast(`以后就叫它“${esc(S.cat.name)}”啦`); };
     box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { S.cat.breed = b.dataset.b; Pet.save(); chrome("account"); draw(); });

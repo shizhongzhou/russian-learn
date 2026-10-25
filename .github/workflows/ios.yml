@@ -1,0 +1,70 @@
+name: Build iOS app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build
+  cancel-in-progress: true
+
+jobs:
+  ios:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: native
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Capacitor
+        run: npm install --no-audit --no-fund --legacy-peer-deps
+
+      - name: Copy the website into the app
+        run: bash scripts/prepare-web.sh
+
+      - name: Create the iOS project
+        run: |
+          npx cap add ios --packagemanager CocoaPods || npx cap add ios
+          bash scripts/patch-ios.sh
+          npx cap sync ios
+          ls ios/App
+
+      - name: Build (unsigned)
+        run: |
+          cd ios/App
+          if [ -d App.xcworkspace ]; then TARGET="-workspace App.xcworkspace"; else TARGET="-project App.xcodeproj"; fi
+          xcodebuild $TARGET -scheme App -configuration Release -sdk iphoneos \
+            -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            MARKETING_VERSION=1.0 CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            build | tail -40
+          APP=$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' | head -1)
+          test -n "$APP"
+          mkdir -p Payload && cp -R "$APP" Payload/
+          zip -qry ../../MaoMaoRussian.ipa Payload
+          ls -la ../../MaoMaoRussian.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaoMaoRussian-ipa
+          path: native/MaoMaoRussian.ipa
+
+      - name: Publish to the "ios-latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view ios-latest >/dev/null 2>&1 || gh release create ios-latest --title "猫猫俄语通 iOS 安装包" --notes "自动构建的未签名 iOS 安装包（.ipa）。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。" --prerelease
+          gh release upload ios-latest MaoMaoRussian.ipa --clobber
+          gh release edit ios-latest --notes "自动构建的未签名 iOS 安装包（.ipa），构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。"
