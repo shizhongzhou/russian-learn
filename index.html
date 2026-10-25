@@ -2,31 +2,38 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>俄语阶梯 · Русский шаг за шагом</title>
-<meta name="description" content="免费俄语学习网站：A1–C2 分级词汇（点击发音）、情景对话、听力练习和逐句中译的近期新闻。">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231C3F94'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-size='40' text-anchor='middle' fill='white'%3EЖ%3C/text%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>猫猫俄语通</title>
+<meta name="description" content="学俄语，养一只猫：A1–C2 分级词汇、语法、对话、听力、新闻，答对题给猫咪赚猫粮。">
+<meta name="theme-color" content="#F6F1E9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="猫猫俄语通">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=PT+Serif:ital,wght@0,400;0,700;1,400&family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header class="bar">
-  <a class="brand" href="#/" aria-label="返回首页"><span class="brand-mark">Ж</span><span class="brand-name">俄语阶梯</span></a>
-  <nav class="levels-nav" aria-label="等级">
-    <a href="#/A1">A1</a><a href="#/A2">A2</a><a href="#/B1">B1</a><a href="#/B2">B2</a><a href="#/C1">C1</a><a href="#/C2">C2</a>
-  </nav>
-  <div class="speed" role="group" aria-label="朗读速度">
-    <button data-rate="0.7">慢速</button><button data-rate="1">正常</button><button data-rate="1.4">倍速</button>
-  </div>
+<header class="appbar" id="appbar">
+  <a class="brand" href="#/home" aria-label="猫猫俄语通 主页"><span class="brand-mark"></span><span class="brand-name">猫猫俄语通</span></a>
+  <div class="res"></div>
 </header>
 <div id="voice-warning" class="voice-warning" hidden></div>
 <main id="app" tabindex="-1"></main>
-<footer class="foot">
-  <p>词汇数据来自 <a href="https://github.com/Badestrand/russian-dictionary" target="_blank" rel="noopener">OpenRussian</a>（CC BY-SA 4.0），词频来自 <a href="https://github.com/rspeer/wordfreq" target="_blank" rel="noopener">wordfreq</a>；中文释义、对话、听力和新闻改写为本站原创。等级按词频划分，仅供参考。朗读使用浏览器内置俄语语音。</p>
-  <p><a href="https://github.com/shizhongzhou/russian-learn" target="_blank" rel="noopener">GitHub 源代码</a></p>
-</footer>
+<nav class="tabbar" id="tabbar" aria-label="主导航" hidden>
+  <a href="#/home" data-tab="home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 L12 4 L21 11 M5 10 V20 H10 V14 H14 V20 H19 V10"/></svg><span>主页</span></a>
+  <a href="#/learn" data-tab="learn"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5 H10 A2 2 0 0 1 12 7 V20 A2 2 0 0 0 10 18 H4 Z M20 5 H14 A2 2 0 0 0 12 7 V20 A2 2 0 0 1 14 18 H20 Z"/></svg><span>学习</span></a>
+  <a href="#/meow" data-tab="meow"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9 L6 3 L10 7 H14 L18 3 L19 9 A8 7 0 1 1 5 9 Z M9.5 12.5 h.01 M14.5 12.5 h.01 M11 15.5 Q12 16.5 13 15.5"/></svg><span>喵喵</span></a>
+  <a href="#/account" data-tab="account"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 12 A4 4 0 1 0 12 4 A4 4 0 1 0 12 12 Z M4 21 C4 16.5 8 14.5 12 14.5 C16 14.5 20 16.5 20 21"/></svg><span>账号</span></a>
+</nav>
+<script src="cat.js"></script>
+<script src="pet.js"></script>
 <script src="app.js"></script>
+<script src="pages.js"></script>
+<script src="study.js"></script>
 </body>
 </html>

@@ -1,0 +1,17 @@
+{
+  "name": "猫猫俄语通",
+  "short_name": "猫猫俄语通",
+  "description": "学俄语，养一只猫。A1–C2 词汇、语法、对话、听力、新闻。",
+  "lang": "zh-CN",
+  "start_url": "./#/home",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F1E9",
+  "theme_color": "#F6F1E9",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

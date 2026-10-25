@@ -77,9 +77,11 @@ async function playSequence(items) { // items: [{el, text, voice}]
     it.el && it.el.scrollIntoView({ block: "nearest", behavior: "smooth" });
     await speak(it.text, { voice: it.voice || 0 });
     it.el && it.el.classList.remove("playing");
+    if (token === playToken && it.after) it.after();
     if (token !== playToken) return;
     await new Promise(r => setTimeout(r, 250 / rate));
   }
+  return token === playToken;
 }
 async function playOne(el, text, voice = 0) {
   stopAll();
@@ -109,15 +111,6 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 const h = (html) => { const t = document.createElement("template"); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 const SPEAKER = '<svg class="speaker" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm12.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 
-/* ---------- router ---------- */
-function route() {
-  stopAll();
-  const [, lv, tab] = location.hash.match(/^#\/([ABC][12])?(?:\/(\w+))?/) || [];
-  document.querySelectorAll(".levels-nav a").forEach(a => a.toggleAttribute("aria-current", a.getAttribute("href") === `#/${lv}`));
-  if (lv && LEVELS[lv]) renderLevel(lv, tab || "words"); else renderHome();
-  window.scrollTo(0, 0);
-}
-window.addEventListener("hashchange", route);
 
 /* ---------- home ---------- */
 function renderHome() {
@@ -153,7 +146,12 @@ function renderLevel(lv, tab) {
   const L = LEVELS[lv];
   document.title = `${lv} ${L.title} · 俄语阶梯`;
   app.innerHTML = "";
-  app.append(h(`<div class="level-head"><h1>${lv}</h1><div><strong>${L.title}</strong><p>${L.desc}</p></div></div>`));
+  app.append(h(`<nav class="lv-pills" aria-label="等级">${ORDER.map(x => `<a href="#/${x}/${tab}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav>`));
+  app.append(h(`<div class="level-head"><h1>${lv}</h1><div><strong>${L.title}</strong><p>${L.desc}</p></div>
+    <div class="speed" role="group" aria-label="朗读速度"><button data-rate="0.7">慢速</button><button data-rate="1">正常</button><button data-rate="1.4">倍速</button></div></div>`));
+  app.querySelectorAll(".level-head .speed button").forEach(b => b.onclick = () => setRate(+b.dataset.rate));
+  syncRate();
+  Pet.state.lastLevel = lv; Pet.state.lastPlace = { lv, tab, name: (TABS.find(t => t[0] === tab) || TABS[0])[1] }; Pet.save();
   const tabs = h(`<div class="tabs" role="tablist"></div>`);
   TABS.forEach(([id, name]) => {
     const b = h(`<button role="tab" aria-selected="${id === tab}">${name}</button>`);
@@ -200,7 +198,7 @@ async function renderWords(lv, panel) {
       const [w, z, p, g] = r;
       const li = h(`<li class="wcard"><button class="word" title="${esc(r[4])}">${SPEAKER}<span><span class="w ru" lang="ru">${esc(w)}</span><span class="z">${esc(z)}</span><span class="p">#${start + i} · ${POS[p] || ""}${g ? "（" + esc(g) + (p === "n" && "阳阴中通".includes(g) ? "性" : "") + "）" : ""}</span></span></button></li>`);
       const btn = li.firstElementChild;
-      btn.onclick = () => playOne(btn, w);
+      btn.onclick = () => { playOne(btn, w); Pet.heardWord(lv, i); };
       const gb = h(`<button class="gbtn" aria-label="${esc(w)} 的语法信息">语法</button>`);
       gb.onclick = () => openWord(lv, i, r);
       li.append(gb);
@@ -214,7 +212,7 @@ async function renderWords(lv, panel) {
       prev.onclick = () => { page--; draw(); list.scrollIntoView(); };
       next.onclick = () => { page++; draw(); list.scrollIntoView(); };
       const play = h(`<button>朗读本页</button>`);
-      play.onclick = () => playSequence([...list.querySelectorAll(".word")].map(el => ({ el, text: el.querySelector(".w").textContent })));
+      play.onclick = () => playSequence(filtered.slice(page * PAGE, (page + 1) * PAGE).map(([r, i]) => ({ el: null, text: r[0], idx: i })).map((it, k) => ({ el: list.querySelectorAll(".word")[k], text: it.text, after: () => Pet.heardWord(lv, it.idx) })));
       pager.append(prev, info, next, play);
     }
   }
@@ -231,12 +229,21 @@ function linesBlock(cls, title, sub, lines, opts = {}) {
     const li = h(`<li class="line${l.who ? "" : " solo"}">${l.who ? `<span class="who ${l.who === "B" ? "b" : ""}" aria-hidden="true">${l.who === "A" ? "А" : "Б"}</span>` : ""}<span class="ru" lang="ru">${esc(l.ru)}</span><span class="zh">${esc(l.zh)}</span></li>`);
     const voice = l.who === "B" ? 1 : 0;
     li.onclick = () => playOne(li, l.ru, voice);
+    if (opts.speak) {
+      const mic = h(`<button class="mic" aria-label="跟读这一句">${MIC}</button>`);
+      mic.onclick = e => { e.stopPropagation(); shadowLine(mic, li, l.ru, cls + "|" + title + "|" + lines.indexOf(l)); };
+      li.append(mic);
+    }
     ol.append(li);
     return { el: li, text: l.ru, voice };
   });
   const c = block.querySelector(".controls");
   const play = h(`<button class="btn">▶ 播放全部</button>`);
-  play.onclick = () => playSequence(items);
+  play.onclick = async () => {
+    Pet.talk(cls === "news" ? "一起听新闻～" : "我也在听哦");
+    const done = await playSequence(items);
+    if (done && opts.reward) Pet.reward(opts.reward);
+  };
   const stop = h(`<button class="btn ghost">停止</button>`);
   stop.onclick = stopAll;
   const zh = h(`<button class="btn ghost" aria-pressed="true">隐藏中文</button>`);
@@ -246,6 +253,11 @@ function linesBlock(cls, title, sub, lines, opts = {}) {
     const g = h(`<span class="speed inline" role="group" aria-label="朗读速度"><button data-rate="0.7">慢速 0.7×</button><button data-rate="1">正常 1×</button><button data-rate="1.4">倍速 1.4×</button></span>`);
     g.querySelectorAll("button").forEach(b => b.onclick = () => setRate(+b.dataset.rate));
     c.append(g);
+  }
+  if (opts.read) {
+    const rd = h(`<button class="btn ghost readdone">读完了 ✓</button>`);
+    rd.onclick = () => { if (!Pet.once("read:" + title, "read")) Pet.toast("这篇已经领过阅读奖励啦"); rd.disabled = true; rd.textContent = "已读完"; };
+    block.append(rd);
   }
   if (opts.hideRu) {
     block.classList.add("hide-ru", "hide-zh");
@@ -257,17 +269,65 @@ function linesBlock(cls, title, sub, lines, opts = {}) {
   return block;
 }
 
+/* ---------- speaking practice: shadow a line ---------- */
+const MIC = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3"/></svg>';
+const normRu = s => s.toLowerCase().replace(/\u0301/g, "").replace(/ё/g, "е").replace(/[^а-яa-z0-9 ]+/g, " ").split(/\s+/).filter(Boolean);
+function scoreSpeech(target, heard) {
+  const t = normRu(target), hset = new Set(normRu(heard));
+  if (!t.length) return 0;
+  return Math.round(t.filter(w => hset.has(w)).length / t.length * 100);
+}
+function shadowLine(btn, li, ru, key) {
+  stopAll();
+  let fb = li.querySelector(".say-fb");
+  if (!fb) { fb = h(`<div class="say-fb" aria-live="polite"></div>`); li.append(fb); }
+  fb.onclick = e => e.stopPropagation();
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const good = () => { if (Pet.once("speak:" + key, "speak", true)) Pet.cheer("你的俄语说得真好！"); };
+  if (SR) {
+    const r = new SR();
+    r.lang = "ru-RU"; r.interimResults = false; r.maxAlternatives = 3;
+    btn.classList.add("rec"); fb.textContent = "请跟读…";
+    r.onresult = e => {
+      const alts = [...e.results[0]].map(a => a.transcript);
+      const best = alts.map(a => [a, scoreSpeech(ru, a)]).sort((a, b) => b[1] - a[1])[0];
+      fb.innerHTML = `识别到：<span lang="ru">${esc(best[0])}</span> · <b>${best[1]} 分</b>${best[1] >= 60 ? " 很棒！" : " 再试一次？"}`;
+      if (best[1] >= 60) good(); else Pet.talk("慢一点，再读一遍～");
+    };
+    r.onerror = e => { fb.textContent = e.error === "not-allowed" ? "没有麦克风权限，请在浏览器设置里允许" : "没听清，再试一次"; };
+    r.onend = () => btn.classList.remove("rec");
+    try { r.start(); } catch { btn.classList.remove("rec"); }
+    return;
+  }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { fb.textContent = "这个浏览器不支持录音，换 Chrome 或 Safari 试试"; return; }
+  if (btn._rec) { btn._rec.stop(); return; }
+  navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+    const rec = new MediaRecorder(stream), chunks = [];
+    btn._rec = rec; btn.classList.add("rec"); fb.textContent = "录音中…读完再点一次麦克风";
+    rec.ondataavailable = e => chunks.push(e.data);
+    rec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop()); btn._rec = null; btn.classList.remove("rec");
+      const url = URL.createObjectURL(new Blob(chunks, { type: rec.mimeType }));
+      fb.innerHTML = `<audio controls src="${url}"></audio><span>和原音比一比：</span><button class="btn small" data-ok>我读好了</button><button class="btn small ghost" data-again>再录一次</button>`;
+      fb.querySelector("[data-ok]").onclick = () => { good(); fb.querySelector("[data-ok]").disabled = true; };
+      fb.querySelector("[data-again]").onclick = () => shadowLine(btn, li, ru, key);
+    };
+    rec.start();
+    setTimeout(() => { if (rec.state === "recording") rec.stop(); }, 15000);
+  }).catch(() => { fb.textContent = "没有麦克风权限，请在浏览器设置里允许"; });
+}
+
 async function renderDialogues(lv, panel) {
   const d = await getJSON(`data/content_${lv}.json`);
   panel.innerHTML = `<p class="sub">两种声音分别朗读 А、Б 两个角色。点击任意一句可单独播放。</p>`;
-  d.dialogues.forEach(dl => panel.append(linesBlock("dialogue", dl.title, dl.titleZh, dl.lines.map(([who, ru, zh]) => ({ who, ru, zh })))));
+  d.dialogues.forEach(dl => panel.append(linesBlock("dialogue", dl.title, dl.titleZh, dl.lines.map(([who, ru, zh]) => ({ who, ru, zh })), { reward: "listen", speak: true })));
 }
 
 async function renderListening(lv, panel) {
   const d = await getJSON(`data/content_${lv}.json`);
   panel.innerHTML = `<p class="sub">先只听不看：点“播放全部”，然后回答问题。听完可以显示原文和翻译核对。</p>`;
   d.listening.forEach(ex => {
-    const block = linesBlock("listen", ex.title, ex.titleZh, ex.text.map(([ru, zh]) => ({ ru, zh })), { hideRu: true });
+    const block = linesBlock("listen", ex.title, ex.titleZh, ex.text.map(([ru, zh]) => ({ ru, zh })), { hideRu: true, reward: "listen" });
     const quiz = h(`<ol class="quiz"></ol>`);
     let right = 0, done = 0;
     const score = h(`<p class="score" aria-live="polite"></p>`);
@@ -286,7 +346,7 @@ async function renderListening(lv, panel) {
           box.dataset.done = 1; done++;
           b.classList.add(i === q.answer ? "right" : "wrong");
           box.querySelector("[data-ok='1']").classList.add("right");
-          if (i === q.answer) right++;
+          if (i === q.answer) { right++; Pet.reward("correct"); } else Pet.wrong();
           if (done === ex.questions.length) score.textContent = `答对 ${right} / ${ex.questions.length} 题`;
         };
         box.append(b);
@@ -302,7 +362,7 @@ async function renderNews(lv, panel) {
   const d = await getJSON(`data/content_${lv}.json`);
   panel.innerHTML = `<p class="sub">根据最近的真实新闻按 ${lv} 难度改写，逐句配中文翻译。用页面顶部的“慢速 / 正常 / 倍速”或每篇新闻里的速度按钮切换朗读速度。</p>`;
   d.news.forEach(n => {
-    const block = linesBlock("news", n.title, `${n.titleZh} · ${n.date}`, n.sentences.map(([ru, zh]) => ({ ru, zh })), { speeds: true });
+    const block = linesBlock("news", n.title, `${n.titleZh} · ${n.date}`, n.sentences.map(([ru, zh]) => ({ ru, zh })), { speeds: true, reward: "news", speak: true, read: true });
     block.append(h(`<p class="source">信息来源：<a href="${esc(n.source[1])}" target="_blank" rel="noopener">${esc(n.source[0])}</a>（本站改写，非原文）</p>`));
     panel.append(block);
   });
@@ -451,6 +511,11 @@ async function renderGrammar(lv, panel) {
     const el = h(`<details class="topic block" id="g-${t.id}"><summary><span class="mm-n">${n}</span><span class="t-title"><span class="t-zh">${esc(t.title)}</span>${t.ru ? `<span class="t-ru ru" lang="ru">${esc(t.ru)}</span>` : ""}<span class="t-brief">${esc(g.name)} · ${esc(t.brief || "")}</span></span></summary><div class="t-body"></div></details>`);
     el.querySelector(".t-body").innerHTML = t.body.map(blockHTML).join("") + `<p class="t-top"><a href="#" class="totop">↑ 回到思维导图</a></p>`;
     el.querySelector(".totop").onclick = e => { e.preventDefault(); map.scrollIntoView({ behavior: "smooth" }); };
+    let tmr;
+    el.addEventListener("toggle", () => {
+      clearTimeout(tmr);
+      if (el.open) { Pet.talk("认真看完这个专题，有奖励哦"); tmr = setTimeout(() => { if (el.open && document.body.contains(el)) Pet.topicDone(lv, t.id); }, 20000); }
+    });
     panel.append(el);
   }));
 }
@@ -463,5 +528,3 @@ function blockHTML(b) {
   if (b.ex) return `<ol class="lines g-ex">${b.ex.map(([ru, zh]) => `<li class="line solo say" lang="ru" data-say="${esc(ru)}"><span class="ru">${esc(ru)}</span><span class="zh" lang="zh">${esc(zh)}</span></li>`).join("")}</ol>`;
   return "";
 }
-
-route();
