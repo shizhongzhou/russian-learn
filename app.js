@@ -28,45 +28,118 @@ const store = {
 
 /* ---------- speech ---------- */
 const synth = window.speechSynthesis;
+const speechAudio = new Audio();
+speechAudio.preload = "none";
+let cancelAudioPlayback = () => {};
 let ruVoices = [];
 let rate = store.get("rate", 1);
 let playToken = 0;
+const voiceWarning = document.getElementById("voice-warning");
+
+function showVoiceWarning(message) {
+  if (!voiceWarning) return;
+  voiceWarning.hidden = !message;
+  voiceWarning.textContent = message || "";
+}
 
 function loadVoices() {
   if (!synth) return;
   const all = synth.getVoices();
   ruVoices = all.filter(v => /^ru(-|_|$)/i.test(v.lang));
-  // prefer higher-quality voices first
   ruVoices.sort((a, b) => score(b) - score(a));
-  const warn = document.getElementById("voice-warning");
-  if (all.length && !ruVoices.length) {
-    warn.hidden = false;
-    warn.textContent = "你的浏览器/系统里没有找到俄语语音，所以无法朗读。电脑上可用 Chrome 或 Edge；手机上请在系统设置里下载俄语（Русский）语音包后刷新页面。";
-  } else warn.hidden = true;
 }
 function score(v) { return (/google|natural|neural|premium|enhanced|milena|yuri|katya|svetlana|dmitry/i.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1); }
-if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
-else {
-  const warn = document.getElementById("voice-warning");
-  warn.hidden = false; warn.textContent = "当前浏览器不支持语音朗读（Web Speech API）。请换用 Chrome、Edge 或 Safari。";
-}
+if (synth) { loadVoices(); synth.addEventListener?.("voiceschanged", loadVoices); }
 
 const clean = s => s.replace(/́/g, "").replace(/[«»—]/g, " ");
 
-function speak(text, { voice = 0, rate: r = rate } = {}) {
-  return new Promise(resolve => {
-    if (!synth) return resolve();
+// Use standard MP3 playback first so Russian voices installed on the device are not required.
+// Keep each request short; Google Translate's public TTS endpoint has no official availability guarantee.
+function splitSpeechText(text, maxLength = 180) {
+  const parts = [];
+  let rest = clean(text).trim();
+  while (rest.length > maxLength) {
+    let cut = rest.lastIndexOf(" ", maxLength);
+    if (cut < maxLength * 0.55) cut = maxLength;
+    parts.push(rest.slice(0, cut).trim());
+    rest = rest.slice(cut).trim();
+  }
+  if (rest) parts.push(rest);
+  return parts;
+}
+function speakOnline(text, r) {
+  const parts = splitSpeechText(text);
+  if (!parts.length) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    let index = 0;
+    let done = false;
+    let timer;
+    const finish = error => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      speechAudio.onended = speechAudio.onerror = null;
+      cancelAudioPlayback = () => {};
+      if (error) reject(error); else resolve();
+    };
+    cancelAudioPlayback = () => finish(new Error("Playback cancelled"));
+    const playNext = () => {
+      if (done) return;
+      if (index >= parts.length) return finish();
+      const query = new URLSearchParams({ ie: "UTF-8", client: "tw-ob", tl: "ru", q: parts[index++] });
+      speechAudio.onended = () => { clearTimeout(timer); playNext(); };
+      speechAudio.onerror = () => finish(new Error("Online speech audio could not be loaded"));
+      speechAudio.playbackRate = r;
+      speechAudio.src = `https://translate.google.com/translate_tts?${query}`;
+      timer = setTimeout(() => finish(new Error("Online speech audio timed out")), 30000);
+      speechAudio.play().catch(finish);
+    };
+    playNext();
+  });
+}
+function speakLocally(text, { voice = 0, rate: r = rate } = {}) {
+  return new Promise((resolve, reject) => {
+    if (!synth) return reject(new Error("Speech synthesis is not supported"));
+    loadVoices();
     const u = new SpeechSynthesisUtterance(clean(text));
     u.lang = "ru-RU";
     u.rate = r;
     if (ruVoices.length) u.voice = ruVoices[voice % ruVoices.length];
-    // with one voice only, shift pitch so two speakers sound different
     if (voice === 1 && ruVoices.length < 2) u.pitch = 0.7;
-    u.onend = u.onerror = () => resolve();
+    const timer = setTimeout(() => reject(new Error("Device speech timed out")), Math.max(15000, text.length * 700 / r + 8000));
+    u.onend = () => { clearTimeout(timer); resolve(); };
+    u.onerror = event => {
+      clearTimeout(timer);
+      if (["canceled", "interrupted"].includes(event.error)) resolve();
+      else reject(new Error(event.error || "Device speech failed"));
+    };
+    synth.resume();
     synth.speak(u);
   });
 }
-function stopAll() { playToken++; if (synth) synth.cancel(); document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing")); }
+async function speak(text, options = {}) {
+  const r = options.rate ?? rate;
+  try {
+    await speakOnline(text, r);
+    showVoiceWarning("");
+  } catch (error) {
+    if (error.message === "Playback cancelled") return;
+    try {
+      await speakLocally(text, { ...options, rate: r });
+      showVoiceWarning("");
+    } catch {
+      showVoiceWarning("在线语音暂时无法连接，设备也没有可用的俄语语音。请检查网络，或在系统文字转语音设置中安装俄语语音包后重试。");
+    }
+  }
+}
+function stopAll() {
+  playToken++;
+  cancelAudioPlayback();
+  speechAudio.pause();
+  speechAudio.removeAttribute("src");
+  if (synth) { synth.cancel(); synth.resume(); }
+  document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing"));
+}
 
 async function playSequence(items) { // items: [{el, text, voice}]
   stopAll();
