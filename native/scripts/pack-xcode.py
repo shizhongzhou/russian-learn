@@ -16,7 +16,8 @@ for rel in re.findall(r'path: "\.\./\.\./\.\./node_modules/([^"]+)"', src):
 # 2) vendor capacitor-swift-pm with its binary xcframeworks, referenced by local path
 co = os.path.join(spm, "checkouts", "capacitor-swift-pm")
 cdst = os.path.join(dst, "capacitor-swift-pm")
-shutil.copytree(co, cdst, symlinks=True, ignore=shutil.ignore_patterns(".git"))
+shutil.copytree(co, cdst, symlinks=True, ignore=shutil.ignore_patterns(".git", ".github", ".swiftpm"))
+os.system(f'chmod -R u+w "{dst}"')   # SwiftPM checkouts are read-only
 pkg = open(os.path.join(cdst, "Package.swift")).read()
 for name in re.findall(r'\.binaryTarget\(\s*name:\s*"([^"]+)"', pkg):
     fw = glob.glob(os.path.join(spm, "artifacts", "**", name + ".xcframework"), recursive=True)
@@ -26,6 +27,7 @@ for name in re.findall(r'\.binaryTarget\(\s*name:\s*"([^"]+)"', pkg):
                  f'.binaryTarget(name: "{name}", path: "{name}.xcframework")', pkg)
 assert "url:" not in pkg, pkg
 open(os.path.join(cdst, "Package.swift"), "w").write(pkg)
+os.system(f'chmod -R u+w "{dst}"')
 # 3) point every Package.swift at the local copy
 remote = re.compile(r'\.package\(\s*url:\s*"https://github\.com/ionic-team/capacitor-swift-pm(?:\.git)?"\s*,[^)]*\)')
 for f in glob.glob(os.path.join(dst, "**", "Package.swift"), recursive=True):
