@@ -19,11 +19,9 @@ const later = (fn, ms) => { const t = setInterval(fn, ms); pageTimers.push(t); r
 /* ---------- chrome: top bar + bottom tabs ---------- */
 const THEME_BG = { living: "#F6F1E9", window: "#F6EDC4", winter: "#DFE8F2", moscow: "#F1DCCB", night: "#10142C" };
 function applyTheme(scene) {
-  const root = document.documentElement;
-  if (root.dataset.scene === scene) return;
-  root.dataset.scene = scene;
-  const dark = scene === "night" || matchMedia("(prefers-color-scheme: dark)").matches;
-  document.querySelector('meta[name="theme-color"]').content = dark ? getComputedStyle(root).getPropertyValue("--porcelain").trim() : THEME_BG[scene] || THEME_BG.living;
+  // v2: the app stays white; the room scene only changes the cat's room
+  document.documentElement.dataset.room = scene;
+  document.querySelector('meta[name="theme-color"]').content = "#FFFFFF";
 }
 function chrome(active) {
   const v = Pet.view();
@@ -67,14 +65,15 @@ function route() {
     case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["慢慢写，我等你～", "写完有小鱼干吃！", "Пиши́! 写吧"]; break;
     case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["考试加油！", "我相信你", "Уда́чи! 祝你好运"]; break;
     case "meow": tab = "meow"; pageMeow(); roam = false; break;
+    case "play": tab = "home"; pagePlay(); roam = false; break;
     case "shop": tab = "meow"; pageShop(p1); break;
     case "dress": tab = "home"; pageDress(); roam = false; break;
     case "vet": tab = "meow"; pageVet(); roam = false; break;
     case "account": tab = "account"; pageAccount(); break;
     case "desk": tab = "account"; pageDesk(); break;
-    default: tab = "home"; pageHome(); roam = false;
+    default: tab = "home"; pageHome();
   }
-  if (!LEVELS[p0]) document.title = { home: "猫猫俄语通", learn: "学习 · 猫猫俄语通", meow: "喵喵 · 猫猫俄语通", account: "账号 · 猫猫俄语通" }[tab] || "猫猫俄语通";
+  if (!LEVELS[p0]) document.title = { home: "猫猫俄语通", learn: "学习 · 猫猫俄语通", meow: "猫咪 · 猫猫俄语通", account: "账号 · 猫猫俄语通" }[tab] || "猫猫俄语通";
   chrome(tab);
   Pet.setRoam(roam, roamLines);
   window.scrollTo(0, 0);
@@ -86,12 +85,12 @@ const LEARN_LINES = ["加油！我在旁边陪你", "Ты молоде́ц! 你�
 /* ---------- welcome / register ---------- */
 function pageWelcome() {
   const S = Pet.state;
-  let step = 1, nick = "", breed = S.cat.breed || "bluewhite", name = S.profile ? (S.cat.name || "") : "";
+  let step = 1, nick = "", breed = has3D(S.cat.breed) ? S.cat.breed : "orange", name = S.profile ? (S.cat.name || "") : "";
   const box = h(`<section class="welcome"></section>`);
   app.append(box);
   function draw() {
     if (step === 1) {
-      box.innerHTML = `<div class="welcome-cat">${catSVG({ breed: "bluewhite", stage: 3, mood: "cheer", size: 180 })}</div>
+      box.innerHTML = `<div class="welcome-cat">${catSVG({ breed: "orange", stage: 4, mood: "cheer", size: 180 })}</div>
         <h1 class="display">猫猫俄语通</h1>
         <p class="lead">学俄语，养一只猫。你学得越多，它吃得越饱、长得越可爱；不学习它会饿、会生病。</p>
         <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周"></label>
@@ -105,7 +104,7 @@ function pageWelcome() {
       box.innerHTML = `<p class="step">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的猫</h1>
         <div class="pick-preview"><div class="pp-cat">${catSVG({ breed, stage: 1, mood: "happy", size: 170 })}</div>
           <div class="pp-name">${esc(name) || "（还没起名字）"}</div><div class="pp-breed">${BREEDS[breed].name} · ${BREEDS[breed].desc}</div></div>
-        <div class="breeds" role="radiogroup" aria-label="猫咪品种">${Object.entries(BREEDS).map(([k, b]) => `<button role="radio" aria-checked="${k === breed}" data-b="${k}">${catSVG({ breed: k, stage: 1, mood: "happy", size: 54 })}<span>${b.short}</span></button>`).join("")}</div>
+        <div class="breeds" role="radiogroup" aria-label="猫咪品种">${PICK_BREEDS.map(k => [k, BREEDS[k]]).map(([k, b]) => `<button role="radio" aria-checked="${k === breed}" data-b="${k}">${catSVG({ breed: k, stage: 1, mood: "happy", size: 54 })}<span>${b.short}</span></button>`).join("")}</div>
         <label class="field"><span>给它起个名字</span><input id="cname" maxlength="10" value="${esc(name)}" placeholder="输入它的名字"></label>
         <p class="hint">每只猫都从“小奶猫”开始，学得越多会戴上铃铛、蝴蝶结、花环。</p>
         <button class="btn big" id="done">就选它，开始学习</button>
@@ -240,23 +239,45 @@ function roomBox(v, { cat = true, label = true } = {}) {
 }
 function pageHome() {
   const v = Pet.view();
-  const box = h(`<div class="page home"></div>`);
-  if (v.sick) box.append(h(`<a class="alert danger" href="#/vet"><b>${esc(v.cat.name)}生病了</b><span>${v.treated ? `正在康复：已坚持 ${v.recoverDays.length} / 3 天，今天答对 10 题算打卡` : "带它去宠物医院买药 →"}</span></a>`));
-  else if (v.mood === "hungry" || v.thin) box.append(h(`<a class="alert warn" href="#/meow"><b>${esc(v.cat.name)}${v.full < 30 ? "饿了" : v.drink < 30 ? "渴了" : "瘦了一圈"}</b><span>去喵喵页喂它 →</span></a>`));
-  const room = roomBox(v);
-  room.append(h(`<a class="room-btn" href="#/dress">装扮小窝</a>`));
-  box.append(room);
+  const hr = new Date().getHours();
+  const hello = hr < 5 ? "夜深了。" : hr < 11 ? "早上好。" : hr < 13 ? "中午好。" : hr < 18 ? "下午好。" : "晚上好。";
+  const words = Object.values(Pet.state.heardCount || {}).reduce((a, b) => a + b, 0);
+  const lp = v.lastPlace, lv = v.lastLevel;
   const pct = Math.min(100, v.daily.correct / v.goal * 100);
-  box.append(h(`<section class="stats4">
-    <a href="#/shop"><span>猫粮</span><b>${fmt(v.food)}</b></a><a href="#/shop"><span>水</span><b>${fmt(v.water)}</b></a>
-    <a href="#/meow"><span>成长值</span><b>${fmt(v.growth)}</b></a><a href="#/quiz/${v.lastLevel}"><span>今日</span><b>${v.daily.correct}/${v.goal}</b></a></section>`));
-  box.append(h(`<section class="card goal"><div class="row"><h2>今日目标</h2><span>答对 ${v.daily.correct} / ${v.goal} 题${v.streak ? ` · 连续 ${v.streak} 天` : ""}</span></div>
-    <div class="bar"><i style="width:${pct}%"></i></div>
-    <p>${v.daily.done ? "今天的目标完成啦！奖励已发放" : `再答对 ${v.goal - v.daily.correct} 题，奖励 5 猫粮 + 3 水`}</p>
-    <a class="btn" href="#/quiz/${v.lastLevel}">开始每日小测 · ${v.lastLevel}</a></section>`));
-  const lp = v.lastPlace;
-  box.append(h(`<a class="card dark cont" href="${lp ? `#/${lp.lv}/${lp.tab}` : "#/learn"}"><div><small>${lp ? `继续学习 · ${lp.lv}` : "开始学习"}</small><b>${lp ? lp.name : "从 A1 字母和单词开始"}</b></div><span class="play">${svgI(ICON.play)}</span></a>`));
-  if (v.nextAt) box.append(h(`<a class="card next" href="#/meow"><div><b>下一阶段：${v.nextName}</b><small>再得 ${fmt(v.nextAt - v.growth)} 成长值 · 解锁${v.nextGift}</small></div></a>`));
+  const doing = v.sick ? "生病了" : v.mood === "hungry" ? (v.full < 30 ? "饿了" : "渴了") : "正在自己玩";
+  const box = h(`<div class="page home v2home">
+    <section class="hm-hero">
+      <h1>${hello}</h1>
+      <p>和${esc(v.cat.name)}一起，每天进步一点点。</p>
+      <a class="hm-cat" href="#/meow" aria-label="去看${esc(v.cat.name)}">
+        ${v.cat.breed === "orange" ? `<img class="hm-pose" src="img/pose/ball.webp" alt="">` : `${catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: v.sick ? "sick" : v.mood === "hungry" ? "hungry" : "happy", size: 96 })}<img class="hm-ball" src="img/item/ball.webp" alt="">`}
+        <img class="hm-bowl" src="img/item/bowl.webp" alt="">
+      </a>
+      <span class="hm-chip"><i></i>${esc(v.cat.name)} · ${v.stageName} · ${doing}</span>
+    </section>
+    <section class="hm-stats">
+      <div><b>${v.streak || 0}</b><span>连续学习 · 天</span></div>
+      <div><b>${fmt(words)}</b><span>已学单词</span></div>
+      <div><b>${v.daily.correct}<small> / ${v.goal}</small></b><span>今日答对</span></div>
+    </section>
+    <section class="hm-course">
+      <div class="row"><div><small>当前课程</small><b>${lp ? lp.lv : lv} · ${esc(LEVELS[lp ? lp.lv : lv].title)}</b><span>${lp ? esc(lp.name) : "从字母和第一批单词开始"}</span></div><em>今日 ${v.daily.correct}/${v.goal}</em></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <a class="btn big" href="${lp ? `#/${lp.lv}/${lp.tab}` : `#/${lv}/words`}">继续学习 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    </section>
+    <section class="hm-plan">
+      <div class="row"><h2>今日安排</h2><span>${v.daily.done ? "今日目标已完成" : `再答对 ${v.goal - v.daily.correct} 题拿奖励`}</span></div>
+      ${[
+        [`#/quiz/${lv}`, "每日小测", `${lv} · 答对 1 题 2 猫粮`, "M12 3a9 9 0 1 0 .01 0M8.5 12.5l2.5 2.5 5-5.5"],
+        [`#/memo/${lv}`, "单词复习", "巩固核心词汇 · 每个 +1 猫粮", "M4 5.5h6a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4zM20 5.5h-6a2 2 0 0 0-2 2V20a2 2 0 0 1 2-2h6z"],
+        [`#/${lv}/listening`, "听力练习", `${lv} 短对话 · 先听后答`, "M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v6H4zM17 14h3v6h-3z"],
+        [`#/shadow/${lv}`, "复读跟读", "听一句 · 跟着读 · 打分", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"],
+      ].map(([href, t, sub, ic]) => `<a class="hm-row" href="${href}"><span class="hm-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ic}"/></svg></span><span class="grow"><b>${t}</b><small>${sub}</small></span><svg class="hm-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>`).join("")}
+    </section>
+    <a class="hm-wand" href="#/play" aria-label="拿出逗猫棒，陪${esc(v.cat.name)}玩"><img src="img/item/wand.webp" alt=""></a>
+  </div>`);
+  if (v.sick) box.prepend(h(`<a class="alert danger" href="#/vet"><b>${esc(v.cat.name)}生病了</b><span>${v.treated ? `正在康复：已坚持 ${v.recoverDays.length} / 3 天，今天答对 10 题算打卡` : "带它去宠物医院买药 →"}</span></a>`));
+  else if (v.mood === "hungry" || v.thin) box.prepend(h(`<a class="alert warn" href="#/meow"><b>${esc(v.cat.name)}${v.full < 30 ? "饿了" : v.drink < 30 ? "渴了" : "瘦了一圈"}</b><span>去猫咪页喂它 →</span></a>`));
   app.append(box);
 }
 
@@ -382,7 +403,7 @@ function pageMeow() {
     const m = mood || v.mood;
     const gPct = v.nextAt ? (v.growth - v.prevAt) / (v.nextAt - v.prevAt) * 100 : 100;
     const barRow = (label, val, color) => `<div class="stat"><span>${label}</span><div class="bar"><i style="width:${val}%;background:${color}"></i></div><b>${Math.round(val)}%</b></div>`;
-    box.innerHTML = `<header class="row"><h1 class="display small">喵喵</h1><span class="hint">${BREEDS[v.cat.breed].name} · 陪伴第 ${Math.max(1, Math.ceil((Date.now() - v.profile.created) / 86400000))} 天</span></header>
+    box.innerHTML = `<header class="row"><h1 class="display small">猫咪</h1><span class="hint">${BREEDS[v.cat.breed].name} · 陪伴第 ${Math.max(1, Math.ceil((Date.now() - v.profile.created) / 86400000))} 天</span></header>
       ${v.sick ? `<a class="alert danger" href="#/vet"><b>${esc(v.cat.name)}生病了</b><span>${v.treated ? `康复中 ${v.recoverDays.length}/3 天` : "去宠物医院 →"}</span></a>` : ""}
       <section class="card catcard">
         <span class="pill ${v.sick ? "red" : "green"}">${esc(v.status)}</span><span class="pill orange">Lv.${v.level}</span>
@@ -393,6 +414,7 @@ function pageMeow() {
         <div class="hint">${v.nextAt ? `再得 ${fmt(v.nextAt - v.growth)} 成长值长成“${v.nextName}”` : "已经是最可爱的阶段啦"}</div>
       </section>
       <section class="card stats">${barRow("饱食", v.full, "#E9A15E")}${barRow("水分", v.drink, "#5C93C9")}${barRow("健康", v.health, v.health < 40 ? "#C2412F" : "#1F7A72")}${barRow("心情", v.happy, "#6A7FC1")}</section>
+      <a class="card hm-room" href="#/dress"><b>${esc(v.cat.name)}的小窝</b><small>布置猫窝、猫爬架和场景</small></a>
       <div class="actions">
         <button class="act dark" id="feed">喂饭<small>猫粮 ${fmt(v.food)}</small></button>
         <button class="act blue" id="water">喂水<small>水 ${fmt(v.water)}</small></button>
@@ -576,7 +598,7 @@ function pageAccount() {
       <section class="card">
         <h2>我的猫咪</h2>
         <label class="field"><span>名字</span><input id="cname" maxlength="8" value="${esc(v.cat.name)}"></label>
-        <div class="breeds small" role="radiogroup" aria-label="品种">${Object.entries(BREEDS).map(([k, b]) => `<button role="radio" aria-checked="${k === v.cat.breed}" data-b="${k}">${catSVG({ breed: k, stage: 1, mood: "happy", size: 44 })}<span>${b.short}</span></button>`).join("")}</div>
+        <div class="breeds small" role="radiogroup" aria-label="品种">${PICK_BREEDS.map(k => [k, BREEDS[k]]).map(([k, b]) => `<button role="radio" aria-checked="${k === v.cat.breed}" data-b="${k}">${catSVG({ breed: k, stage: 1, mood: "happy", size: 44 })}<span>${b.short}</span></button>`).join("")}</div>
         <p class="hint">换品种不会影响成长值和已解锁的东西。</p>
       </section>
       <section class="card list">

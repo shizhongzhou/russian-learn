@@ -409,3 +409,63 @@ function meowFor(what) {
   playMeow({ correct: pick(["happy", "mew", "mrrp", "happy"]), wrong: pick(["sad", "mew"]), pet: pick(["purr", "mrrp", "purr"]), hungry: pick(["meow", "sad"]), sick: "sad", eat: "eat" }[what] || pick(["meow", "mew", "mrrp"]));
 }
 function meowSound() { meowFor("correct"); }
+
+/* ========== v2: 3D-rendered cats ==========
+   The breeds below have soft 3D artwork (img/cats); 小橘 (orange) also has a full pose set (img/pose).
+   catSVG / catSideSVG / catLieSVG keep their signatures, so every page picks the art up automatically;
+   breeds chosen before v2 that have no artwork fall back to the old flat drawings. */
+const V2_BREEDS = [
+  ["orange", "橘白", "活泼贪吃，学得越多胖得越快", "orange"],
+  ["british", "英短蓝猫", "圆脸胖嘟嘟，橙色大眼睛，稳重安静", "british"],
+  ["bluewhite", "蓝白长毛", "灰蓝长毛配白围脖，温柔黏人", "bluewhite"],
+  ["ragdoll", "布偶", "蓝眼睛、重点色，抱起来软软的", "ragdoll"],
+  ["amshort", "美短", "银色虎斑，精力旺盛的小运动员", "amshort"],
+  ["siamese", "暹罗", "深色小脸，话很多，会一直陪你聊", "siamese"],
+  ["maine", "缅因", "大个子，耳尖簇毛，温柔的巨人", "maine"],
+  ["silver", "灰白长毛", "绿眼睛，蓬松安静，喜欢晒太阳", "silver"],
+  ["persian", "波斯", "雪白长毛，慢悠悠的贵族", "lion"],
+  ["bengal", "豹猫", "豹纹花色，好奇心爆棚", "lihua"],
+  ["russian", "俄罗斯蓝猫", "来自俄罗斯的绿眼睛蓝猫，最懂俄语", "british"],
+  ["abyssinian", "阿比西尼亚", "大耳朵、金棕色，爱爬高", "golden"],
+  ["birman", "伯曼", "戴着白手套的蓝眼睛长毛猫", "ragdoll"],
+  ["siberian", "西伯利亚森林猫", "俄罗斯国猫，厚厚的毛不怕冷", "maine"],
+  ["white", "白色长毛", "一身雪白，安静优雅", "white"],
+  ["devon", "德文卷毛", "大耳朵卷卷毛，像小精灵", "fold"],
+];
+V2_BREEDS.forEach(([k, name, desc, like]) => {
+  const SHORT = { russian: "俄罗斯蓝", abyssinian: "阿比西尼亚", siberian: "西伯利亚" };
+  BREEDS[k] = Object.assign({}, BREEDS[k] || BREEDS[like], { name, short: SHORT[k] || name, desc });
+});
+const PICK_BREEDS = V2_BREEDS.map(b => b[0]);
+const CAT3D = Object.fromEntries(PICK_BREEDS.map(k => [k, `img/cats/${k}.webp`]));
+const POSE3D = { walk: "img/pose/walk.webp", eat: "img/pose/eat.webp", sleep: "img/pose/sleep.webp", ball: "img/pose/ball.webp",
+  crouch: "img/pose/crouch.webp", pounce: "img/pose/pounce.webp", hero: "img/pose/hero.webp" };
+const STAGE_K = [0, 0.78, 0.86, 0.94, 1];           // the kitten grows with its stage
+const _flatCat = catSVG, _flatSide = catSideSVG, _flatLie = catLieSVG;
+const has3D = b => !!CAT3D[b];
+function cat3D(src, { size, stage = 2, cls = "", label = "", flip = false, z = false }) {
+  const k = STAGE_K[Math.max(1, Math.min(4, stage | 0 || 1))];
+  return `<span class="c3d ${cls}" style="--s:${Math.round(size)}px;--k:${k}"${label ? ` role="img" aria-label="${label}"` : ""}>` +
+    `<img src="${src}" alt="" draggable="false"${flip ? ' class="flip"' : ""}>${z ? '<i class="c3d-z" aria-hidden="true">z</i>' : ""}</span>`;
+}
+catSVG = function (o = {}) {
+  const { breed = "orange", mood = "happy" } = o;
+  if (!has3D(breed)) return _flatCat(o);
+  const orange = breed === "orange";
+  if (mood === "sleep") return orange ? cat3D(POSE3D.sleep, { ...o, cls: "m-sleep" }) : cat3D(CAT3D[breed], { ...o, cls: "m-sleep", z: true });
+  if (mood === "eat" && orange) return cat3D(POSE3D.eat, { ...o, cls: "m-eat" });
+  if (mood === "walk" && orange) return cat3D(POSE3D.walk, { ...o, cls: "m-walk" });
+  return cat3D(CAT3D[breed], { ...o, cls: "m-" + mood });
+};
+catSideSVG = function (o = {}) {
+  const { breed = "orange", eat = false } = o;
+  if (!has3D(breed)) return _flatSide(o);
+  if (breed === "orange") return cat3D(eat ? POSE3D.eat : POSE3D.walk, { ...o, cls: "side" + (eat ? " m-eat" : ""), flip: true });
+  return cat3D(CAT3D[breed], { ...o, size: (o.size || 120) * 0.8, cls: "side" + (eat ? " m-eat" : "") });
+};
+catLieSVG = function (o = {}) {
+  const { breed = "orange", awake = false } = o;
+  if (!has3D(breed)) return _flatLie(o);
+  if (breed === "orange") return cat3D(awake ? POSE3D.ball : POSE3D.sleep, { ...o, cls: awake ? "m-lie" : "m-sleep" });
+  return cat3D(CAT3D[breed], { ...o, size: (o.size || 120) * 0.8, cls: awake ? "m-lie" : "m-sleep", z: !awake });
+};
