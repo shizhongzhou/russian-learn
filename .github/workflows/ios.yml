@@ -45,9 +45,12 @@ jobs:
         run: |
           cd ios/App
           xcodebuild -resolvePackageDependencies -project App.xcodeproj -scheme App -clonedSourcePackagesDirPath "$RUNNER_TEMP/spm" | tail -5
+          echo "::notice::$(find "$RUNNER_TEMP/spm" -maxdepth 3 | head -30 | tr '\n' ' ')"
+          echo "::notice::$(find "$RUNNER_TEMP/spm" -name '*.xcframework' -maxdepth 6 | tr '\n' ' ')"
+          echo "::notice::$(cat "$RUNNER_TEMP"/spm/checkouts/capacitor-swift-pm/Package.swift | tr '\n' ' ' | cut -c1-900)"
           cd ../..
           rm -rf /tmp/pk && mkdir -p /tmp/pk/MaoMao-Xcode
-          python3 scripts/pack-xcode.py . "$RUNNER_TEMP/spm" /tmp/pk/MaoMao-Xcode || { echo "::error::pack failed"; exit 1; }
+          python3 scripts/pack-xcode.py . "$RUNNER_TEMP/spm" /tmp/pk/MaoMao-Xcode > /tmp/pack.log 2>&1 || { echo "::error::pack failed: $(tail -8 /tmp/pack.log | tr '\n' ' ')"; exit 1; }
           printf '用 Xcode 打开 native/ios/App/App.xcodeproj\n然后：Signing & Capabilities → Team 选你的 Apple ID → 选设备 → ▶\n' > /tmp/pk/MaoMao-Xcode/打开方法.txt
           (cd /tmp/pk && zip -qry "$GITHUB_WORKSPACE/native/MaoMao-Xcode.zip" MaoMao-Xcode)
           ls -la MaoMao-Xcode.zip
