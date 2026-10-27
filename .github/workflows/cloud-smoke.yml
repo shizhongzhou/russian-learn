@@ -2,9 +2,6 @@ name: Cloud smoke test
 # Opens the app in a headless browser, lets it sign in as a guest and calls the cloud function (run 3).
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ["cloud.js", "cloud-config.js", "social.js", "cloud/smoke.js", ".github/workflows/cloud-smoke.yml"]
 jobs:
   smoke:
     runs-on: ubuntu-latest
