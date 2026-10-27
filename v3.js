@@ -95,7 +95,7 @@ route = function () {
   app.innerHTML = "";
   app.className = "";
   let tab = "home", roam = true, tool = false, title = "";
-  const NOBAR = ["grammar", "alphabet", "news", "library", "exams", "trip", "photo", "selfie", "album", "activity", "settings", "dict", "play", "records", "favs", "partner", "course", "reading", "quiz", "memo", "write", "exam", "trki", "read", "vet", "arrange", "rank", "friend", "admin", "desk", "messages", "shadow"];
+  const NOBAR = ["grammar", "alphabet", "news", "library", "exams", "trip", "photo", "selfie", "album", "activity", "settings", "dict", "play", "records", "favs", "partner", "course", "reading", "quiz", "memo", "write", "exam", "trki", "read", "vet", "arrange", "rank", "friend", "admin", "desk", "messages", "shadow", "book"];
   const [p0, p1, p2] = parts;
   if (LEVELS[p0]) {
     tab = "learn"; renderLevel3(p0, p1 || "words", p2); title = p0;
@@ -116,6 +116,7 @@ route = function () {
     case "exams": tab = "learn"; pageExams3(LEVELS[p1] ? p1 : v.lastLevel, p2); title = "考试"; break;
     case "library": tab = "learn"; pageLibrary3(p1); title = "我的书架"; break;
     case "read": tab = "learn"; pageReader(p1); roam = false; break;
+    case "book": tab = "learn"; roam = false; parts[2] != null ? pageClassicRead(p1, +parts[2] || 0) : pageClassicBook(p1); break;
     case "write": tab = "learn"; roam = false; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); break;
     case "exam": tab = "learn"; roam = false; pageExam(LEVELS[p1] ? p1 : v.lastLevel); break;
     case "pet": case "meow": tab = "meow"; pagePet3(); roam = false; title = "宠物"; break;
@@ -609,12 +610,14 @@ async function pageExams3(lv, tab = "real") {
 /* ---------- 书架 ---------- */
 const COVER_BG = ["#F9E3C8", "#D9EBD2", "#F5E9D6", "#E4E7F7", "#FBE0E3", "#DDEFF3"];
 const COVER_EM = ["⛪", "🌳", "📝", "📘", "🎻", "🪆"];
-function pageLibrary3(tab = "shelf") {
+function pageLibrary3(tab = "classics") {
   const S = Pet.state; S.bookFav = S.bookFav || {};
+  if (!["shelf", "fav"].includes(tab)) tab = "classics";
   const box = h(`<div class="page">${head3("我的书架", "#/learn", `<label class="btn small ghost imp">${ic3(I3.plus)}导入 PDF<input type="file" accept="application/pdf,.pdf" multiple hidden id="pick"></label>`)}
-    <div class="utabs" role="tablist"><button role="tab" aria-selected="${tab !== "fav"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
+    <div class="utabs three" role="tablist"><button role="tab" aria-selected="${tab === "classics"}" data-t="classics">经典名著</button><button role="tab" aria-selected="${tab === "shelf"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
     <div class="books"></div></div>`);
   app.append(box);
+  if (tab === "classics") { box.querySelector(".books").className = "classics"; box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/library/${b.dataset.t}`); box.querySelector("#pick").onchange = e => { location.hash = "#/library/shelf"; }; drawClassics(box.querySelector(".classics")); return; }
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/library/${b.dataset.t}`);
   const list = box.querySelector(".books");
   function draw() {
@@ -1084,6 +1087,7 @@ function pageDict(tab = "tr") {
   if (tab === "word") {
     body.innerHTML = `<label class="input3 big">${ic3(I3.search)}<input id="q" placeholder="输入俄语单词，例如 привет" autocomplete="off" lang="ru"></label><div id="res"></div>`;
     const q = body.querySelector("#q"), res = body.querySelector("#res");
+    const pre = store.get("dictQ", ""); if (pre) { store.set("dictQ", ""); setTimeout(() => { q.value = pre; q.oninput(); }, 0); }
     let t;
     q.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
       const w = q.value.trim(); if (!w) { res.innerHTML = ""; return; }

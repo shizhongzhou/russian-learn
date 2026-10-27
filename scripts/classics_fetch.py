@@ -1,7 +1,7 @@
 """Fetch public-domain Russian classics (original text only) from ru.wikisource.org.
 Writes data/books/index.json and data/books/<id>/<n>.json (one file per chapter).
 Text is from Wikisource (public domain originals; pre-reform spelling is converted to modern)."""
-import json, os, re, sys, time, urllib.parse, urllib.request
+import json, os, traceback, re, sys, time, urllib.parse, urllib.request
 from bs4 import BeautifulSoup
 API = "https://ru.wikisource.org/w/api.php"
 UA = {"User-Agent": "PetRussianApp/1.0 (https://github.com/shizhongzhou/russian-learn; educational, non-commercial)"}
@@ -108,10 +108,12 @@ index = {b["id"]: b for b in json.load(open(idx_path))} if os.path.exists(idx_pa
 report = []
 for w in works:
     if only and w["id"] not in only: continue
-    root = w.get("root") or search(w)
-    if not root: report.append(f"MISS {w['id']} {w['title']}"); continue
-    try: chapters = collect(root)
-    except Exception as e: report.append(f"ERR {w['id']} {e}"); continue
+    try:
+        root = w.get("root") or search(w)
+        if not root: report.append(f"MISS {w['id']} {w['title']}"); continue
+        chapters = collect(root)
+    except Exception as e:
+        import traceback; report.append(f"ERR {w['id']} {e!r} {traceback.format_exc()[-400:]}"); print(report[-1], flush=True); continue
     chapters = [(l, [modernize(p) for p in ps]) for l, ps in chapters if ps]
     total = sum(len(p) for _, ps in chapters for p in ps)
     if total < 200: report.append(f"SHORT {w['id']} {root} {total}"); continue

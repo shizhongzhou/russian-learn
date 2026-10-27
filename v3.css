@@ -641,3 +641,45 @@ svg.sparks{position:absolute;width:56px;height:56px;fill:none;stroke:var(--lime-
 .okbox,.nobox{border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px}
 .okbox{background:#E3F6E9}.nobox{background:#FFF1E6}
 .okbox .ru,.nobox .ru{font:700 20px Georgia,serif}
+
+/* ---------- 经典名著 (classics.js) ---------- */
+.utabs.three{grid-template-columns:repeat(3,1fr)}
+.classics{display:flex;flex-direction:column;gap:12px;padding-top:12px}
+.cl-note{margin:0}
+.cl-h{margin:4px 0 0;font:800 16px var(--zh)}
+.cl-cont{display:flex;flex-direction:column;gap:8px}
+.cl-cont .card{display:flex;align-items:center;gap:12px;padding:12px 14px;text-decoration:none;color:var(--ink)}
+.cl-cont .em{font-size:26px}.cl-cont small{display:block;color:var(--muted);font-size:12px}
+.classics .books{display:grid;grid-template-columns:repeat(3,1fr);gap:12px 10px}
+.book .cover .ct,.clhero .cover .ct{font:700 14px/1.2 Georgia,"Times New Roman",serif;color:#33352c;word-break:break-word;margin-top:14px}
+.book .cover .lvtag{position:absolute;left:8px;top:6px;font:800 10px var(--zh);font-style:normal;background:rgba(255,255,255,.7);border-radius:6px;padding:1px 6px}
+.book b[lang=ru]{font-family:Georgia,serif;font-size:13px;line-height:1.25}
+.clbook .body{display:flex;flex-direction:column;gap:12px}
+.clhero{display:flex;gap:14px;padding:14px;align-items:flex-start}
+.clhero .cover{width:96px;flex:none;aspect-ratio:3/4;border-radius:14px;padding:10px;position:relative;overflow:hidden;display:flex}
+.clhero .cover>span:last-child{position:absolute;right:6px;bottom:2px;font-size:36px}
+.clhero h2{margin:0;font:800 20px/1.25 Georgia,serif}.clhero p{margin:2px 0;font-family:Georgia,serif}
+.clhero small{color:var(--muted)}
+.clhero .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.clhero .tags i{font-style:normal;font-size:12px;font-weight:700;background:var(--lime-soft);color:var(--lime-ink);border-radius:999px;padding:2px 10px}
+.clch b[lang=ru]{font-family:Georgia,serif;font-weight:600}
+.clch .okdot{color:var(--lime-deep);font-weight:800;margin-right:6px}
+.clread .v3head h1{font-family:Georgia,serif;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clread .v3head .ib{border:1px solid var(--line);background:#fff;border-radius:10px;min-width:40px;height:36px;font:700 14px var(--zh);color:var(--ink)}
+.cltext{background:#FFFDF8;border:1px solid var(--line);border-radius:20px;padding:18px 18px 8px;font-family:Georgia,"Times New Roman",serif;line-height:1.75;color:#24261F}
+.cltext h2{font-size:1.25em;text-align:center;margin:.2em 0 .6em}.cltext .by{text-align:center;color:var(--muted);margin-top:-.4em}
+.cltext h3{font-size:1.05em;text-align:center;margin:1em 0 .5em}
+.cltext p{margin:0 0 .8em;text-indent:1.5em;hyphens:auto}
+.cltext p.verse{white-space:pre-line;text-indent:0;margin-left:.5em}
+.cltext w{border-radius:4px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cltext w.on{background:var(--lime)}
+.clend{height:1px}
+.clnav{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:12px 0 calc(110px + env(safe-area-inset-bottom))}
+.clnav .hint{text-align:center}
+.clpop{position:fixed;left:12px;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:40;max-width:536px;margin:0 auto;background:#fff;border-radius:20px;box-shadow:0 10px 40px rgba(20,30,10,.18);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.clpop[hidden]{display:none}
+.clpop .row1{display:flex;align-items:center;gap:8px}
+.clpop .row1 b{font:700 22px Georgia,serif}
+.clpop .ib{border:0;background:#F3F5EE;border-radius:10px;width:36px;height:36px;display:grid;place-items:center}
+.clpop .ib svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
+.clpop .zh{margin:0}

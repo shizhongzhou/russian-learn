@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: pip install beautifulsoup4
-      - run: python3 scripts/classics_fetch.py scripts/classics_list.json data/books "${{ inputs.only }}"
+      - run: python3 scripts/classics_fetch.py scripts/classics_list.json data/books "${{ inputs.only }}" 2>&1 | tee /tmp/log.txt; echo "::notice::$(tail -c 900 /tmp/log.txt | tr '\n' ' ')"
+        shell: bash
       - name: publish
         run: |
           git config user.name bot; git config user.email bot@users.noreply.github.com
