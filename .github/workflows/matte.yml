@@ -1,0 +1,39 @@
+name: Pet cut-out
+# Decrypts art/pet-src/<pet>.tar.enc (key passed as an input, masked) and cuts the pet out of every video.
+on:
+  workflow_dispatch:
+    inputs:
+      key: { description: "decryption key", required: true }
+      pet: { description: "source pack name", required: true, default: "orange" }
+      fps: { description: "frames per second", required: false, default: "24" }
+jobs:
+  list:
+    runs-on: ubuntu-latest
+    outputs: { files: "${{ steps.l.outputs.files }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - id: l
+        env: { KEY: "${{ github.event.inputs.key }}" }
+        run: |
+          echo "::add-mask::$KEY"
+          openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:$KEY -in art/pet-src/${{ github.event.inputs.pet }}.tar.enc | tar -t | grep mp4 | sed 's#^\./##' | jq -R . | jq -cs . > f.json
+          echo "files=$(cat f.json)" >> $GITHUB_OUTPUT
+  cut:
+    needs: list
+    runs-on: ubuntu-latest
+    strategy: { fail-fast: false, matrix: { file: "${{ fromJSON(needs.list.outputs.files) }}" } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Matte
+        env: { KEY: "${{ github.event.inputs.key }}" }
+        run: |
+          echo "::add-mask::$KEY"
+          pip install -q "rembg[cpu]==2.0.67" pillow numpy
+          mkdir src && openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:$KEY -in art/pet-src/${{ github.event.inputs.pet }}.tar.enc | tar -x -C src
+          f="${{ matrix.file }}"; n="${f%.mp4}"
+          python scripts/matte.py "src/$f" "out/$n" ${{ github.event.inputs.fps }} 420 | tail -1 | sed 's/^/::notice::'"$n"' /'
+          rm -rf out/$n/raw
+      - uses: actions/upload-artifact@v4
+        with: { name: "cut-${{ strategy.job-index }}", path: out, retention-days: 5 }
