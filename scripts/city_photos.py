@@ -10,31 +10,38 @@ Q = {
   "beijing": "Forbidden City Beijing", "harbin": "Saint Sophia Cathedral Harbin", "chengdu": "giant panda Chengdu",
 }
 OK = ("cc0", "public domain", "pd", "cc by", "cc-by")
-UA = {"User-Agent": "PetRussianApp/1.0 (educational app; contact via github shizhongzhou)"}
+UA = {"User-Agent": "PetRussianLearningApp/1.0 (https://github.com/shizhongzhou/russian-learn; educational) python-urllib"}
+import time
+def get(url):
+    for i in range(4):
+        try: return urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60).read()
+        except Exception as e: print("retry", url[:80], e); time.sleep(3 + i * 4)
+    raise RuntimeError("failed " + url)
 def api(params):
-    url = "https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params)
-    return json.load(urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30))
+    return json.loads(get("https://commons.wikimedia.org/w/api.php?" + urllib.parse.urlencode(params)))
 credits = {}
 for key, q in Q.items():
-    r = api({"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6, "gsrsearch": q + " filetype:bitmap", "gsrlimit": 25,
-             "prop": "imageinfo", "iiprop": "url|extmetadata|size", "iiurlwidth": 900})
-    pages = sorted((r.get("query") or {}).get("pages", {}).values(), key=lambda p: p.get("index", 99))
-    best = None
-    for p in pages:
-        ii = (p.get("imageinfo") or [{}])[0]; md = ii.get("extmetadata", {})
-        lic = (md.get("LicenseShortName", {}).get("value") or "").lower()
-        if not any(lic.startswith(o) for o in OK) or "nc" in lic or "nd" in lic: continue
-        w, h = ii.get("width", 0), ii.get("height", 0)
-        if w < 1200 or not (1.2 <= w / max(h, 1) <= 2.0): continue
-        best = (p, ii, md); break
-    if not best: print("NONE", key); continue
-    p, ii, md = best
-    data = urllib.request.urlopen(urllib.request.Request(ii["thumburl"], headers=UA), timeout=60).read()
-    im = Image.open(io.BytesIO(data)).convert("RGB"); im.thumbnail((900, 900))
-    im.save(os.path.join(OUT, f"{key}.webp"), quality=80, method=6)
-    import re
-    strip = lambda s: re.sub("<[^>]+>", "", s or "").strip()
-    credits[key] = {"title": p["title"], "author": strip(md.get("Artist", {}).get("value"))[:80], "license": md.get("LicenseShortName", {}).get("value"),
-                    "page": ii.get("descriptionurl")}
-    print(key, p["title"], credits[key]["license"])
+  try:
+      r = api({"action": "query", "format": "json", "generator": "search", "gsrnamespace": 6, "gsrsearch": q + " filetype:bitmap", "gsrlimit": 25,
+               "prop": "imageinfo", "iiprop": "url|extmetadata|size", "iiurlwidth": 900})
+      pages = sorted((r.get("query") or {}).get("pages", {}).values(), key=lambda p: p.get("index", 99))
+      best = None
+      for p in pages:
+          ii = (p.get("imageinfo") or [{}])[0]; md = ii.get("extmetadata", {})
+          lic = (md.get("LicenseShortName", {}).get("value") or "").lower()
+          if not any(lic.startswith(o) for o in OK) or "nc" in lic or "nd" in lic: continue
+          w, h = ii.get("width", 0), ii.get("height", 0)
+          if w < 1200 or not (1.2 <= w / max(h, 1) <= 2.0): continue
+          best = (p, ii, md); break
+      if not best: print("NONE", key); continue
+      p, ii, md = best
+      data = get(ii["thumburl"]); time.sleep(1)
+      im = Image.open(io.BytesIO(data)).convert("RGB"); im.thumbnail((900, 900))
+      im.save(os.path.join(OUT, f"{key}.webp"), quality=80, method=6)
+      import re
+      strip = lambda s: re.sub("<[^>]+>", "", s or "").strip()
+      credits[key] = {"title": p["title"], "author": strip(md.get("Artist", {}).get("value"))[:80], "license": md.get("LicenseShortName", {}).get("value"),
+                      "page": ii.get("descriptionurl")}
+      print(key, p["title"], credits[key]["license"])
+  except Exception as e: print('ERR', key, e)
 json.dump(credits, open(os.path.join(OUT, "credits.json"), "w"), ensure_ascii=False, indent=1)
