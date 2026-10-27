@@ -8,17 +8,17 @@ function pagePlay() {
   const img = orange ? { idle: "img/pose/hero.webp", crouch: "img/pose/crouch.webp", pounce: "img/pose/pounce.webp" }
     : { idle: petSrc(v.cat.breed, v.shownStage), crouch: petSrc(v.cat.breed, v.shownStage), pounce: petSrc(v.cat.breed, v.shownStage) };
   const key = Pet.today() + "|wandcatch";
-  const box = h(`<div class="page play">
-    <header class="subhead"><a class="iconbtn" href="#/home" aria-label="返回主页">${svgI(ICON.back, "stroke")}</a>
-      <div class="grow"><b>逗${isDog(v.cat.breed) ? "狗" : "猫"}时间</b><small>拖动羽毛，或摇一摇手机</small></div><span class="pl-count"></span></header>
+  const box = h(`<div class="page play play3">
+    <header class="ptop"><a class="pawbtn" href="#/home" aria-label="返回主页">${ic3(I3.paw)}</a><h1>逗${isDog(v.cat.breed) ? "狗" : "猫"}时间</h1><span class="pl-count"></span></header>
     <section class="pl-field" aria-label="和${esc(v.cat.name)}玩逗猫棒">
-      <svg class="pl-string" aria-hidden="true"><line class="stick"/><line class="str"/></svg>
+      <svg class="pl-string" aria-hidden="true"><line class="stick"/><line class="str"/></svg><span class="holder" aria-hidden="true"></span>
       <span class="pl-feather" role="slider" tabindex="0" aria-label="羽毛，拖动它"><img src="img/item/feather.webp" alt=""></span>
       <div class="pl-cat"><img data-p="idle" src="${img.idle}" alt=""><img data-p="crouch" src="${img.crouch}" alt="" class="${orange ? "flip" : ""}"><img data-p="pounce" src="${img.pounce}" alt=""></div>
       <div class="pl-floor"></div>
       <p class="pl-say" aria-live="polite"></p>
     </section>
-    <button class="btn ghost" id="shake">摇一摇（手机）</button>
+    <div class="pbot"><button class="shake" id="shake">${ic3("M8 3h8v18H8zM11 18h2M4 9c-1 2-1 4 0 6M20 9c1 2 1 4 0 6")}<span>轻摇手机，陪它玩一会儿</span></button><button class="snd" id="snd" aria-label="声音">${ic3(I3.sound)}</button></div>
+    <a class="putaway" href="#/home">⌃ 收起逗${isDog(v.cat.breed) ? "狗" : "猫"}棒</a>
   </div>`);
   app.append(box);
   const field = box.querySelector(".pl-field"), feather = box.querySelector(".pl-feather"), line = box.querySelector(".pl-string .str"), stick = box.querySelector(".pl-string .stick");
@@ -28,9 +28,11 @@ function pagePlay() {
   const caught = () => Pet.state.once[key] || 0;
   const drawCount = () => count.textContent = `今日奖励 ${caught()}/${PLAY.maxPerDay}`;
   drawCount(); show("idle");
+  box.querySelector("#snd").onclick = e => { const S = Pet.state; S.settings.mute = !S.settings.mute; Pet.save(); e.currentTarget.classList.toggle("off", S.settings.mute); };
+  box.querySelector("#snd").classList.toggle("off", !!Pet.state.settings.mute);
   let W = field.clientWidth, H = field.clientHeight;
   // feather: spring towards the target the finger sets
-  let fx = W * 0.62, fy = H * 0.34, vx = 0, vy = 0, tx = fx, ty = fy;
+  let fx = W * 0.5, fy = H * 0.36, vx = 0, vy = 0, tx = fx, ty = fy;
   const setTarget = (x, y) => { tx = Math.max(20, Math.min(W - 20, x)); ty = Math.max(30, Math.min(H - 60, y)); };
   const fromEvent = e => { const r = field.getBoundingClientRect(); setTarget(e.clientX - r.left, e.clientY - r.top); };
   field.addEventListener("pointerdown", e => { field.setPointerCapture(e.pointerId); fromEvent(e); });
@@ -42,7 +44,7 @@ function pagePlay() {
   box.querySelector("#shake").onclick = async () => {
     try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) await DeviceMotionEvent.requestPermission(); } catch (_) {}
     window.addEventListener("devicemotion", onMotion); shakeT = 1;
-    box.querySelector("#shake").textContent = "已开启摇一摇";
+    box.querySelector("#shake span").textContent = "它正跟着你扑抓";
   };
   // cat state machine
   let cx = W / 2, mode = "idle", mt = 0, from = null, to = null, face = 1, cooldown = 1.2;
@@ -55,7 +57,7 @@ function pagePlay() {
     if (shakeT > 0) { shakeT -= dt; tx += (Math.random() - .5) * 60; ty += (Math.random() - .5) * 40; setTarget(tx, ty); }
     vx += (tx - fx) * 60 * dt; vy += (ty - fy) * 60 * dt + 40 * dt; vx *= 0.86; vy *= 0.86; fx += vx * dt * 10; fy += vy * dt * 10;
     feather.style.transform = `translate(${fx.toFixed(1)}px, ${fy.toFixed(1)}px) rotate(${(vx * 0.6).toFixed(1)}deg)`;
-    const sx = W - 64 + (fx - W / 2) * 0.12, sy = 54; stick.setAttribute("x1", W + 12); stick.setAttribute("y1", -14); stick.setAttribute("x2", sx.toFixed(1)); stick.setAttribute("y2", sy);
+    const sx = W / 2 + (fx - W / 2) * 0.18, sy = 26; stick.setAttribute("x1", W / 2); stick.setAttribute("y1", 0); stick.setAttribute("x2", sx.toFixed(1)); stick.setAttribute("y2", sy);
     line.setAttribute("x1", sx.toFixed(1)); line.setAttribute("y1", sy); line.setAttribute("x2", fx.toFixed(1)); line.setAttribute("y2", (fy - 30).toFixed(1));
     mt += dt; cooldown -= dt;
     let x = cx, y = 0, rot = 0;

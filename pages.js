@@ -34,12 +34,7 @@ function chrome(active) {
   tabs.querySelectorAll("a").forEach(a => a.toggleAttribute("aria-current", a.dataset.tab === active));
   if (active) tabs.querySelectorAll("a").forEach(a => { if (a.dataset.tab === active) a.setAttribute("aria-current", "page"); });
 }
-Pet.onChange(() => {
-  const v = Pet.view();
-  const res = document.querySelector("#appbar .res");
-  if (res && v.profile) res.innerHTML = `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${WATER_I}${fmt(v.water)}</a>`;
-  Pet.drawRoam();
-});
+/* (v3 keeps the top bar up to date itself) */
 
 /* ---------- router ---------- */
 function route() {

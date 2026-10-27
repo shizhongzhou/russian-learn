@@ -58,9 +58,10 @@ const Pet = (() => {
     const days = Math.max(0, (now - S.lastTick) / DAY);
     if (days > 0.001) {
       const idle = (now - S.lastStudy) / DAY;
-      S.full = clamp(S.full - 30 * days);
-      S.drink = clamp(S.drink - 40 * days);
-      S.happy = clamp(S.happy - 12 * days);
+      const k = S.settings && S.settings.speed === "active" ? 1.6 : 1;   // 活跃模式: needs change faster
+      S.full = clamp(S.full - 30 * days * k);
+      S.drink = clamp(S.drink - 40 * days * k);
+      S.happy = clamp(S.happy - 12 * days * k);
       let hp = 0;
       if (idle >= 3) hp += 10 * days;
       if (S.full <= 0) hp += 5 * days;

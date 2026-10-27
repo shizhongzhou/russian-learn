@@ -38,6 +38,7 @@ const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="9"
 const FISH_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F29A4A" d="M3 12c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z"/><circle cx="8" cy="11" r="1.2" fill="#fff"/></svg>`;
 const DROP_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4E9BE8" d="M12 3 Q18 11 18 15 A6 6 0 0 1 6 15 Q6 11 12 3 Z"/></svg>`;
 const PAW_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><g fill="#F29A4A"><ellipse cx="12" cy="15.5" rx="4.6" ry="3.8"/><circle cx="6" cy="10" r="2"/><circle cx="10" cy="6.5" r="2"/><circle cx="14" cy="6.5" r="2"/><circle cx="18" cy="10" r="2"/></g></svg>`;
+const SHOW_DOGS = false;          // dogs are drawn and ready; switched on later
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 const petName = () => Pet.state.cat.name || "小家伙";
 const meowSafe = k => { if (Pet.state.settings.meow && !Pet.state.settings.mute) meowFor(k); };
@@ -55,15 +56,16 @@ const ago = t => { const s = (Date.now() - t) / 1000; return s < 60 ? "刚刚" :
 const hhmm = t => { const d = new Date(t); return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`; };
 
 /* ---------- top bar & tabs ---------- */
-function chrome3(active, { tool = false } = {}) {
+function chrome3(active, { tool = false, bar = true } = {}) {
   const v = Pet.view();
-  const bar = document.getElementById("appbar");
-  bar.querySelector(".brand-mark").innerHTML = LOGO;
-  bar.querySelector(".brand-name").textContent = "宠物俄语通";
-  bar.querySelector(".brand").setAttribute("aria-label", "宠物俄语通 主页");
-  bar.querySelector(".res").innerHTML = !v.profile ? "" : tool
-    ? `<a class="tool" href="#/dict">${ic3(I3.translate)}查词 / 翻译</a>`
-    : `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}">${FISH_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${DROP_I}${fmt(v.water)}</a>`;
+  const appbar = document.getElementById("appbar");
+  appbar.hidden = !bar || !v.profile;
+  appbar.querySelector(".brand-mark").innerHTML = LOGO;
+  appbar.querySelector(".brand-name").textContent = "宠物俄语通";
+  appbar.querySelector(".brand").setAttribute("aria-label", "宠物俄语通 主页");
+  appbar.querySelector(".res").innerHTML = !v.profile ? "" : tool
+    ? `<a class="tool" href="#/dict">${ic3(I3.translate)}<span>查词 / 翻译</span></a>`
+    : resChips(v);
   const tabs = document.getElementById("tabbar");
   tabs.hidden = !v.profile;
   const labels = { home: "主页", learn: "学习", meow: "宠物", account: "账户" };
@@ -74,10 +76,11 @@ function chrome3(active, { tool = false } = {}) {
     if (a.dataset.tab === active) a.setAttribute("aria-current", "page");
   });
 }
+const resChips = v => `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}">${PAW_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${DROP_I}${fmt(v.water)}</a>`;
 Pet.onChange(() => {
   const res = document.querySelector("#appbar .res");
   const v = Pet.view();
-  if (res && v.profile && !res.querySelector(".tool")) res.innerHTML = `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}">${FISH_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${DROP_I}${fmt(v.water)}</a>`;
+  if (res && v.profile && !res.querySelector(".tool,.gear")) res.innerHTML = resChips(v);
 });
 
 /* ---------- router ---------- */
@@ -92,6 +95,7 @@ route = function () {
   app.innerHTML = "";
   app.className = "";
   let tab = "home", roam = true, tool = false, title = "";
+  const NOBAR = ["grammar", "alphabet", "news", "library", "exams", "trip", "photo", "selfie", "album", "activity", "settings", "dict", "play", "records", "favs", "partner", "course", "reading", "quiz", "memo", "write", "exam", "trki", "read", "vet", "arrange", "rank", "friend", "admin", "desk", "messages", "shadow"];
   const [p0, p1, p2] = parts;
   if (LEVELS[p0]) {
     tab = "learn"; renderLevel3(p0, p1 || "words", p2); title = p0;
@@ -126,22 +130,24 @@ route = function () {
     case "selfie": tab = "meow"; roam = false; pageSelfie(p1); title = "一起合影"; break;
     case "play": tab = "home"; roam = false; pagePlay(); break;
     case "rank": tab = "home"; pageRank(p1); break;
-    case "friends": tab = "account"; pageFriends3(p1); title = "好友"; break;
+    case "friends": tab = "home"; pageFriends3(p1); title = "好友"; break;
     case "friend": tab = "account"; roam = false; pageFriendCat(p1); break;
-    case "messages": tab = "account"; pageMessages(p1); title = "消息"; break;
+    case "messages": tab = "home"; pageMessages(p1); title = "消息"; break;
     case "activity": tab = "meow"; pageActivity(); title = "动态记录"; break;
     case "records": tab = "account"; pageRecords(); title = "学习记录"; break;
     case "favs": tab = "account"; pageFavs(); title = "我的收藏"; break;
     case "partner": tab = "account"; pagePartner(); title = "我的伙伴"; break;
-    case "settings": tab = "account"; pageSettings3(); title = "设置"; break;
-    case "dict": tab = "home"; pageDict(p1); title = "查词与翻译"; break;
+    case "settings": tab = "account"; roam = false; pageSettings3(); title = "设置"; break;
+    case "dict": tab = "home"; roam = false; pageDict(p1 || "tr"); title = "查词与翻译"; break;
     case "admin": tab = "account"; roam = false; pageAdmin(); break;
     case "desk": tab = "account"; pageDesk(); break;
     case "account": tab = "account"; pageAccount3(); title = "账户"; break;
     default: tab = "home"; tool = true; pageHome3();
   }
   document.title = title ? `${title} · 宠物俄语通` : "宠物俄语通";
-  chrome3(tab, { tool });
+  const BAR = ["home", "learn", "ladder", "lv", "shadow", "pet", "meow", "nest", "dress", "shop", "travel", "friends", "messages", "account", ""];
+  document.body.classList.toggle("nobar", !BAR.includes(p0 || "home") || !!LEVELS[p0]);
+  chrome3(tab, { tool, bar: !(NOBAR.includes(p0) || LEVELS[p0]) });
   Roam.set(roam && tab !== "");
   window.scrollTo(0, 0);
   app.focus({ preventScroll: true });
@@ -271,93 +277,99 @@ const Roam = (() => {
 /* ---------- 主页 ---------- */
 function petPic(size, opts = {}) { const v = Pet.view(); return petImg(v.cat.breed, { stage: v.shownStage, size, ...opts }); }
 function pageHome3() {
-  const v = Pet.view(), S = Pet.state;
+  const v = Pet.view();
   const hr = new Date().getHours();
   const [zh, ru] = hr < 5 ? ["夜深了。", "Доброй ночи."] : hr < 11 ? ["早上好。", "Доброе утро."] : hr < 18 ? ["下午好。", "Добрый день."] : ["晚上好。", "Добрый вечер."];
   const acc = v.totalAnswered ? Math.round(v.totalCorrect / v.totalAnswered * 100) : 0;
   const lp = v.lastPlace, lv = lp ? lp.lv : v.lastLevel;
   const doing = v.sick ? "生病了，需要照顾" : v.full < 30 ? "饿了，等你喂饭" : v.drink < 30 ? "渴了，想喝水" : "正在自己玩";
-  const pct = Math.min(100, Math.round(v.daily.correct / v.goal * 100));
   const box = h(`<div class="page h3">
-    <section class="v3hero">
-      <h1>${zh}</h1><p class="ru" lang="ru">${ru}</p>
+    <section class="hhero">
+      <div class="txt"><h1>${zh}</h1><p lang="ru">${ru}</p></div>
+      <a class="art" href="#/pet" aria-label="去看${esc(petName())}">${sparks()}${petPic(150)}<img class="yarn" src="img/item/ball.webp" alt=""></a>
       <span class="status"><i></i>${esc(doing)} · 刚刚更新</span>
-      <a class="pet" href="#/pet" aria-label="去看${esc(petName())}">${petPic(128, { pose: "sit" })}</a>
     </section>
     ${v.sick ? `<a class="alert danger" href="#/vet"><b>${esc(petName())}生病了</b><span>${v.treated ? `康复中 ${v.recoverDays.length}/3 天` : "带它去宠物医院 →"}</span></a>` : ""}
-    <nav class="quick">
-      <a class="on" href="#/play">${tile3(I3.feather)}逗${isDog(v.cat.breed) ? "狗" : "猫"}棒</a>
-      <a href="#/records">${tile3(I3.clock)}学习记录</a>
-      <a href="#/favs">${tile3(I3.star)}我的收藏</a>
-      <a href="#/memo/mine">${tile3(I3.book)}单词本</a>
+    <nav class="quick2">
+      <a class="on" href="#/play">${ic3(I3.feather)}<span>逗${isDog(v.cat.breed) ? "狗" : "猫"}棒</span></a>
+      <a href="#/records">${ic3(I3.clock)}<span>学习记录</span></a>
+      <a href="#/favs">${ic3(I3.star)}<span>我的收藏</span></a>
+      <a href="#/memo/mine">${ic3("M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2M9 7h6")}<span>单词本</span></a>
     </nav>
-    <section class="card"><h2 style="margin:0 0 8px;font-size:15px">继续学习</h2>
-      <a class="cont" href="${lp ? `#/${lp.lv}/${lp.tab}` : `#/lv/${lv}`}"><span class="grow"><b>${lv} · ${esc(LEVELS[lv].title)}</b><small>${lp ? esc(lp.name) + " · 上次学到这里" : "对话与场景课"}</small></span>
-      <span style="font-size:42px;line-height:1">📚</span>${GO}</a></section>
-    <section class="card"><h2 style="margin:0;font-size:15px">学习数据</h2>
-      <div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
-    <a class="card plan" href="#/quiz/${v.lastLevel}" style="text-decoration:none;color:inherit">${tile3(I3.clock, "y")}
-      <span class="grow"><b style="display:block">每日计划</b><small class="hint">${v.daily.done ? "今日目标已完成 🎉" : `答对 ${v.goal} 题完成今天的目标`}</small></span>
-      <span class="ring" style="--p:${pct}"><span>${v.daily.correct}/${v.goal}</span></span></a>
+    <a class="card cont2" href="${lp ? `#/${lp.lv}/${lp.tab}` : `#/lv/${lv}`}"><span class="grow"><small>继续学习</small><b>${lv} · ${esc(LV_COURSE[lv])}</b><span>${lp ? esc(lp.name) : "对话与场景课"}</span></span>
+      <span class="bookem" aria-hidden="true">📚</span><span class="circ">${GO}</span></a>
+    <section class="card stats2"><h2>学习数据</h2><div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
+    <a class="card plan2" href="#/quiz/${v.lastLevel}"><span class="cal">${ic3("M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h2M12 14h2M16 14h2M8 17h2")}</span>
+      <span class="grow"><b>每日计划</b><span><em>${v.daily.correct}</em> / ${v.goal}　${v.daily.done ? "今日已完成" : "今日目标"}</span></span><span class="circ">${GO}</span></a>
+    <section class="card friends2"><div class="sec-t"><h2>好友</h2><a href="#/friends">全部 ›</a></div><div class="fl"><p class="hint">加载中…</p></div>
+      <button class="btn big lime" id="addF">${ic3(I3.plus)} 添加好友</button></section>
   </div>`);
   app.append(box);
+  box.querySelector("#addF").onclick = () => addFriendSheet(() => route());
+  const fl = box.querySelector(".fl");
+  if (!Cloud.enabled()) { fl.innerHTML = `<p class="hint">联网后可以加好友</p>`; return; }
+  Cloud.call("friendList").then(r => {
+    const n = r.incoming.length;
+    fl.innerHTML = (n ? `<a class="newreq" href="#/friends/new">${ic3(I3.bell)}<b>有 ${n} 个新的好友申请</b>${GO}</a>` : "") +
+      (r.friends.length ? `<div class="avs">${r.friends.slice(0, 6).map(p => `<a href="#/friend/${encodeURIComponent(p.uid)}" title="${esc(p.nick)}">${avatarPet(p.breed, p.stage, 46)}<small>${esc(p.nick)}</small></a>`).join("")}</div>`
+        : `<p class="hint">还没有好友。把好友码 <b>${r.myCode || "—"}</b> 发给同学，一起养宠物学俄语。</p>`);
+  }).catch(() => { fl.innerHTML = `<p class="hint">登录后可以加好友、送礼物</p>`; });
 }
+const LV_COURSE = { A1: "零基础入门", A2: "基础进阶", B1: "中级提升", B2: "中高级", C1: "高级", C2: "精通" };
+const sparks = () => `<svg class="sparks" viewBox="0 0 60 60" aria-hidden="true"><path d="M30 4v12M14 12l6 9M46 12l-6 9M4 30h11" /></svg>`;
 
 /* ---------- 学习 ---------- */
 function pageLearn3() {
   const v = Pet.view();
+  const T = (href, d, tone, b, s) => `<a class="tile" href="${href}">${tile3(d, tone)}<span><b>${b}</b><small>${s}</small></span></a>`;
   const box = h(`<div class="page">
-    <section class="v3hero"><h1>学习</h1><p>系统学习，稳步进阶</p><span class="pet">${petPic(112, { pose: "look" })}</span></section>
-    <a class="banner" href="#/ladder"><span><b>俄语阶梯 · A1–C2</b><small>从零基础到精通，系统课程</small></span><span class="pet">${petImg(v.cat.breed, { stage: 1, size: 86 })}</span>${GO}</a>
+    <section class="hhero sm"><div class="txt"><h1>学习</h1><p>系统学习，稳步进阶</p></div><span class="art">${sparks()}${petPic(118)}</span></section>
+    <a class="banner" href="#/ladder"><span><b>俄语阶梯 · A1–C2</b><small>从零基础到精通，系统课程</small></span><span class="pet">${petPic(80, { stage: 1 })}<span class="bk" aria-hidden="true">📚</span></span>${GO}</a>
     <div class="tiles">
-      <a class="tile" href="#/alphabet">${tile3("M4 19L9 5h1l5 14M6 14h7M15 12h4a2 2 0 0 1 0 4h-4v-8h3.5a2 2 0 0 1 0 4")}<span><b>字母表</b><small>掌握俄文字母</small></span></a>
-      <a class="tile" href="#/news">${tile3(I3.news, "b")}<span><b>新闻媒体</b><small>读新闻学表达</small></span></a>
-      <a class="tile" href="#/library">${tile3(I3.shelf, "g")}<span><b>书架</b><small>管理学习资料</small></span></a>
-      <a class="tile" href="#/memo/${v.lastLevel}">${tile3(I3.cards, "y")}<span><b>背单词</b><small>科学记忆单词</small></span></a>
-      <a class="tile" href="#/course/${v.lastLevel}">${tile3(I3.play, "g")}<span><b>课程</b><small>情景对话课</small></span></a>
-      <a class="tile" href="#/reading/${v.lastLevel}">${tile3(I3.read, "b")}<span><b>泛读</b><small>阅读拓展提升</small></span></a>
-      <a class="tile" href="#/shadow/${v.lastLevel}">${tile3(I3.mic, "o")}<span><b>跟读练习</b><small>听一句，跟着说</small></span></a>
-      <a class="tile" href="#/exams/${v.lastLevel}">${tile3(I3.exam, "v")}<span><b>考试</b><small>ТРКИ · 词汇测验</small></span></a>
+      ${T("#/alphabet", "M4 19L9 5h1l5 14M6 14h7M15 12h4a2 2 0 0 1 0 4h-4v-8h3.5a2 2 0 0 1 0 4", "", "字母表", "掌握俄文字母")}
+      ${T("#/news", I3.news, "b", "新闻媒体", "读新闻学表达")}
+      ${T("#/library", I3.shelf, "g", "书架", "管理学习资料")}
+      ${T(`#/memo/${v.lastLevel}`, I3.cards, "g", "背单词", "科学记忆单词")}
+      ${T(`#/course/${v.lastLevel}`, I3.play, "g", "课程", "系统视频课程")}
+      ${T(`#/reading/${v.lastLevel}`, I3.read, "b", "泛读", "阅读拓展提升")}
     </div>
-    <a class="card plan" href="#/quiz/${v.lastLevel}" style="text-decoration:none;color:inherit">${tile3("M12 3a9 9 0 1 0 .01 0M8.5 12.5l2.5 2.5 5-5.5")}<span class="grow"><b style="display:block">每日小测</b><small class="hint">${v.lastLevel} · 答对 1 题得 2 小鱼干</small></span>${GO}</a>
   </div>`);
   app.append(box);
 }
+
 const LV_UNITS = lv => LEVELS[lv].total - (ORDER.indexOf(lv) ? LEVELS[ORDER[ORDER.indexOf(lv) - 1]].total : 0);
 const LV_NAME = { A1: "入门", A2: "初级", B1: "中级", B2: "中高级", C1: "高级", C2: "精通" };
 function lvProgress(lv) { const S = Pet.state, n = LV_UNITS(lv), heard = S.heardCount[lv] || 0; return { heard, n, pct: Math.min(100, Math.round(heard / n * 100)) }; }
 function pageLadder() {
   const v = Pet.view();
   const box = h(`<div class="page">
-    ${head3("俄语阶梯", "#/learn")}<p class="v3sub">从 A1 到 C2，循序渐进</p>
-    <section class="v3hero" style="min-height:0;position:absolute;right:16px;top:58px">${petPic(96, { pose: "sit" })}</section>
-    <nav class="ladder3" style="margin-top:60px">${ORDER.map(lv => { const p = lvProgress(lv); return `<a href="#/lv/${lv}" class="${lv === v.lastLevel ? "cur" : ""}"><span class="lv">${lv}</span><b>${LV_NAME[lv]}</b>
-      <span><div class="pc">${fmt(p.heard)} / ${fmt(p.n)} 词</div><div class="bar"><i style="width:${p.pct}%"></i></div></span>${GO}</a>`; }).join("")}</nav>
+    <section class="hhero sm"><div class="txt"><a class="back0" href="#/learn" aria-label="返回">${ic3(I3.back)}</a><h1>俄语阶梯</h1><p>从 A1 到 C2，循序渐进</p></div><span class="art">${sparks()}${petPic(118)}</span></section>
+    <nav class="ladder3">${ORDER.map(lv => { const p = lvProgress(lv); return `<a href="#/lv/${lv}" class="${lv === v.lastLevel ? "cur" : ""}"><span class="lv">${lv}</span><b>${LV_NAME[lv]}</b>
+      <span><div class="pc">${fmt(p.heard)} / ${fmt(p.n)}</div><div class="bar"><i style="width:${p.pct}%"></i></div></span>${GO}</a>`; }).join("")}</nav>
   </div>`);
   app.append(box);
 }
+
 function pageLevel3(lv) {
   const S = Pet.state; S.lastLevel = lv; Pet.save();
   const p = lvProgress(lv);
-  const topics = Object.keys(S.topics).filter(k => k.startsWith(lv + ":")).length;
+  const T = (href, d, tone, b, s, wide) => `<a class="tile${wide ? " wide" : ""}" href="${href}">${tile3(d, tone)}<span><b>${b}</b><small>${s}</small></span>${GO}</a>`;
   const box = h(`<div class="page">
-    ${head3(`${lv} ${LV_NAME[lv]}`, "#/ladder")}<p class="v3sub">${esc(LEVELS[lv].desc)}</p>
-    <div class="lvprog"><span>学习进度</span><div class="bar"><i style="width:${p.pct}%"></i></div><b>${p.pct}%</b></div>
+    <section class="hhero sm"><div class="txt"><a class="back0" href="#/ladder" aria-label="返回">${ic3(I3.back)}</a><h1 class="mid">${lv} ${LV_NAME[lv]}</h1><p>${LV_SUB[lv]}</p></div><span class="art">${sparks()}${petPic(104)}</span></section>
+    <div class="lvprog"><span>学习进度</span><div class="bar"><i style="width:${p.pct}%"></i></div><b>${fmt(p.heard)} / ${fmt(p.n)}</b></div>
     <div class="tiles">
-      <a class="tile" href="#/${lv}/words">${tile3(I3.words)}<span><b>单词</b><small>词汇积累 · 已听 ${fmt(p.heard)}</small></span>${GO}</a>
-      <a class="tile" href="#/grammar/${lv}">${tile3(I3.gram, "b")}<span><b>语法</b><small>掌握语法规则 · ${topics} 个专题</small></span>${GO}</a>
-      <a class="tile" href="#/${lv}/dialogues">${tile3(I3.chat, "g")}<span><b>对话</b><small>日常情景对话</small></span>${GO}</a>
-      <a class="tile" href="#/${lv}/listening">${tile3(I3.ear, "v")}<span><b>听力</b><small>听懂日常语速</small></span>${GO}</a>
-      <a class="tile" href="#/reading/${lv}">${tile3(I3.read, "b")}<span><b>阅读</b><small>提升阅读能力</small></span>${GO}</a>
-      <a class="tile" href="#/write/${lv}">${tile3(I3.pen, "o")}<span><b>写作</b><small>学会书面表达</small></span>${GO}</a>
-      <a class="tile" href="#/shadow/${lv}">${tile3(I3.mic, "y")}<span><b>跟读</b><small>听一句，跟着说</small></span>${GO}</a>
-      <a class="tile" href="#/memo/${lv}">${tile3(I3.cards, "g")}<span><b>背单词</b><small>本级词库</small></span>${GO}</a>
-      <a class="tile wide" href="#/exams/${lv}">${tile3(I3.exam, "b")}<span><b>考试</b><small>ТРКИ 题型练习 · 本级词汇测验</small></span>${GO}</a>
+      ${T(`#/${lv}/words`, I3.words, "g", "单词", "词汇积累")}
+      ${T(`#/grammar/${lv}`, I3.gram, "b", "语法", "掌握语法规则")}
+      ${T(`#/${lv}/dialogues`, I3.chat, "g", "对话", "日常情景对话")}
+      ${T(`#/${lv}/listening`, I3.ear, "b", "听力", "听懂日常语速")}
+      ${T(`#/reading/${lv}`, I3.read, "b", "阅读", "提升阅读能力")}
+      ${T(`#/write/${lv}`, I3.pen, "o", "写作", "学会书面表达")}
+      ${T(`#/exams/${lv}`, I3.exam, "b", "考试", "ТРКИ 真题 · 题型练习", true)}
     </div>
   </div>`);
   app.append(box);
 }
-/* the v2 level pages (words / dialogues / listening / news / grammar text) with the new header */
+
 function renderLevel3(lv, tab, topic) {
   const names = { words: "单词", grammar: "语法", dialogues: "对话", listening: "听力", news: "新闻" };
   renderLevel(lv, tab);
@@ -409,15 +421,22 @@ function pageAlphabet() {
 const NEWS_EM = ["🏛️", "🧊", "📚", "🚀", "🌍", "🎭", "🏟️", "🌲", "🚆", "🎨", "🔬", "🌊"];
 const NEWS_BG = ["#FDEBD8", "#E3F0FB", "#F1E8DD", "#E9E6FB", "#E2F4E8", "#FBE4EA"];
 async function pageNews3(lv) {
-  const box = h(`<div class="page">${head3("新闻媒体", "#/learn", `<span class="side">每周更新<br>按等级改写</span>`)}
+  const S = Pet.state; S.newsFav = S.newsFav || {};
+  const box = h(`<div class="page">${head3("新闻媒体", "#/learn", `<span class="side upd">${ic3("M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5")}<span>每周更新<br>按等级改写</span></span>`)}
     <nav class="pills">${ORDER.map(x => `<a href="#/news/${x}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav><div class="news3"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
   const list = box.querySelector(".news3");
   const d = await getJSON(`data/content_${lv}.json`).catch(() => null);
   if (!d) { list.innerHTML = `<p class="empty3">加载失败，请稍后再试</p>`; return; }
-  list.innerHTML = d.news.map((n, i) => `<a href="#/news/${lv}/${i}"><span class="th" style="background:${NEWS_BG[i % NEWS_BG.length]}">${NEWS_EM[(n.title.length + i) % NEWS_EM.length]}</span>
-    <span><b lang="ru">${esc(n.title)}</b><small>${esc(n.titleZh)}</small><small>来源：${esc(n.source[0])} · ${esc(n.date)}</small><span class="lvtag ${/^B|^C/.test(lv) ? "b" : ""}">${lv}</span></span></a>`).join("");
+  const draw = () => {
+    list.innerHTML = d.news.map((n, i) => { const k = lv + ":" + n.title; return `<div class="nitem"><a href="#/news/${lv}/${i}"><span class="th" style="background:${NEWS_BG[i % NEWS_BG.length]}">${NEWS_EM[(n.title.length + i) % NEWS_EM.length]}</span>
+      <span class="grow"><b lang="ru">${esc(n.title)}</b><small>来源：${esc(n.source[0])} · ${esc(n.date.slice(5))}</small><span class="lvtag ${/^B|^C/.test(lv) ? "b" : ""}">${lv}</span></span></a>
+      <button class="bm ${S.newsFav[k] ? "on" : ""}" data-k="${esc(k)}" aria-label="收藏">${ic3("M6 3h12v18l-6-4-6 4z")}</button></div>`; }).join("");
+    list.querySelectorAll(".bm").forEach(b => b.onclick = () => { const k = b.dataset.k; S.newsFav[k] = !S.newsFav[k]; Pet.save(); Pet.toast(S.newsFav[k] ? "已收藏这篇新闻" : "已取消收藏", S.newsFav[k] ? "good" : ""); draw(); });
+  };
+  draw();
 }
+
 async function pageArticle(lv, i) {
   const d = await getJSON(`data/content_${lv}.json`);
   const n = d.news[i]; if (!n) { location.hash = `#/news/${lv}`; return; }
@@ -450,7 +469,8 @@ async function pageReading(lv) {
 /* ---------- 跟读练习: hold the mic → the kitten crouches (charging); speak → it runs ---------- */
 async function pageShadow3(lv, start = 0) {
   const S = Pet.state, v = Pet.view();
-  const box = h(`<div class="page sh3"><p class="crumb">学习 / 跟读</p>${head3("跟读练习", `#/learn`)}<p class="v3sub">听一句，跟着说</p>
+  const box = h(`<div class="page sh3"><p class="crumb0"><a href="#/learn" aria-label="返回">${ic3(I3.back)}</a>学习 / 跟读</p>
+    <div class="shtitle"><span class="lg">${LOGO}</span><span class="grow"><h1>跟读练习</h1><p>听一句，跟着说</p></span><span class="res">${resChips(v)}</span></div>
     <nav class="pills">${ORDER.map(x => `<a href="#/shadow/${x}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav>
     <section class="card sent"><p class="empty3">加载中…</p></section>
     <div class="nav2"><button class="btn ghost" id="prev">‹ 上一句</button><button class="btn" id="next">下一句 ›</button></div>
@@ -552,34 +572,37 @@ async function pageShadow3(lv, start = 0) {
 /* ---------- 考试 ---------- */
 async function pageExams3(lv, tab = "real") {
   const S = Pet.state; S.trki = S.trki || {};
-  const box = h(`<div class="page">${head3("考试 · ТРКИ", "#/learn")}
+  const ex = S.exams[lv];
+  const box = h(`<div class="page">${head3("考试 · ТРКИ", `#/lv/${lv}`)}
     <nav class="pills">${ORDER.map(x => `<a href="#/exams/${x}/${tab}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav>
     <div class="seg" role="tablist">${[["real", "真题"], ["mock", "模拟"], ["wrong", "错题"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-t="${k}">${l}</button>`).join("")}</div>
-    <div class="exl" style="display:flex;flex-direction:column;gap:10px"></div></div>`);
+    <div class="exl"></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/exams/${lv}/${b.dataset.t}`);
-  const list = box.querySelector(".exl");
-  const ex = S.exams[lv];
+  const PI = ic3(I3.exam, "pi");
+  const paper = (href, title, sub, badge, cls = "") => `<a class="paper" href="${href}">${PI}<span class="grow"><b>${title}</b><small>${sub}</small></span><span class="badge ${cls}">${badge}</span>${GO}</a>`;
+  const parts = [["lex", "词汇 · 语法", 25], ["read", "阅读", 50], ["listen", "听力", 35], ["write", "写作", 60], ["speak", "口语", 35]];
+  const done = parts.filter(([id]) => S.trki[id] && S.trki[id].passed).length;
+  let html = "";
   if (tab === "real") {
-    list.innerHTML = `<section class="card"><p style="margin:0">ТРКИ 官方真题有版权，不能直接放进 App。这里先放<b>按真题结构原创的练习卷</b>；拿到授权的真题后会放在这里。</p></section>` +
-      (lv === "B2" ? "" : `<a class="paper" href="#/exams/B2/mock">${ic3(I3.exam).replace("<svg", '<svg width="24" height="24" style="fill:none;stroke:#555;stroke-width:2"')}<span class="grow"><b>ТРКИ-2 练习卷 01</b><small>B2 · 原创练习卷 · 五个部分</small></span><span class="badge">去 B2</span></a>`);
-    if (lv === "B2") list.innerHTML += mockList();
+    html = lv === "B2"
+      ? paper("#/trki", "真题卷 01", "示范试卷 · ТРКИ-2 结构 · 来源：原创", done === 5 ? "已通过" : done ? `${done}/5` : "待练习", done === 5 ? "ok" : done ? "" : "gray")
+      : paper(`#/exams/B2/real`, "真题卷 01", "示范试卷 · ТРКИ-2（B2）", "去 B2", "gray");
+    html += `<p class="hint" style="margin:0 4px">官方真题有版权，拿到授权后会放在这里；现在先用按真题结构原创的示范卷。</p>
+      <div class="sec-t"><h2>真题卷 01</h2></div>
+      <div class="tiles"><a class="tile" href="#/trki">${tile3(I3.list, "g")}<span><b>分项练习</b><small>按题型练习</small></span></a>
+        <a class="tile" href="#/trki/lex">${tile3(I3.clock, "y")}<span><b>整套计时</b><small>${parts.reduce((a, p) => a + p[2], 0)} 分钟 · 示例</small></span></a></div>`;
   } else if (tab === "mock") {
-    list.innerHTML = (lv === "B2" ? mockList() : "") + `<a class="paper" href="#/exam/${lv}"><span class="grow"><b>${lv} 词汇测验</b><small>本级单词 20 题，16 题通过 · 通过得豪华罐头</small></span><span class="badge ${ex && ex.passed ? "ok" : "gray"}">${ex && ex.passed ? `已通过 ${ex.best}/20` : "未考"}</span>${GO}</a>
-      <a class="paper" href="#/quiz/${lv}"><span class="grow"><b>每日小测</b><small>今天学过的词 + 生词本</small></span>${GO}</a>
-      <a class="paper" href="#/write/${lv}"><span class="grow"><b>写作练习</b><small>${lv} 作文题</small></span>${GO}</a>
-      <section class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <a class="tile" href="#/quiz/${lv}">${tile3(I3.list, "g")}<span><b>分项练习</b><small>按题型练习</small></span></a>
-        <a class="tile" href="#/trki/lex">${tile3(I3.clock, "y")}<span><b>整套计时</b><small>按考试时间</small></span></a></div></section>`;
+    html = paper(`#/exam/${lv}`, `${lv} 词汇测验`, "本级单词 20 题 · 16 题通过", ex && ex.passed ? `${ex.best}/20` : "待练习", ex && ex.passed ? "ok" : "gray") +
+      paper(`#/quiz/${lv}`, "每日小测", "今天学过的词 + 生词本", "每天更新", "gray") +
+      paper(`#/write/${lv}`, `${lv} 写作练习`, "按题目写俄语短文", "练习", "gray") +
+      (lv === "B2" ? parts.map(([id, n, m]) => paper(`#/trki/${id}`, `ТРКИ-2 · ${n}`, `${m} 分钟`, S.trki[id] ? (S.trki[id].passed ? "已通过" : "未通过") : "待练习", S.trki[id] && S.trki[id].passed ? "ok" : "gray")).join("") : "");
   } else {
     const n = Object.keys(S.wrongWords || {}).length;
-    list.innerHTML = `<a class="paper" href="#/memo/mine"><span class="grow"><b>生词本 / 错题</b><small>答错的单词会自动收进来，答对就移出</small></span><span class="badge ${n ? "" : "ok"}">${n} 个</span>${GO}</a>` +
-      Object.entries(S.trki).filter(([, r]) => !r.passed).map(([id]) => `<a class="paper" href="#/trki/${id}"><span class="grow"><b>ТРКИ-2 · ${id}</b><small>上次未通过，再练一次</small></span>${GO}</a>`).join("");
+    html = paper("#/memo/mine", "错词本", "答错的单词自动收进来，答对就移出", `${n} 个`, n ? "" : "ok") +
+      Object.entries(S.trki).filter(([, r]) => !r.passed).map(([id]) => paper(`#/trki/${id}`, `ТРКИ-2 · ${(parts.find(p => p[0] === id) || [, id])[1]}`, "上次未通过，再练一次", "重做")).join("");
   }
-  function mockList() {
-    const parts = [["lex", "词汇 · 语法"], ["read", "阅读"], ["listen", "听力"], ["write", "写作"], ["speak", "口语"]];
-    return parts.map(([id, name], i) => { const r = S.trki[id]; return `<a class="paper" href="#/trki/${id}"><span class="grow"><b>ТРКИ-2 练习卷 · ${name}</b><small>原创练习卷 · 第 ${i + 1} 部分</small></span><span class="badge ${r && r.passed ? "ok" : r ? "" : "gray"}">${r ? (r.passed ? "已通过" : "未通过") : "待练习"}</span>${GO}</a>`; }).join("");
-  }
+  box.querySelector(".exl").innerHTML = html;
 }
 
 /* ---------- 书架 ---------- */
@@ -587,24 +610,30 @@ const COVER_BG = ["#F9E3C8", "#D9EBD2", "#F5E9D6", "#E4E7F7", "#FBE0E3", "#DDEFF
 const COVER_EM = ["⛪", "🌳", "📝", "📘", "🎻", "🪆"];
 function pageLibrary3(tab = "shelf") {
   const S = Pet.state; S.bookFav = S.bookFav || {};
-  const box = h(`<div class="page">${head3("我的书架", "#/learn", `<label class="btn small ghost">${ic3(I3.plus).replace("<svg", '<svg width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:2.4"')}导入 PDF<input type="file" accept="application/pdf,.pdf" multiple hidden id="pick"></label>`)}
-    <div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "fav"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
-    <div class="books"></div><p class="hint">书只保存在这台设备上，不会上传。阅读时选中俄语可以朗读、查词；每读 5 页得 1 小鱼干。</p></div>`);
+  const box = h(`<div class="page">${head3("我的书架", "#/learn", `<label class="btn small ghost imp">${ic3(I3.plus)}导入 PDF<input type="file" accept="application/pdf,.pdf" multiple hidden id="pick"></label>`)}
+    <div class="utabs" role="tablist"><button role="tab" aria-selected="${tab !== "fav"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
+    <div class="books"></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/library/${b.dataset.t}`);
   const list = box.querySelector(".books");
   function draw() {
     let m = bookMeta(); if (tab === "fav") m = m.filter(b => S.bookFav[b.id]);
-    list.innerHTML = m.length ? m.map((b, i) => { const pct = b.pages ? Math.round((b.last || 1) / b.pages * 100) : 0;
-      return `<div class="book"><a href="#/read/${b.id}" class="cover" style="background:${COVER_BG[i % COVER_BG.length]};text-decoration:none">${esc(b.name.slice(0, 12))}<span>${COVER_EM[i % COVER_EM.length]}</span></a>
-        <b>${esc(b.name.slice(0, 16))}</b><small>已读 ${pct}%</small><div class="bar"><i style="width:${pct}%"></i></div>
-        <div style="display:flex;gap:6px"><button class="btn small ghost" data-fav="${b.id}">${S.bookFav[b.id] ? "★" : "☆"}</button><button class="btn small ghost" data-del="${b.id}" aria-label="删除">${ic3(I3.trash).replace("<svg", '<svg width="16" height="16" style="fill:none;stroke:currentColor;stroke-width:2"')}</button></div></div>`; }).join("")
-      : `<p class="empty3" style="grid-column:1/-1">${tab === "fav" ? "还没有收藏的书，在书架里点 ☆ 收藏" : "书架还是空的。点右上角「导入 PDF」，选择手机或电脑里的电子书。"}</p>`;
-    list.querySelectorAll("[data-fav]").forEach(b => b.onclick = () => { const id = b.dataset.fav; S.bookFav[id] = !S.bookFav[id]; Pet.save(); draw(); });
-    list.querySelectorAll("[data-del]").forEach(b => b.onclick = async () => {
-      const id = b.dataset.del, bk = bookMeta().find(x => x.id === id);
-      if (!b.dataset.sure) { b.dataset.sure = 1; Pet.toast(`再点一次删除《${esc(bk.name)}》`, "warn"); return; }
-      await BookDB.del(id).catch(() => {}); setBookMeta(bookMeta().filter(x => x.id !== id)); draw();
+    list.innerHTML = m.map((b, i) => { const pct = b.pages ? Math.round((b.last || 1) / b.pages * 100) : 0;
+      return `<div class="book"><a href="#/read/${b.id}" class="cover" style="background:${COVER_BG[i % COVER_BG.length]}">${esc(b.name.slice(0, 10))}<span>${COVER_EM[i % COVER_EM.length]}</span></a>
+        <b>${esc(b.name.slice(0, 14))}</b><small>已读 ${pct}%</small><div class="bar"><i style="width:${pct}%"></i></div><button class="more" data-m="${b.id}" aria-label="更多">···</button></div>`; }).join("")
+      || `<p class="empty3" style="grid-column:1/-1">${tab === "fav" ? "还没有收藏的书。在书架里点「···」收藏" : "书架还是空的。点右上角「导入 PDF」，把自己的俄语教材放进来。书只保存在这台设备上；阅读时选中俄语可朗读、查词，每读 5 页得 1 小鱼干。"}</p>`;
+    list.querySelectorAll("[data-m]").forEach(b => b.onclick = () => {
+      const id = b.dataset.m, bk = bookMeta().find(x => x.id === id);
+      const sh = h(`<div class="sheet3" role="dialog" aria-modal="true"><div class="in"><h2>${esc(bk.name)}</h2>
+        <button class="btn big ghost" data-a="read">继续阅读</button><button class="btn big ghost" data-a="fav">${S.bookFav[id] ? "取消收藏" : "收藏"}</button><button class="btn big ghost" data-a="del" style="color:var(--red)">从书架删除</button><button class="btn big" data-a="x">取消</button></div></div>`);
+      document.body.append(sh);
+      sh.onclick = async e => {
+        const a = e.target.dataset && e.target.dataset.a; if (e.target !== sh && !a) return;
+        sh.remove();
+        if (a === "read") location.hash = `#/read/${id}`;
+        if (a === "fav") { S.bookFav[id] = !S.bookFav[id]; Pet.save(); draw(); }
+        if (a === "del") { await BookDB.del(id).catch(() => {}); setBookMeta(bookMeta().filter(x => x.id !== id)); draw(); }
+      };
     });
   }
   box.querySelector("#pick").onchange = async e => {
@@ -625,36 +654,33 @@ function pagePet3() {
   app.append(box);
   let flash = null;
   function draw() {
-    const v = Pet.view(), S = Pet.state, dog = isDog(v.cat.breed);
-    const sex = S.cat.sex === "f" ? "♀" : "♂";
-    const say = v.sick ? "我不舒服……带我去看医生吧" : v.full < 40 ? "有点饿，想吃你做的饭～" : v.drink < 40 ? "好渴，想喝水" : v.happy < 45 ? "有点无聊，陪我玩一会儿吧" : pickOne(["今天也一起学习吧！", "Приве́т! 你来啦", "我又长大一点点了"]);
-    const speedMode = S.settings.speed === "active" ? "活跃模式" : "标准模式";
+    const v = Pet.view(), S = Pet.state;
+    const say = v.sick ? "我不舒服，带我去看医生吧" : v.full < 50 ? "有点饿，想蹭蹭你～" : v.drink < 50 ? "有点渴，想喝水～" : v.happy < 50 ? "有点无聊，陪我玩一会儿吧" : "今天也一起学习吧～";
+    const active = S.settings.speed === "active";
     const row = (n, val, col) => `<div class="brow"><span>${n}</span><div class="bar"><i style="width:${val}%;background:${col}"></i></div><b>${Math.round(val)}%</b></div>`;
-    box.innerHTML = `<div class="top"><h1>${esc(petName())}</h1><span class="sex" style="color:${S.cat.sex === "f" ? "#E8789A" : "#4E9BE8"}">${sex}</span><span class="lv">Lv.${v.level}</span>
-        <a class="mode" href="#/activity">${ic3(I3.paw).replace("<svg", '<svg width="14" height="14" style="fill:none;stroke:currentColor;stroke-width:2"')}${speedMode}</a></div>
-      <p class="hint" style="margin:-8px 0 0">${esc(petOf(v.cat.breed).name)} · ${ART_STAGE_NAMES[artStage(v.shownStage)]} · ${esc(v.stageName.replace("猫", dog ? "狗" : "猫"))}</p>
+    box.innerHTML = `<div class="top"><h1>${esc(petName())}</h1><span class="sex ${S.cat.sex === "f" ? "f" : ""}">${S.cat.sex === "f" ? "♀" : "♂"}</span><span class="lv">Lv.${v.level}</span>
+        <a class="mode" href="#/activity">${ic3("M13 3L5 14h6l-1 7 8-11h-6z")}${active ? "活跃模式" : "标准模式"}</a></div>
       ${v.sick ? `<a class="alert danger" href="#/vet"><b>${esc(petName())}生病了</b><span>${v.treated ? `康复中 ${v.recoverDays.length}/3 天` : "去宠物医院 →"}</span></a>` : ""}
-      <div class="stagewrap">${ic3(I3.spark, "spark").replace('class="spark"', 'class="spark" style="left:12%;top:10%;fill:none;stroke:currentColor;stroke-width:2"')}
-        <button aria-label="摸摸${esc(petName())}">${petPic(210, { pose: flash || (v.sick ? "lie" : "sit") })}</button></div>
-      <section class="card bars"><div class="head"><span style="font-size:18px">✨</span><b>${esc(say)}</b><span>刚刚更新</span></div>
-        ${row("饱腹", v.full, "#F29A4A")}${row("水分", v.drink, "#4E9BE8")}${row("心情", v.happy, "#8C7BE8")}${row("健康", v.health, v.health < 40 ? "#F06A5D" : "#58C27D")}
-        <div class="brow"><span>成长</span><div class="bar"><i style="width:${v.nextAt ? Math.round((v.growth - v.prevAt) / (v.nextAt - v.prevAt) * 100) : 100}%"></i></div><b style="font-size:11px">${v.nextAt ? fmt(v.nextAt - v.growth) : "满级"}</b></div>
-        <p class="hint" style="margin:0">${v.nextAt ? `再得 ${fmt(v.nextAt - v.growth)} 成长值长到下一阶段${artStage(v.stage + 1) > artStage(v.stage) ? "，会变大哦" : ""}` : "已经长到最大啦"}</p></section>
-      <div class="acts"><button id="feed"><span class="e">🥣</span>喂食<small class="hint">${FISH_I} ${fmt(v.food)}</small></button><button id="petit"><span class="e">✋</span>抚摸</button><a class="ab" href="#/play"><span class="e">🪀</span>玩耍</a></div>
-      <div class="acts"><button id="water"><span class="e">💧</span>喂水<small class="hint">${fmt(v.water)}</small></button><a class="ab" href="#/shop/food"><span class="e">🛍️</span>小卖部</a><a class="ab" href="#/activity"><span class="e">📋</span>动态</a></div>
-      ${Object.entries(v.inv).filter(([, n]) => n > 0).length ? `<section class="card"><b>背包</b><div class="pills" style="margin-top:8px">${Object.entries(v.inv).filter(([, n]) => n > 0).map(([id, n]) => `<button data-snack="${id}">${Pet.SNACK_NAMES[id]} ×${n}</button>`).join("")}</div></section>` : ""}
+      <div class="stagewrap">${sparks()}<button aria-label="摸摸${esc(petName())}">${petPic(220)}</button></div>
+      <section class="card bars"><div class="head"><span class="star">✨</span><b>${esc(say)}</b><span>刚刚更新</span></div>
+        ${row("饱腹", v.full, "#F29A4A")}${row("水分", v.drink, "#4E9BE8")}${row("心情", v.happy, "#8C7BE8")}${row("健康", v.health, v.health < 40 ? "#F06A5D" : "#58C27D")}</section>
+      <div class="acts"><button id="feed"><img src="img/item/bowl.webp" alt="">喂食</button><button id="petit"><span class="e">✋</span>抚摸</button><a class="ab" href="#/play"><img src="img/item/wand.webp" alt="">玩耍</a></div>
       <div class="big2"><a class="dark" href="#/nest">${ic3(I3.home)}小窝<small>布置温馨的家</small></a><a class="lime" href="#/travel">${ic3(I3.globe)}旅游<small>带它去看世界</small></a></div>`;
-    const tmp = (p, ms = 1600) => { flash = p; draw(); setTimeout(() => { flash = null; if (document.body.contains(box)) draw(); }, ms); };
-    box.querySelector("#feed").onclick = () => { if (Pet.feed()) { logEvent("feed", `${petName()}吃饱了一点，饱腹 +8`); feedScene("kibble", draw); } };
-    box.querySelector("#water").onclick = () => { if (Pet.giveWater()) { logEvent("water", `${petName()}喝了水，水分 +10`); feedScene("water", draw); } };
-    box.querySelector("#petit").onclick = box.querySelector(".stagewrap button").onclick = () => { meowSafe(v.sick ? "sick" : "pet"); Pet.pet(); logEvent("pet", `摸了摸${petName()}，心情变好了`); tmp("look"); };
-    box.querySelectorAll("[data-snack]").forEach(b => b.onclick = () => { const id = b.dataset.snack, it = SHOP.snack.find(x => x.id === id); Pet.state.inv[id]--; it.apply(Pet.state); Pet.save(); logEvent("snack", `${petName()}吃了${it.name}`); Pet.toast(`${esc(petName())}吃了${it.name}，好开心！`, "good"); feedScene(id, draw); });
+    const tmp = ms => { flash = 1; box.querySelector(".stagewrap button").classList.add("hop"); setTimeout(() => { flash = null; if (document.body.contains(box)) draw(); }, ms); };
+    box.querySelector("#feed").onclick = () => {
+      const S2 = Pet.state, f = S2.food >= 1, w = S2.water >= 1;
+      if (!f && !w) { Pet.toast("小鱼干和水都用完了，去学习赚一些吧", "warn"); return; }
+      if (f) Pet.feed(); if (w) Pet.giveWater();
+      logEvent("feed", `${petName()}吃饱喝足${f ? "，饱腹 +8" : ""}${w ? "，水分 +10" : ""}`);
+      feedScene(f ? "kibble" : "water", draw);
+    };
+    box.querySelector("#petit").onclick = box.querySelector(".stagewrap button").onclick = () => { meowSafe(v.sick ? "sick" : "pet"); Pet.pet(); logEvent("pet", `摸了摸${petName()}，心情变好了`); tmp(900); };
   }
   draw();
 }
 
 /* ---------- 小窝 ---------- */
-const FURN = [["bed", "猫窝", "🛏️"], ["tree", "猫爬架", "🪜"], ["toy", "小鱼玩具", "🐟"], ["scratch", "猫抓板", "🧶"], ["fish", "鱼缸", "🐠"], ["fountain", "饮水机", "⛲"], ["plant", "绿植", "🪴"], ["lamp", "台灯", "💡"]];
+const FURN = [["bed", "猫窝", "🛏️"], ["tree", "猫爬架", "🪜"], ["toy", "小鱼玩具", "🐟"], ["plant", "绿植", "🪴"], ["scratch", "猫抓板", "🧶"], ["fish", "鱼缸", "🐠"], ["fountain", "饮水机", "⛲"], ["lamp", "台灯", "💡"]];
 function pageNest() {
   const box = h(`<div class="page nest"></div>`);
   app.append(box);
@@ -662,13 +688,17 @@ function pageNest() {
     const v = Pet.view(), S = Pet.state; S.owned = S.owned || {};
     const has = k => k === "tree" ? S.tree > 0 : k === "plant" || k === "lamp" ? !!S.owned[k] : !!S.decor[k];
     const n = FURN.filter(([k]) => has(k)).length;
-    box.innerHTML = `${head3("小窝", "#/pet", `<label class="side" style="display:flex;align-items:center;gap:6px"><select id="scene" style="border:1px solid var(--line);border-radius:999px;padding:6px 10px;font:600 13px var(--zh);background:#fff">${Object.entries(SCENES).map(([k, s]) => `<option value="${k}" ${S.scene === k ? "selected" : ""} ${k === "living" || S.owned["scene_" + k] ? "" : "disabled"}>${s.name}${k === "living" || S.owned["scene_" + k] ? "" : "（未解锁）"}</option>`).join("")}</select></label>`)}
-      <p class="v3sub">给${esc(petName())}一个温暖的家</p><div class="roomslot"></div>
-      <section class="card"><div class="sec-t"><h2>家具清单 <span class="hint">(${n}/${FURN.length})</span></h2><a href="#/arrange">自由摆放 ›</a></div>
-        <div class="furn" style="margin-top:12px">${FURN.map(([k, name, em]) => `<div class="${has(k) ? "on" : ""}"><span class="em">${em}</span>${name}</div>`).join("")}<div><a class="em" href="#/shop/furn" style="text-decoration:none;color:#999">+</a>添加</div></div></section>
-      <div class="p3"><div class="big2"><a class="dark" href="#/arrange">${ic3(I3.sofa)}布置</a><a class="lime" href="#/shop/toy">${ic3(I3.shop)}小卖部</a></div></div>`;
-    box.querySelector(".roomslot").append(roomBox(v, { label: false }));
-    box.querySelector("#scene").onchange = e => { S.scene = e.target.value; Pet.save(); logEvent("nest", `小窝换成了「${SCENES[S.scene].name}」`); draw(); };
+    const scenes = Object.keys(SCENES).filter(k => k === "living" || S.owned["scene_" + k]);
+    box.innerHTML = `<div class="ntop"><span class="grow"><h1>小窝</h1><p>给${esc(petName())}一个温暖的家</p></span>
+        <label class="scenesel">☀️<select id="scene" aria-label="场景">${Object.entries(SCENES).map(([k, s]) => `<option value="${k}" ${S.scene === k ? "selected" : ""} ${scenes.includes(k) ? "" : "disabled"}>${s.name}${scenes.includes(k) ? "" : "（未解锁）"}</option>`).join("")}</select></label></div>
+      <div class="roomslot"><button class="arr l" data-d="-1" aria-label="上一个场景">‹</button><button class="arr r" data-d="1" aria-label="下一个场景">›</button></div>
+      <section class="card furnc"><div class="sec-t"><h2>家具清单 <span class="hint">(${n}/${FURN.length})</span></h2><a href="#/arrange">查看全部 ›</a></div>
+        <div class="furn">${FURN.map(([k, name, em]) => `<div class="${has(k) ? "on" : ""}"><span class="em">${em}</span>${name}</div>`).join("")}<div><a class="em add" href="#/shop/furn" aria-label="去小卖部买家具">+</a>添加</div></div></section>
+      <div class="big2"><a class="dark" href="#/arrange">${ic3(I3.sofa)}布置</a><a class="lime" href="#/shop/toy">${ic3(I3.shop)}小卖部</a></div>`;
+    box.querySelector(".roomslot").prepend(roomBox(v, { label: false }));
+    const setScene = k => { S.scene = k; Pet.save(); logEvent("nest", `小窝换成了「${SCENES[k].name}」`); draw(); };
+    box.querySelector("#scene").onchange = e => setScene(e.target.value);
+    box.querySelectorAll(".arr").forEach(b => b.onclick = () => { const i = scenes.indexOf(S.scene); setScene(scenes[(i + +b.dataset.d + scenes.length) % scenes.length]); });
   }
   draw();
 }
@@ -727,34 +757,28 @@ const TRAVEL = {
   中国: [["beijing", "北京", "Пекин", "长城和故宫", "🏯", "#F7DED6", 150, "UTC+8"], ["harbin", "哈尔滨", "Харбин", "冰雪之城，俄式建筑", "❄️", "#E0EDF8", 160, "UTC+8"], ["chengdu", "成都", "Чэнду", "大熊猫的家", "🐼", "#E4F3E3", 170, "UTC+8"]],
 };
 const CITY = Object.fromEntries(Object.entries(TRAVEL).flatMap(([c, l]) => l.map(([id, zh, ru, desc, em, bg, price, tz]) => [id, { id, country: c, zh, ru, desc, em, bg, price, tz }])));
+function cityPh(c, cls = "ph") { return `<span class="${cls}" style="background:${c.bg}"><img src="img/cities/${c.id}.webp" alt="" onerror="this.remove()"><em>${c.em}</em></span>`; }
 function pageTravel(country) {
   const cur = TRAVEL[country] ? country : "法国", S = Pet.state; S.trips = S.trips || {};
-  const box = h(`<div class="page">${head3("选择旅行目的地", "#/pet", `<span style="font-size:34px">🌍</span>`)}<p class="v3sub">带${esc(petName())}去看看更大的世界吧！</p>
+  const box = h(`<div class="page">
+    <div class="ttop"><span class="grow"><h1>选择旅行目的地</h1><p>带${esc(petName())}去看看更大的世界吧！</p></span><span class="earth" aria-hidden="true">🌍</span></div>
     <nav class="pills">${Object.keys(TRAVEL).map(c => `<a href="#/travel/${c}" ${c === cur ? 'aria-current="page"' : ""}>${c}</a>`).join("")}</nav>
-    <div class="cities">${TRAVEL[cur].map(([id]) => { const c = CITY[id]; return `<a class="city" href="#/trip/${id}"><span class="ph" style="background:${c.bg}">${c.em}</span><span><b>${c.zh}</b><small lang="ru">${c.ru}</small><small>${esc(c.desc)}</small>${S.trips[id] ? `<span class="lvtag">去过 ✓</span>` : ""}</span>${GO}</a>`; }).join("")}</div>
-    <a class="card plan" href="#/album" style="text-decoration:none;color:inherit">${tile3(I3.photo, "b")}<span class="grow"><b style="display:block">旅行相册</b><small class="hint">${Object.keys(S.trips).length} 个城市的合影</small></span>${GO}</a></div>`);
+    <div class="cities">${TRAVEL[cur].map(([id]) => { const c = CITY[id]; return `<a class="city" href="#/trip/${id}">${cityPh(c)}<span class="grow"><b>${c.zh}${S.trips[id] ? ` <span class="lvtag">去过</span>` : ""}</b><small>${esc(c.desc)}</small></span>${GO}</a>`; }).join("")}</div>
+    <a class="card plan2" href="#/album">${tile3(I3.photo, "b")}<span class="grow"><b>旅行相册</b><span>${Object.keys(S.trips).length} 个城市的合影</span></span><span class="circ">${GO}</span></a></div>`);
   app.append(box);
-}
-function globeSVG(c) {
-  return `<svg class="globe" viewBox="0 0 300 300" role="img" aria-label="地球，飞往${c.zh}"><defs><radialGradient id="gl" cx="38%" cy="32%"><stop offset="0" stop-color="#9FD3FF"/><stop offset=".6" stop-color="#3E8EE0"/><stop offset="1" stop-color="#1F5FAE"/></radialGradient></defs>
-    <circle cx="150" cy="150" r="128" fill="url(#gl)"/>
-    <path d="M70 110c20-30 60-40 80-30s10 30-10 40-30 30-50 20-30-10-20-30zM170 70c20 0 50 10 60 30s-10 30-30 30-40-20-30-60zM180 170c20-10 50 0 50 20s-20 40-40 40-30-20-10-60zM90 190c10 0 20 20 10 40s-30 0-30-20 10-20 20-20z" fill="#7CC77A" opacity=".9"/>
-    <path d="M90 120 Q150 40 215 105" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="7 7"/>
-    <g transform="translate(150 70) rotate(18)"><path d="${I3.plane}" transform="translate(-12 -12)" fill="#fff"/></g>
-    <g transform="translate(215 105)"><circle r="7" fill="#1D1E1B"/><circle r="3" fill="#fff"/><rect x="10" y="-26" rx="8" width="${c.zh.length * 16 + 20}" height="26" fill="#1D1E1B"/><text x="${20 + c.zh.length * 8}" y="-8" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">${c.zh}</text></g></svg>`;
 }
 function pageTrip(id) {
   const c = CITY[id]; if (!c) { location.hash = "#/travel"; return; }
   const v = Pet.view(), S = Pet.state; S.trips = S.trips || {};
   const off = +c.tz.replace("UTC", ""), local = new Date(Date.now() + (off * 60 + new Date().getTimezoneOffset()) * 60000);
   const enough = v.food >= c.price;
-  const box = h(`<div class="page">${head3(c.zh, `#/travel/${c.country}`)}
-    ${globeSVG(c)}<p class="hint" style="text-align:center">拖动地球查看其他城市 · 当前目的地 <span lang="ru">${c.ru}</span></p>
-    <section class="card" style="display:grid;grid-template-columns:1fr 1fr;text-align:center"><div><small class="hint">当地时间</small><b style="display:block;font-size:22px">${hhmm(local)}</b></div><div style="border-left:1px solid var(--line)"><small class="hint">时区</small><b style="display:block;font-size:22px">${c.tz}</b></div></section>
-    <section class="card"><div class="ticket"><span class="plane">${ic3(I3.plane)}</span><span class="grow"><b style="font-size:17px">${c.zh}机票</b><small class="hint" style="display:block">${c.price} 小鱼干</small></span></div>
-      <p class="hint" style="margin:10px 0 6px">我有：${FISH_I} ${fmt(v.food)} 小鱼干</p><div class="bar"><i style="width:${Math.min(100, v.food / c.price * 100)}%;background:var(--orange)"></i></div>
-      <p style="margin:6px 0 0;color:${enough ? "var(--lime-deep)" : "var(--red)"};font-size:13px">${enough ? "小鱼干够啦，出发吧！" : `还差 ${c.price - v.food} 小鱼干`}</p></section>
-    ${enough ? `<button class="btn big lime" id="fly">✈️ 出发去${c.zh}</button>` : `<a class="btn big" href="#/learn">去学习攒小鱼干 ›</a>`}
+  const box = h(`<div class="page trip"><header class="v3head center"><a class="back" href="#/travel/${c.country}" aria-label="返回">${ic3(I3.back)}</a><h1>${c.zh}</h1><span style="width:36px"></span></header>
+    <div class="globewrap">${globeSVG(c)}<span class="drag">👆 拖动地球查看其他城市</span></div>
+    <section class="card tinfo"><div><small>当地时间</small><b>${hhmm(local)}</b></div><div><small>时区</small><b>${c.tz}</b></div></section>
+    <section class="card"><a class="ticket" href="#/travel/${c.country}"><span class="plane">${ic3(I3.plane)}</span><span class="grow"><b>${c.zh}机票</b><span class="pr">${c.price} 小鱼干</span></span>${GO}</a>
+      <p class="have">我有：${FISH_I} ${fmt(v.food)} 小鱼干</p><div class="bar"><i style="width:${Math.min(100, v.food / c.price * 100)}%;background:var(--orange)"></i></div>
+      <p class="need ${enough ? "ok" : ""}">${enough ? "小鱼干够啦，可以出发！" : `还差 ${c.price - v.food} 小鱼干`}</p></section>
+    ${enough ? `<button class="btn big lime" id="fly">${ic3(I3.plane)} 出发去${c.zh}</button>` : `<a class="btn big" href="#/learn">去学习攒小鱼干 ›</a>`}
     ${S.trips[id] ? `<a class="btn big ghost" href="#/photo/${id}">看看在${c.zh}的照片</a>` : ""}</div>`);
   app.append(box);
   const fly = box.querySelector("#fly");
@@ -767,15 +791,45 @@ function pageTrip(id) {
 }
 function pagePhoto(id) {
   const c = CITY[id]; if (!c) { location.hash = "#/travel"; return; }
-  const v = Pet.view();
-  const box = h(`<div class="page">${head3("旅行合影", `#/trip/${id}`)}
-    <div class="photo3" style="background:linear-gradient(180deg,${c.bg},#fff 75%)"><span class="land">${c.em}</span><span class="stamp">${c.zh.toUpperCase()}</span>${petPic(240, { pose: "sit" })}</div>
+  const S = Pet.state;
+  const box = h(`<div class="page photo">
+    <div class="photo3">${cityPh(c, "bgph")}<a class="back" href="#/trip/${id}" aria-label="返回">${ic3(I3.back)}</a><span class="stamp">${c.zh}</span>
+      <span class="me" ${S.selfie ? "" : "hidden"}><img src="${S.selfie || ""}" alt="我"></span>${petPic(230)}</div>
     <div class="seg" role="tablist"><button role="tab" aria-selected="true">仅宠物</button><button role="tab" aria-selected="false" id="both">一起合影</button></div>
-    <a class="btn big lime" href="#/selfie/${id}">${ic3(I3.camera).replace("<svg", '<svg width="22" height="22" style="fill:none;stroke:currentColor;stroke-width:2"')} 拍张自拍，一起合影</a>
-    <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><a class="btn ghost" href="#/selfie/${id}">拍摄头像</a><a class="btn ghost" href="#/selfie/${id}">从相册选择</a></div>
-    <p class="hint" style="text-align:center">“仅宠物”的照片已存进旅行相册</p></div>`);
+    <button class="cam" id="cam" aria-label="拍摄头像">${ic3(I3.camera)}</button><p class="hint" style="text-align:center;margin:-6px 0 0">拍摄头像，用于合影</p>
+    <div class="two2"><button class="btn ghost" id="shoot">${ic3(I3.camera)} 拍摄头像</button><label class="btn ghost">${ic3(I3.photo)} 从相册选择<input type="file" accept="image/*" hidden id="pick"></label></div></div>`);
   app.append(box);
-  box.querySelector("#both").onclick = () => location.hash = `#/selfie/${id}`;
+  const setSelfie = url => { S.selfie = url; Pet.save(); const me = box.querySelector(".me"); me.hidden = false; me.querySelector("img").src = url; box.querySelector("#both").setAttribute("aria-selected", "true"); box.querySelector(".seg button").setAttribute("aria-selected", "false"); Pet.toast("合影已存进旅行相册", "good"); };
+  const shrink = src => new Promise(res => { const im = new Image(); im.onload = () => { const s = Math.min(im.width, im.height), cv = document.createElement("canvas"); cv.width = cv.height = 220; cv.getContext("2d").drawImage(im, (im.width - s) / 2, (im.height - s) / 2, s, s, 0, 0, 220, 220); res(cv.toDataURL("image/jpeg", 0.8)); }; im.src = src; });
+  box.querySelector("#pick").onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = async () => setSelfie(await shrink(r.result)); r.readAsDataURL(f); };
+  const shoot = () => selfieCam(async url => setSelfie(await shrink(url)));
+  box.querySelector("#cam").onclick = box.querySelector("#shoot").onclick = box.querySelector("#both").onclick = shoot;
+}
+/* front camera with a face circle (06 拍一张此刻的你) */
+function selfieCam(done) {
+  const sh = h(`<div class="sheet3 camsheet" role="dialog" aria-modal="true" aria-label="拍一张此刻的你"><div class="in" style="position:relative"><h2>拍一张此刻的你</h2><button class="x" aria-label="关闭">✕</button>
+    <div class="vf"><video playsinline autoplay muted></video><i class="ring"></i></div><p class="hint" style="text-align:center">把脸放进圆圈里</p><button class="cam" id="snap" aria-label="拍照">${ic3(I3.camera)}</button></div></div>`);
+  document.body.append(sh);
+  const vid = sh.querySelector("video"); let stream;
+  const close = () => { if (stream) stream.getTracks().forEach(t => t.stop()); sh.remove(); };
+  sh.querySelector(".x").onclick = close;
+  navigator.mediaDevices && navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false }).then(s => { stream = s; vid.srcObject = s; })
+    .catch(() => { sh.querySelector(".hint").textContent = "没有相机权限，可以用「从相册选择」"; });
+  sh.querySelector("#snap").onclick = () => {
+    if (!vid.videoWidth) return;
+    const cv = document.createElement("canvas"); cv.width = vid.videoWidth; cv.height = vid.videoHeight;
+    const g = cv.getContext("2d"); g.translate(cv.width, 0); g.scale(-1, 1); g.drawImage(vid, 0, 0);
+    const url = cv.toDataURL("image/jpeg", 0.85); close(); done(url);
+  };
+}
+
+function globeSVG(c) {
+  return `<svg class="globe" viewBox="0 0 300 300" role="img" aria-label="地球，飞往${c.zh}"><defs><radialGradient id="gl" cx="38%" cy="32%"><stop offset="0" stop-color="#9FD3FF"/><stop offset=".6" stop-color="#3E8EE0"/><stop offset="1" stop-color="#1F5FAE"/></radialGradient></defs>
+    <circle cx="150" cy="150" r="128" fill="url(#gl)"/>
+    <path d="M70 110c20-30 60-40 80-30s10 30-10 40-30 30-50 20-30-10-20-30zM170 70c20 0 50 10 60 30s-10 30-30 30-40-20-30-60zM180 170c20-10 50 0 50 20s-20 40-40 40-30-20-10-60zM90 190c10 0 20 20 10 40s-30 0-30-20 10-20 20-20z" fill="#7CC77A" opacity=".9"/>
+    <path d="M90 120 Q150 40 215 105" fill="none" stroke="#fff" stroke-width="3" stroke-dasharray="7 7"/>
+    <g transform="translate(150 70) rotate(18)"><path d="${I3.plane}" transform="translate(-12 -12)" fill="#fff"/></g>
+    <g transform="translate(215 105)"><circle r="7" fill="#1D1E1B"/><circle r="3" fill="#fff"/><rect x="10" y="-26" rx="8" width="${c.zh.length * 16 + 20}" height="26" fill="#1D1E1B"/><text x="${20 + c.zh.length * 8}" y="-8" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">${c.zh}</text></g></svg>`;
 }
 function pageSelfie(id) {
   const c = CITY[id] || CITY.paris;
@@ -797,45 +851,36 @@ function pageAlbum() {
 /* ---------- 好友 · 新朋友 ---------- */
 function avatarPet(breed, stage = 2, size = 54) { return `<span class="av">${petImg(PETS[breed] ? breed : "orange", { stage, size })}</span>`; }
 function pageFriends3(tab = "list") {
-  const box = h(`<div class="page">${head3("好友", "#/account")}<div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "new"}" data-t="list">好友</button><button role="tab" aria-selected="${tab === "new"}" data-t="new">新朋友<span class="tbadge" id="nb" hidden></span></button></div><div class="fb3"><p class="empty3">加载中…</p></div></div>`);
+  const box = h(`<div class="page">${head3("好友", "#/home")}<div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "new"}" data-t="list">好友</button><button role="tab" aria-selected="${tab === "new"}" data-t="new">新朋友<span class="tbadge" id="nb" hidden></span></button></div><div class="fb3"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/friends/${b.dataset.t}`);
   const body = box.querySelector(".fb3");
   if (!Cloud.enabled()) { body.innerHTML = `<p class="empty3">好友功能需要联网</p>`; return; }
   async function draw() {
     let r;
-    try { await Cloud.push(); r = await Cloud.call("friendList"); } catch (e) { body.innerHTML = `<p class="empty3">${esc(e.message)}</p><button class="btn big ghost" onclick="loginSheet(()=>route())">登录后使用好友</button>`; return; }
+    try { await Cloud.push(); r = await Cloud.call("friendList"); } catch (e) { body.innerHTML = `<p class="empty3">${esc(e.message)}</p><button class="btn big ghost" id="lg">手机号 / 邮箱登录</button>`; body.querySelector("#lg").onclick = () => loginSheet(() => route()); return; }
     const nb = box.querySelector("#nb"); if (r.incoming.length) { nb.hidden = false; nb.textContent = r.incoming.length; }
     const online = p => p.lastActive && Date.now() - p.lastActive < 10 * 60000;
     if (tab !== "new") {
-      body.innerHTML = `<button class="btn big lime" id="addB">${ic3(I3.plus).replace("<svg", '<svg width="20" height="20" style="fill:none;stroke:currentColor;stroke-width:2.6"')} 添加好友</button>
-        <div class="sec-t"><h2>我的好友 (${r.friends.length})</h2><span>好友码 <b>${r.myCode || "—"}</b> · <a href="#" id="copy">复制</a></span></div>
-        <div class="rows">${r.friends.map(p => `<a class="fr" href="#/friend/${encodeURIComponent(p.uid)}">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small class="${online(p) ? "on" : ""}">${online(p) ? "在线" : p.lastActive ? `离线 · ${ago(p.lastActive)}` : "离线"}</small></span><span class="chat" aria-hidden="true">${ic3(I3.chat)}</span></a>`).join("") || `<p class="empty3">还没有好友。点上面「添加好友」，或者把你的好友码发给同学。</p>`}</div>
-        ${r.outgoing.length ? `<p class="hint">等待对方确认：${r.outgoing.map(p => esc(p.nick)).join("、")}</p>` : ""}`;
-      body.querySelector("#addB").onclick = () => addSheet();
-      body.querySelector("#copy").onclick = async e => { e.preventDefault(); try { await navigator.clipboard.writeText(`来宠物俄语通加我好友吧！好友码：${r.myCode}`); Pet.toast("好友码已复制", "good"); } catch { Pet.toast(`好友码：${r.myCode}`); } };
+      body.innerHTML = `<button class="btn big lime" id="addB">${ic3(I3.plus)} 添加好友</button>
+        <div class="sec-t"><h2>我的好友 (${r.friends.length})</h2><span>我的好友码 <b>${r.myCode || "—"}</b></span></div>
+        <div class="rows">${r.friends.map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<a class="grow" href="#/friend/${encodeURIComponent(p.uid)}" style="text-decoration:none;color:inherit"><b>${esc(p.nick)}</b><small class="${online(p) ? "on" : ""}">${online(p) ? "在线" : p.lastActive ? `离线 ${ago(p.lastActive)}` : "离线"}</small></a>
+          <a class="chat" href="#/friend/${encodeURIComponent(p.uid)}" aria-label="去看${esc(p.nick)}的宠物">${ic3(I3.chat)}</a><button class="dots" data-u="${p.uid}" data-n="${esc(p.nick)}" aria-label="更多">⋮</button></div>`).join("") || `<p class="empty3">还没有好友。点「添加好友」，或者把好友码发给同学。</p>`}</div>
+        ${r.outgoing.map(p => `<div class="rows"><div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>等待对方确认</small></span></div></div>`).join("")}`;
+      body.querySelector("#addB").onclick = () => addFriendSheet(draw);
+      body.querySelectorAll(".dots").forEach(b => b.onclick = () => {
+        const sh = h(`<div class="sheet3" role="dialog" aria-modal="true"><div class="in"><h2>${b.dataset.n}</h2><a class="btn big ghost" href="#/friend/${encodeURIComponent(b.dataset.u)}">看看它的宠物 · 送零食</a><button class="btn big ghost" data-a="del" style="color:var(--red)">删除好友</button><button class="btn big" data-a="x">取消</button></div></div>`);
+        document.body.append(sh);
+        sh.onclick = async e => { const a = e.target.dataset && e.target.dataset.a; if (e.target.tagName === "A") { sh.remove(); return; } if (e.target !== sh && !a) return; sh.remove(); if (a === "del") { await Cloud.call("friendRemove", { other: b.dataset.u }).catch(x => Pet.toast(x.message, "warn")); draw(); } };
+      });
     } else {
-      body.innerHTML = `${r.incoming.length ? `<div class="sec-t"><h2>收到的申请 (${r.incoming.length})</h2></div>${r.incoming.map(p => `<section class="card req"><div class="fr" style="padding:0">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>想和你的宠物做朋友～ · ${esc(p.catName)} Lv.${p.level}</small></span></div><div class="two"><button class="btn lime" data-ok="${p.uid}">接受</button><button class="btn ghost" data-no="${p.uid}">暂不</button></div></section>`).join("")}` : `<p class="empty3">暂时没有新的好友申请</p>`}
-        ${r.friends.length ? `<div class="sec-t"><h2>已成为好友 (${r.friends.length})</h2></div><div class="rows">${r.friends.slice(0, 5).map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>我们现在是好友啦！</small></span><span class="badge gray">已成为好友</span></div>`).join("")}</div>` : ""}`;
+      body.innerHTML = `${r.incoming.length ? `<div class="newreq">${ic3(I3.bell)}<b>有新的好友申请</b></div><div class="sec-t"><h2>收到的申请 (${r.incoming.length})</h2></div>${r.incoming.map(p => `<section class="card req"><div class="fr" style="padding:0">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>想和你的宠物做朋友～</small></span><small class="hint">${p.lastActive ? ago(p.lastActive) : ""}</small></div><div class="two"><button class="btn lime" data-ok="${p.uid}">接受</button><button class="btn soft" data-no="${p.uid}">暂不</button></div></section>`).join("")}` : `<p class="empty3">暂时没有新的好友申请</p>`}
+        ${r.friends.length ? `<div class="sec-t"><h2>已成为好友 (${r.friends.length})</h2></div><div class="rows">${r.friends.slice(0, 8).map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>我们现在是好友啦！</small></span><span class="badge gray">已成为好友</span></div>`).join("")}</div>` : ""}`;
       body.querySelectorAll("[data-ok],[data-no]").forEach(b => b.onclick = async () => {
         await Cloud.call("friendRespond", { other: b.dataset.ok || b.dataset.no, accept: !!b.dataset.ok }).catch(e => Pet.toast(e.message, "warn"));
         if (b.dataset.ok) inbox("social", "新朋友", "你们已经成为好友啦！", "🤝"); draw();
       });
     }
-  }
-  function addSheet() {
-    const sh = h(`<div class="sheet3" role="dialog" aria-modal="true" aria-label="添加好友"><div class="in" style="position:relative"><h2>添加好友</h2><button class="x" aria-label="关闭">✕</button>
-      <label class="input3">${ic3(I3.search).replace("<svg", '<svg width="18" height="18" style="fill:none;stroke:#999;stroke-width:2"')}<input id="code" maxlength="8" placeholder="输入对方的 6 位好友码" autocapitalize="characters"></label>
-      <button class="btn big" id="send">发送申请</button><p class="hint" id="msg" style="text-align:center"></p></div></div>`);
-    document.body.append(sh);
-    const close = () => sh.remove();
-    sh.querySelector(".x").onclick = close; sh.onclick = e => { if (e.target === sh) close(); };
-    sh.querySelector("#send").onclick = async () => {
-      const code = sh.querySelector("#code").value.trim(); if (!code) return;
-      try { const x = await Cloud.call("friendAdd", { code }); sh.querySelector("#msg").innerHTML = `<span class="badge ok">✓ ${x.status === "ok" ? `已和 ${esc(x.friend.nick)} 成为好友` : "好友申请已发送"}</span>`; setTimeout(() => { close(); draw(); }, 1000); }
-      catch (e) { sh.querySelector("#msg").textContent = e.message; }
-    };
-    sh.querySelector("#code").focus();
   }
   draw();
 }
@@ -843,12 +888,12 @@ function pageFriends3(tab = "list") {
 /* ---------- 消息 ---------- */
 async function pageMessages(tab = "gift") {
   const S = Pet.state; S.msgs = S.msgs || [];
-  const box = h(`<div class="page">${head3("消息", "#/account")}<div class="seg" role="tablist">${[["gift", "礼物"], ["social", "互动"], ["system", "系统"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-t="${k}">${l}</button>`).join("")}</div><div class="rows"></div></div>`);
+  const box = h(`<div class="page">${head3("消息", "#/home")}<div class="seg" role="tablist">${[["gift", "礼物"], ["social", "互动"], ["system", "系统"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-t="${k}">${l}</button>`).join("")}</div><div class="msgs"></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/messages/${b.dataset.t}`);
   if (tab === "gift") await Cloud.claimGifts().catch(() => {});
   const list = S.msgs.filter(m => m.kind === tab);
-  box.querySelector(".rows").innerHTML = list.map(m => `<div class="msg"><span class="em">${m.em}</span><span class="grow"><b>${esc(m.title)}</b><small>${esc(m.text)} · ${ago(m.t)}</small></span>${m.unread ? `<span class="red"></span>` : ""}</div>`).join("") || `<p class="empty3">${tab === "gift" ? "还没有收到礼物。好友可以给你的宠物送零食哦" : tab === "social" ? "还没有互动消息" : "没有系统消息"}</p>`;
+  box.querySelector(".msgs").innerHTML = list.map(m => `<div class="card msg"><span class="em">${m.em}</span><span class="grow"><b>${esc(m.title)}</b><small>${esc(m.text)}</small></span>${m.unread ? `<span class="red"></span>` : ""}${GO}</div>`).join("") || `<p class="empty3">${tab === "gift" ? "还没有收到礼物。好友可以给你的宠物送零食哦" : tab === "social" ? "还没有互动消息" : "没有系统消息"}</p>`;
   list.forEach(m => m.unread = false); Pet.save();
 }
 
@@ -856,14 +901,15 @@ async function pageMessages(tab = "gift") {
 function pageActivity() {
   const S = Pet.state; S.log = S.log || [];
   const EM = { feed: "🥣", water: "💧", pet: "❤️", snack: "🍗", play: "🪀", travel: "✈️", buy: "🛍️", nest: "🏠", grow: "🌱" };
-  const today = new Date().toDateString();
+  const T = { feed: "刚刚吃饱了", water: "喝了水", pet: "想要抱抱", snack: "吃了零食", play: "玩了一会儿", travel: "去旅行了", buy: "收到新东西", nest: "小窝换了样子", grow: "长大了" };
+  const d = new Date(), today = d.toDateString();
+  const item = e => `<div class="card msg"><span class="em">${EM[e.kind] || "🐾"}</span><span class="grow"><b>${T[e.kind] || "动态"}</b><small>${esc(e.text)}</small></span><span class="hint">${hhmm(e.t)}</span>${GO}</div>`;
   const box = h(`<div class="page">${head3("动态记录", "#/pet")}
-    <div class="sec-t"><h2>今天 <span class="hint" style="font-weight:400">${new Date().getMonth() + 1}月${new Date().getDate()}日</span></h2></div>
-    <div class="rows">${S.log.filter(e => new Date(e.t).toDateString() === today).map(e => `<div class="msg"><span class="em" style="background:#F3F5EE">${EM[e.kind] || "🐾"}</span><span class="grow"><b>${esc(e.text)}</b></span><span class="hint">${hhmm(e.t)}</span></div>`).join("") || `<p class="empty3">今天还没有互动。去喂喂它、摸摸它吧</p>`}</div>
-    ${S.log.some(e => new Date(e.t).toDateString() !== today) ? `<div class="sec-t"><h2>更早</h2></div><div class="rows">${S.log.filter(e => new Date(e.t).toDateString() !== today).slice(0, 20).map(e => `<div class="msg"><span class="em" style="background:#F3F5EE">${EM[e.kind] || "🐾"}</span><span class="grow"><b>${esc(e.text)}</b><small>${ago(e.t)}</small></span></div>`).join("")}</div>` : ""}
+    <div class="sec-t"><h2>今天 <span class="hint" style="font-weight:400">${d.getMonth() + 1}月${d.getDate()}日</span></h2></div>
+    <div class="msgs">${S.log.filter(e => new Date(e.t).toDateString() === today).map(item).join("") || `<p class="empty3">今天还没有互动。去喂喂它、摸摸它吧</p>`}</div>
     <div class="sec-t"><h2>设置</h2></div>
-    <section class="rows"><div><span class="grow"><b>状态变化速度</b><small>宠物的饱腹、水分、心情变化速度</small></span><span class="seg" style="width:140px;grid-auto-columns:1fr"><button aria-selected="${S.settings.speed !== "active"}" data-sp="std">标准</button><button aria-selected="${S.settings.speed === "active"}" data-sp="active">活跃</button></span></div>
-      <div><span class="grow"><b>静音模式</b><small>开启后不播放叫声、不推送互动通知</small></span><button class="switch" role="switch" id="mute" aria-checked="${!!S.settings.mute}" aria-label="静音模式"></button></div></section></div>`);
+    <section class="rows"><div><span class="grow"><b>状态变化速度</b><small>宠物的饱腹、水分、心情变化速度</small></span><span class="seg mini"><button aria-selected="${S.settings.speed !== "active"}" data-sp="std">标准</button><button aria-selected="${S.settings.speed === "active"}" data-sp="active">活跃</button></span></div>
+      <div><span class="grow"><b>静音模式</b><small>开启后不接收互动推送通知</small></span><button class="switch" role="switch" id="mute" aria-checked="${!!S.settings.mute}" aria-label="静音模式"></button></div></section></div>`);
   app.append(box);
   box.querySelectorAll("[data-sp]").forEach(b => b.onclick = () => { S.settings.speed = b.dataset.sp; Pet.save(); route(); });
   box.querySelector("#mute").onclick = e => { S.settings.mute = !S.settings.mute; Pet.save(); e.currentTarget.setAttribute("aria-checked", S.settings.mute); };
@@ -871,29 +917,23 @@ function pageActivity() {
 
 /* ---------- 账户 ---------- */
 function pageAccount3() {
-  const v = Pet.view(), S = Pet.state;
+  const v = Pet.view();
   const acc = v.totalAnswered ? Math.round(v.totalCorrect / v.totalAnswered * 100) : 0;
-  const unread = (S.msgs || []).filter(m => m.unread).length;
+  const R = (href, d, b, extra = "") => `<a href="${href}">${ic3(d, "ri")}<span class="grow"><b>${b}</b></span>${extra}${GO}</a>`;
   const box = h(`<div class="page acc3">
-    <div class="sec-t" style="margin:0"><span></span><a href="#/settings" aria-label="设置">${ic3(I3.cog).replace("<svg", '<svg width="24" height="24" style="fill:none;stroke:#333;stroke-width:1.8"')}</a></div>
-    <a class="me" href="#/settings"><span class="ava">${petPic(90, { stage: 1 })}</span><span class="grow"><b>${esc(v.profile.nick)}</b><span class="online"><i></i>在线</span></span>${GO}</a>
-    <section class="card"><h2 style="margin:0;font-size:15px">学习数据</h2><div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
-    <nav class="rows">
-      <a href="#/records">${tile3(I3.clock)}<span class="grow"><b>学习记录</b></span>${GO}</a>
-      <a href="#/partner">${tile3(I3.paw, "o")}<span class="grow"><b>我的伙伴</b><small>${esc(petName())} · ${esc(petOf(v.cat.breed).name)}</small></span>${petPic(44)}${GO}</a>
-      <a href="#/favs">${tile3(I3.folder, "y")}<span class="grow"><b>我的收藏</b></span>${GO}</a>
-      <a href="#/friends">${tile3(I3.user, "b")}<span class="grow"><b>好友</b></span>${GO}</a>
-      <a href="#/messages">${tile3(I3.bell, "v")}<span class="grow"><b>消息</b></span>${unread ? `<span class="tbadge">${unread}</span>` : ""}${GO}</a>
-      <a href="#/rank">${tile3("M6 20V10M12 20V4M18 20v-7", "g")}<span class="grow"><b>排行榜</b></span>${GO}</a>
-      <a href="#/settings">${tile3(I3.cog)}<span class="grow"><b>设置</b></span>${GO}</a>
-    </nav>
-    <div class="sec-t"><h2>最近互动</h2><a href="#/friends">全部 ›</a></div><div class="rows" id="recent"><p class="empty3">加载中…</p></div></div>`);
+    <a class="me" href="#/settings"><span class="ava">${petPic(92, { stage: 1 })}</span><span class="grow"><b>${esc(v.profile.nick)}</b><span class="online"><i></i>在线</span></span>${GO}</a>
+    <section class="card stats2"><h2>学习数据</h2><div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
+    <nav class="rows">${R("#/records", I3.clock, "学习记录")}${R("#/partner", I3.paw, "我的伙伴", `<span class="mini">${petPic(40)}</span>`)}${R("#/favs", I3.folder, "我的收藏")}</nav>
+    <nav class="rows">${R("#/settings", I3.cog, "设置")}</nav>
+    <div class="sec-t"><h2>最近互动</h2></div><div class="rows" id="recent"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
+  const bar = document.querySelector("#appbar .res");
+  if (bar) bar.innerHTML = `<a class="gear" href="#/settings" aria-label="设置">${ic3(I3.cog)}</a>`;
   const rc = box.querySelector("#recent");
   if (!Cloud.enabled()) { rc.innerHTML = `<p class="empty3">联网后显示好友动态</p>`; return; }
   Cloud.call("friendList").then(r => {
-    rc.innerHTML = r.friends.slice(0, 3).map(p => `<a class="fr" href="#/friend/${encodeURIComponent(p.uid)}">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>${p.lastActive ? `离线 · ${ago(p.lastActive)}在线` : "离线"}</small></span><span class="chat">${ic3(I3.chat)}</span></a>`).join("") || `<a class="fr" href="#/friends">${tile3(I3.plus)}<span class="grow"><b>还没有好友</b><small>点这里添加好友</small></span></a>`;
-  }).catch(() => { rc.innerHTML = `<a class="fr" href="#/friends">${tile3(I3.user)}<span class="grow"><b>登录后可以加好友</b></span></a>`; });
+    rc.innerHTML = r.friends.slice(0, 3).map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>${p.lastActive ? `离线 · ${ago(p.lastActive)}在线` : "离线"}</small></span><a class="chat" href="#/friend/${encodeURIComponent(p.uid)}" aria-label="去看看">${ic3(I3.chat)}</a></div>`).join("") || `<a class="fr" href="#/home"><span class="grow"><b>还没有好友</b><small>在主页点「添加好友」</small></span>${GO}</a>`;
+  }).catch(() => { rc.innerHTML = `<a class="fr" href="#/settings"><span class="grow"><b>登录后可以加好友</b></span>${GO}</a>`; });
 }
 
 /* ---------- 设置 ---------- */
@@ -901,34 +941,36 @@ const LANGS = [["zh", "简体中文 · 中文", "🇨🇳"], ["en", "English · 
 function pageSettings3() {
   const S = Pet.state, v = Pet.view();
   const u = Cloud.enabled() && Cloud.user(), L = Cloud.enabled() ? Cloud.label() : { text: "本机" };
+  const sw = (k, on, label) => `<div>${ic3(k === "mute" ? I3.sound : k === "meow" ? I3.paw : k === "roam" ? I3.heart : I3.bell, "ri")}<span class="grow"><b>${label}</b></span><button class="switch" role="switch" data-k="${k}" aria-checked="${on}"></button></div>`;
   const box = h(`<div class="page">${head3("设置", "#/account")}
     <div class="sec-t"><h2>账号与安全</h2></div>
-    <section class="rows">
-      <label><span class="grow"><b>昵称</b></span><input id="nick" maxlength="12" value="${esc(v.profile.nick)}" style="border:0;text-align:right;font:inherit;width:50%"></label>
-      <a href="#" id="acct"><span class="grow"><b>账号信息</b><small>${esc(L.text)}</small></span>${GO}</a>
-      <a href="#" id="bind"><span class="grow"><b>绑定信息</b><small>${u && !u.is_anonymous ? "已绑定" : "手机号 / 邮箱登录后可换设备"}</small></span>${GO}</a>
-    </section>
+    <section class="rows"><a href="#" id="acct">${ic3(I3.user, "ri")}<span class="grow"><b>账号信息</b><small>${esc(v.profile.nick)} · ${esc(L.text)}</small></span>${GO}</a>
+      <a href="#" id="bind">${ic3(I3.link, "ri")}<span class="grow"><b>绑定信息</b><small>${u && !u.is_anonymous ? "已绑定手机号 / 邮箱" : "绑定后可以换设备继续"}</small></span>${GO}</a></section>
     <div class="sec-t"><h2>通用</h2></div>
+    <section class="rows"><a href="#" id="lang">${ic3(I3.globe, "ri")}<span class="grow"><b>应用界面语言</b></span><em>${LANGS.find(l => l[0] === (S.settings.lang || "zh"))[1]}</em>${GO}</a>
+      ${sw("mute", !!S.settings.mute, "静音模式")}</section>
+    <div class="sec-t"><h2>学习与陪伴</h2></div>
     <section class="rows">
-      <a href="#" id="lang"><span class="grow"><b>应用界面语言</b></span><em>${LANGS.find(l => l[0] === (S.settings.lang || "zh"))[1]}</em>${GO}</a>
-      <div><span class="grow"><b>静音模式</b></span><button class="switch" role="switch" data-k="mute" aria-checked="${!!S.settings.mute}"></button></div>
-      <div><span class="grow"><b>答对时宠物叫一声</b></span><button class="switch" role="switch" data-k="meow" aria-checked="${S.settings.meow !== false}"></button></div>
-      <div><span class="grow"><b>宠物在页面里跑来跑去</b></span><button class="switch" role="switch" data-k="roam" aria-checked="${S.settings.roam !== false}"></button></div>
-      <div><span class="grow"><b>宠物想你时提醒我</b>${IS_NATIVE ? "" : "<small>App 版可用</small>"}</span><button class="switch" role="switch" data-k="notify" aria-checked="${S.settings.notify !== false}"></button></div>
-      <label><span class="grow"><b>每日目标</b></span><select id="goal" style="border:0;font:inherit;background:none">${[10, 20, 30, 50].map(n => `<option value="${n}" ${n === S.goal ? "selected" : ""}>答对 ${n} 题</option>`).join("")}</select></label>
-      <a href="#/desk"><span class="grow"><b>桌面陪伴</b></span>${GO}</a>
-    </section>
+      <label>${ic3(I3.clock, "ri")}<span class="grow"><b>每日目标</b></span><select id="goal">${[10, 20, 30, 50].map(n => `<option value="${n}" ${n === S.goal ? "selected" : ""}>答对 ${n} 题</option>`).join("")}</select></label>
+      ${sw("meow", S.settings.meow !== false, "答对时宠物叫一声")}${sw("roam", S.settings.roam !== false, "宠物在页面里跑来跑去")}${sw("notify", S.settings.notify !== false, "宠物想你时提醒我")}
+      <a href="#/desk">${ic3(I3.home, "ri")}<span class="grow"><b>桌面陪伴</b></span>${GO}</a></section>
     <div class="cloudslot"></div>
     <div class="sec-t"><h2>数据</h2></div>
     <section class="card"><p class="hint" style="margin:0 0 8px">搬家：在旧设备点「导出」，到新设备点「导入」并粘贴。</p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" id="exp">导出进度</button><button class="btn ghost" id="imp">导入进度</button></div>
+      <div class="two2"><button class="btn ghost" id="exp">导出进度</button><button class="btn ghost" id="imp">导入进度</button></div>
       <textarea id="moveBox" rows="3" hidden style="width:100%;margin-top:8px"></textarea><p class="hint" id="moveHint"></p>
       <button class="btn ghost" id="reset" style="width:100%;margin-top:6px">清除本机数据，重新开始</button><p class="hint" id="resetHint"></p></section>
-    <p class="hint" style="text-align:center">宠物俄语通 · 版本 3.0</p></div>`);
+    <p class="hint" style="text-align:center">宠物俄语通 · 版本 3.0 · <a href="#" id="credits">图片来源</a></p></div>`);
   app.append(box);
   if (Cloud.enabled()) box.querySelector(".cloudslot").replaceWith(cloudCard());
-  box.querySelector("#nick").onchange = e => { S.profile.nick = e.target.value.trim() || S.profile.nick; Pet.save(); Pet.toast("昵称已保存", "good"); };
-  box.querySelector("#acct").onclick = box.querySelector("#bind").onclick = e => { e.preventDefault(); if (Cloud.enabled() && !(u && !u.is_anonymous)) loginSheet(() => route()); else Pet.toast(L.text); };
+  box.querySelector("#acct").onclick = e => {
+    e.preventDefault();
+    const sh = h(`<div class="sheet3" role="dialog" aria-modal="true" aria-label="账号信息"><div class="in" style="position:relative"><h2>账号信息</h2><button class="x" aria-label="关闭">✕</button>
+      <label class="field"><span>昵称</span><input id="nk" maxlength="12" value="${esc(S.profile.nick)}"></label><p class="hint">${esc(L.text)}</p><button class="btn big lime" id="sv">保存</button></div></div>`);
+    document.body.append(sh); sh.querySelector(".x").onclick = () => sh.remove();
+    sh.querySelector("#sv").onclick = () => { S.profile.nick = sh.querySelector("#nk").value.trim() || S.profile.nick; Pet.save(); sh.remove(); route(); };
+  };
+  box.querySelector("#bind").onclick = e => { e.preventDefault(); if (Cloud.enabled() && !(u && !u.is_anonymous)) loginSheet(() => route()); else Pet.toast(u ? "已绑定：" + L.text : "联网后可以绑定"); };
   box.querySelector("#goal").onchange = e => { S.goal = +e.target.value; Pet.save(); };
   box.querySelectorAll("[data-k]").forEach(b => b.onclick = async () => {
     const k = b.dataset.k, val = b.getAttribute("aria-checked") !== "true";
@@ -940,12 +982,19 @@ function pageSettings3() {
     e.preventDefault();
     let pick = S.settings.lang || "zh";
     const sh = h(`<div class="sheet3" role="dialog" aria-modal="true" aria-label="应用界面语言"><div class="in" style="position:relative"><h2>应用界面语言</h2><p class="hint" style="text-align:center;margin:-6px 0 0">应用于整个界面</p><button class="x" aria-label="关闭">✕</button>
-      ${LANGS.map(([k, n, f]) => `<button class="lang" role="radio" aria-checked="${k === pick}" data-l="${k}"><span class="fl">${f}</span><span class="grow">${n}${k === "zh" ? "" : `<span class="soon">即将支持</span>`}</span></button>`).join("")}
+      ${LANGS.map(([k, n, f]) => `<button class="lang" role="radio" aria-checked="${k === pick}" data-l="${k}"><span class="fl">${f}</span><span class="grow">${n}${k === "zh" ? "" : `<span class="soon">即将支持</span>`}</span><span class="ck">✓</span></button>`).join("")}
       <button class="btn big lime" id="apply">应用</button></div></div>`);
     document.body.append(sh);
     sh.querySelector(".x").onclick = () => sh.remove();
     sh.querySelectorAll("[data-l]").forEach(b => b.onclick = () => { pick = b.dataset.l; sh.querySelectorAll("[data-l]").forEach(x => x.setAttribute("aria-checked", x.dataset.l === pick)); });
     sh.querySelector("#apply").onclick = () => { if (pick !== "zh") { Pet.toast("英语和俄语界面正在翻译中，很快上线", "warn"); return; } S.settings.lang = pick; Pet.save(); sh.remove(); };
+  };
+  box.querySelector("#credits").onclick = async e => {
+    e.preventDefault();
+    const c = await fetch("img/cities/credits.json").then(r => r.json()).catch(() => ({}));
+    const sh = h(`<div class="sheet3" role="dialog" aria-modal="true"><div class="in" style="position:relative;max-height:80vh;overflow:auto"><h2>图片来源</h2><button class="x" aria-label="关闭">✕</button>
+      <p class="hint">城市照片来自 Wikimedia Commons，按各自的许可协议使用：</p>${Object.entries(c).map(([k, x]) => `<p class="hint"><b>${(CITY[k] || {}).zh || k}</b>：<a href="${esc(x.page)}" target="_blank" rel="noopener">${esc(x.title.replace(/^File:/, ""))}</a> · ${esc(x.author || "")} · ${esc(x.license || "")}</p>`).join("") || `<p class="hint">暂无</p>`}</div></div>`);
+    document.body.append(sh); sh.querySelector(".x").onclick = () => sh.remove();
   };
   const mb = box.querySelector("#moveBox"), mh = box.querySelector("#moveHint");
   box.querySelector("#exp").onclick = async () => { const code = "MM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(Pet.state)))); mb.hidden = false; mb.value = code; mb.select(); try { await navigator.clipboard.writeText(code); mh.textContent = "进度码已复制"; } catch { mh.textContent = "请长按全选复制"; } };
@@ -990,7 +1039,8 @@ function pageFavs() {
 
 /* ---------- 我的伙伴: switch pet / rename ---------- */
 function petPicker(cur, onPick, kind) {
-  return `<div class="pills" style="margin-bottom:8px"><button data-kind="cat" aria-pressed="${kind === "cat"}">🐱 猫咪</button><button data-kind="dog" aria-pressed="${kind === "dog"}">🐶 狗狗</button></div>
+  kind = SHOW_DOGS ? kind : "cat";
+  return `${SHOW_DOGS ? `<div class="pills" style="margin-bottom:8px"><button data-kind="cat" aria-pressed="${kind === "cat"}">🐱 猫咪</button><button data-kind="dog" aria-pressed="${kind === "dog"}">🐶 狗狗</button></div>` : ""}
     <div class="breeds" role="radiogroup" aria-label="品种">${PET_KEYS[kind].map(k => `<button role="radio" aria-checked="${k === cur}" data-b="${k}">${petImg(k, { stage: 2, size: 58 })}<span>${PETS[k].short}</span></button>`).join("")}</div>`;
 }
 function pagePartner() {
@@ -1014,45 +1064,74 @@ function pagePartner() {
 }
 
 /* ---------- 查词与翻译 ---------- */
-function pageDict(tab = "word") {
+function pageDict(tab = "tr") {
   const S = Pet.state; S.lookups = S.lookups || [];
-  const box = h(`<div class="page">${head3("查词与翻译", "#/home")}
-    <div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "tr"}" data-t="word">查单词</button><button role="tab" aria-selected="${tab === "tr"}" data-t="tr">翻译句子</button></div><div class="dbody"></div>
+  const box = h(`<div class="page dict">${head3("查词与翻译", "#/home")}
+    <div class="seg big" role="tablist"><button role="tab" aria-selected="${tab === "word"}" data-t="word">查单词</button><button role="tab" aria-selected="${tab !== "word"}" data-t="tr">翻译句子</button></div><div class="dbody"></div>
     <div class="sec-t"><h2>最近查询</h2><a href="#" id="clr">清空</a></div><div class="rows" id="recent"></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/dict/${b.dataset.t}`);
   const body = box.querySelector(".dbody");
   const fav = w => (S.fav || []).some(f => f.w === w);
   function recent() {
-    box.querySelector("#recent").innerHTML = S.lookups.map((r, i) => `<div><span class="grow"><b class="ru" lang="ru">${esc(r.w)}</b><small>${esc(r.zh)}</small></span><button class="iconbtn" data-s="${i}" style="border:0;background:none" aria-label="朗读">${ic3(I3.sound).replace("<svg", '<svg width="20" height="20" style="fill:none;stroke:#555;stroke-width:2"')}</button><button data-f="${i}" style="border:0;background:none;font-size:20px;color:#F2B21A" aria-label="收藏">${fav(r.w) ? "★" : "☆"}</button></div>`).join("") || `<p class="empty3">还没有查过单词</p>`;
+    box.querySelector("#recent").innerHTML = S.lookups.map((r, i) => `<div><span class="grow"><b class="ru" lang="ru">${esc(r.w)}</b><small>${esc(r.zh)}</small></span><button class="ib" data-s="${i}" aria-label="朗读">${ic3(I3.sound)}</button><button class="star ${fav(r.w) ? "on" : ""}" data-f="${i}" aria-label="收藏">${fav(r.w) ? "★" : "☆"}</button></div>`).join("") || `<p class="empty3">还没有查询记录</p>`;
     box.querySelectorAll("[data-s]").forEach(b => b.onclick = () => playOne(b, S.lookups[+b.dataset.s].w));
     box.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { const r = S.lookups[+b.dataset.f]; const on = toggleFav(r.w, r.zh, r.lv); Pet.toast(on ? "已加入收藏" : "已取消收藏", on ? "good" : ""); recent(); });
   }
+  const remember = r => { S.lookups = [{ w: r.w, zh: r.zh, lv: r.lv }, ...S.lookups.filter(x => x.w !== r.w)].slice(0, 20); Pet.save(); recent(); };
   box.querySelector("#clr").onclick = e => { e.preventDefault(); S.lookups = []; Pet.save(); recent(); };
-  if (tab !== "tr") {
-    body.innerHTML = `<label class="input3">${ic3(I3.search).replace("<svg", '<svg width="18" height="18" style="fill:none;stroke:#999;stroke-width:2"')}<input id="q" placeholder="输入俄语单词，例如 привет" autocomplete="off" lang="ru"></label><div id="res" style="margin-top:10px"></div>`;
+  if (tab === "word") {
+    body.innerHTML = `<label class="input3 big">${ic3(I3.search)}<input id="q" placeholder="输入俄语单词，例如 привет" autocomplete="off" lang="ru"></label><div id="res"></div>`;
     const q = body.querySelector("#q"), res = body.querySelector("#res");
     let t;
     q.oninput = () => { clearTimeout(t); t = setTimeout(async () => {
       const w = q.value.trim(); if (!w) { res.innerHTML = ""; return; }
       const r = await lookup(w);
       if (!r) { res.innerHTML = `<p class="empty3">词库里没有找到「${esc(w)}」</p>`; return; }
-      res.innerHTML = `<section class="card abc-card"><button class="say3" aria-label="朗读">${ic3(I3.vol)}</button><div><div class="word ru" lang="ru" style="font-size:24px">${esc(r.w.replace(/́/g, "́"))}</div><div class="hint">${r.guess ? "可能是 · " : ""}${r.lv} · ${esc(r.zh)}</div></div><button id="fv" style="margin-left:auto;border:0;background:none;font-size:26px;color:#F2B21A" aria-label="收藏">${fav(r.w) ? "★" : "☆"}</button></section>`;
-      res.querySelector(".say3").onclick = () => playOne(res.querySelector(".say3"), r.w);
-      res.querySelector("#fv").onclick = e => { const on = toggleFav(r.w, r.zh, r.lv); e.currentTarget.textContent = on ? "★" : "☆"; recent(); };
-      S.lookups = [{ w: r.w, zh: r.zh, lv: r.lv }, ...S.lookups.filter(x => x.w !== r.w)].slice(0, 20); Pet.save(); recent();
-    }, 300); };
+      res.innerHTML = `<section class="card tres"><div class="row1"><b class="ru" lang="ru">${esc(r.w)}</b><button class="ib" id="say" aria-label="朗读">${ic3(I3.sound)}</button></div>
+        <p class="zh">${esc(r.zh)}</p><p class="hint">${r.guess ? "可能是这个词 · " : ""}${r.lv} 词汇</p>
+        <div class="two2"><button class="btn soft" id="cp">${ic3(I3.cards)} 复制</button><button class="btn soft" id="fv">${ic3(I3.plus)} ${fav(r.w) ? "已在生词本" : "加入生词本"}</button></div></section>`;
+      res.querySelector("#say").onclick = e => playOne(e.currentTarget, r.w);
+      res.querySelector("#cp").onclick = async () => { try { await navigator.clipboard.writeText(`${r.w.replace(/́/g, "")} ${r.zh}`); Pet.toast("已复制", "good"); } catch { Pet.toast(r.w); } };
+      res.querySelector("#fv").onclick = e => { if (!fav(r.w)) toggleFav(r.w, r.zh, r.lv); e.currentTarget.lastChild.textContent = " 已在生词本"; Pet.toast("已加入生词本（我的收藏）", "good"); recent(); };
+      remember(r);
+    }, 280); };
     q.focus();
   } else {
-    body.innerHTML = `<div class="pills"><button aria-pressed="true">俄语</button><span style="align-self:center">⇄</span><button aria-pressed="false">中文</button></div>
-      <label class="input3" style="margin-top:10px"><textarea id="src" rows="3" lang="ru" placeholder="输入要翻译的句子">Как прошёл твой день?</textarea></label>
-      <button class="btn big lime" id="go" style="margin-top:10px">翻译</button>
-      <section class="card" style="margin-top:10px"><b>整句翻译 <span class="soon">即将上线</span></b><p class="hint" style="margin:6px 0 0">句子翻译需要接入机器翻译服务，接好后就能用。现在可以先用「查单词」，或者点 🔊 听这句话的发音。</p>
-        <button class="btn ghost" id="say" style="margin-top:8px">🔊 朗读这句俄语</button></section>`;
-    body.querySelector("#go").onclick = () => Pet.toast("整句翻译即将上线", "warn");
-    body.querySelector("#say").onclick = e => playOne(e.currentTarget, body.querySelector("#src").value);
+    let from = "ru";
+    const draw = () => {
+      body.innerHTML = `<div class="langs"><button class="lsel">${from === "ru" ? "俄语" : "中文"} ⌄</button><button class="swap" aria-label="交换">⇄</button><button class="lsel">${from === "ru" ? "中文" : "俄语"} ⌄</button></div>
+        <div class="tbox"><textarea id="src" rows="5" lang="${from}" placeholder="${from === "ru" ? "输入或粘贴俄语句子" : "输入中文句子"}">${from === "ru" ? "Как прошёл твой день?" : ""}</textarea><button class="clear" aria-label="清空">✕</button></div>
+        <button class="btn big lime" id="go">翻译</button><div id="out"></div>`;
+      body.querySelector(".swap").onclick = () => { from = from === "ru" ? "zh" : "ru"; draw(); };
+      const src = body.querySelector("#src");
+      body.querySelector(".clear").onclick = () => { src.value = ""; src.focus(); };
+      body.querySelector("#go").onclick = async () => {
+        const text = src.value.trim(); if (!text) return;
+        const out = body.querySelector("#out");
+        out.innerHTML = `<section class="card tres"><p class="hint">翻译中…</p></section>`;
+        const r = await translate3(text, from);
+        out.innerHTML = `<section class="card tres"><div class="row1"><b>${esc(r.text)}</b>${from === "zh" && r.ok ? `<button class="ib" id="say" aria-label="朗读">${ic3(I3.sound)}</button>` : from === "ru" ? `<button class="ib" id="say" aria-label="朗读原句">${ic3(I3.sound)}</button>` : ""}</div>
+          ${r.note ? `<p class="hint">${r.note}</p>` : ""}
+          <div class="two2"><button class="btn soft" id="cp">${ic3(I3.cards)} 复制</button><button class="btn soft" id="nb">${ic3(I3.plus)} 加入生词本</button></div></section>`;
+        const say = out.querySelector("#say"); if (say) say.onclick = e => playOne(e.currentTarget, from === "ru" ? text : r.text);
+        out.querySelector("#cp").onclick = async () => { try { await navigator.clipboard.writeText(r.text); Pet.toast("已复制", "good"); } catch {} };
+        out.querySelector("#nb").onclick = () => { toggleFav(from === "ru" ? text : r.text, from === "ru" ? r.text : text, ""); Pet.toast("已加入生词本（我的收藏）", "good"); };
+      };
+    };
+    draw();
   }
   recent();
+}
+/* sentence translation: word-by-word from the built-in dictionary for now; the full AI translation
+   switches on automatically once the cloud "translate" action is available (needs the AI resource pack) */
+async function translate3(text, from) {
+  try { if (Cloud.enabled()) { const r = await Cloud.call("translate", { text, from }); if (r && r.text) return { ok: true, text: r.text }; } } catch (_) {}
+  if (from !== "ru") return { ok: false, text: "整句中译俄即将上线", note: "现在可以先用「查单词」查俄语单词的意思。" };
+  const words = text.match(/[А-Яа-яЁё́-]+/g) || [];
+  const parts = [];
+  for (const w of words) { const r = await lookup(w); parts.push(r ? r.zh.split(/[；;，,]/)[0] : w); }
+  return { ok: false, text: parts.join(" · ") || text, note: "逐词释义（整句 AI 翻译即将上线）" };
 }
 
 /* ---------- welcome: choose a cat or a dog ---------- */
@@ -1064,9 +1143,9 @@ function pageWelcome3() {
   function draw() {
     if (step === 1) {
       const logged = Cloud.enabled() && Cloud.user() && !Cloud.user().is_anonymous;
-      box.innerHTML = `<div style="text-align:center;margin-top:10px">${petImg("orange", { stage: 1, size: 150 })}${petImg("corgi", { stage: 1, size: 130 })}</div>
+      box.innerHTML = `<div style="text-align:center;margin-top:10px">${petImg("orange", { stage: 1, size: 150 })}${petImg("british", { stage: 1, size: 136 })}</div>
         <h1 class="display" style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:40px">${LOGO}</span>宠物俄语通</h1>
-        <p class="hint" style="font-size:15px">学俄语，养一只小猫或小狗。你学得越多，它吃得越饱、长得越大；不学习它会饿、会生病。</p>
+        <p class="hint" style="font-size:15px">学俄语，养一只小猫。你学得越多，它吃得越饱、长得越大；不学习它会饿、会生病。</p>
         ${Cloud.enabled() ? logged ? `<p class="badge ok">已登录：${esc(Cloud.label().text)}</p>` : `<button class="btn big" id="login">手机号 / 邮箱登录</button><p class="hint">已有账号？登录后自动取回你的宠物和学习进度。</p><div class="wl-or"><span>或者先体验一下</span></div>` : ""}
         <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周" value="${esc(nick)}"></label>
         <button class="btn big ${Cloud.enabled() && !logged ? "ghost" : "lime"}" id="go">${Cloud.enabled() && !logged ? "游客开始" : "下一步"}</button>`;
@@ -1076,7 +1155,7 @@ function pageWelcome3() {
       box.querySelector("#go").onclick = () => { nick = inp.value.trim() || "同学"; step = 2; draw(); };
       inp.onkeydown = e => { if (e.key === "Enter") box.querySelector("#go").click(); };
     } else {
-      box.innerHTML = `<p class="hint">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的伙伴</h1>
+      box.innerHTML = `<p class="hint">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的猫</h1>
         <section class="card" style="text-align:center"><div style="min-height:150px;display:flex;align-items:flex-end;justify-content:center">${petImg(breed, { stage: 1, size: 160 })}</div>
           <b style="font-size:18px">${esc(name) || "（还没起名字）"}</b><p class="hint" style="margin:2px 0 0">${PETS[breed].name} · ${PETS[breed].desc}</p></section>
         <section class="card">${petPicker(breed, null, kind)}</section>
@@ -1113,3 +1192,21 @@ catSVG = function (o = {}) {
 catSideSVG = o => petImg(PETS[o.breed] ? o.breed : "orange", { stage: o.stage || 2, size: (o.size || 120) * 0.9, pose: o.eat ? "sit" : "walk", label: o.label || "" });
 catLieSVG = o => petImg(PETS[o.breed] ? o.breed : "orange", { stage: o.stage || 2, size: (o.size || 120) * 0.85, pose: "lie", label: o.label || "" });
 PET_LIST.forEach(([k, , name, short, desc]) => { BREEDS[k] = Object.assign({}, BREEDS[k] || BREEDS.orange, { name, short, desc }); });
+
+function addFriendSheet(after) {
+  const sh = h(`<div class="sheet3" role="dialog" aria-modal="true" aria-label="添加好友"><div class="in" style="position:relative"><h2>添加好友</h2><button class="x" aria-label="关闭">✕</button>
+    <label class="input3">${ic3(I3.search).replace("<svg", '<svg width="18" height="18" style="fill:none;stroke:#999;stroke-width:2"')}<input id="code" maxlength="8" placeholder="输入对方的好友码" autocapitalize="characters"></label>
+    <button class="btn big" id="send">发送申请</button><p class="hint" id="msg" style="text-align:center"></p><p class="hint" id="mine" style="text-align:center"></p></div></div>`);
+  document.body.append(sh);
+  const close = () => sh.remove();
+  sh.querySelector(".x").onclick = close; sh.onclick = e => { if (e.target === sh) close(); };
+  if (Cloud.enabled()) Cloud.call("friendList").then(r => { sh.querySelector("#mine").innerHTML = `我的好友码：<b>${r.myCode || "—"}</b>`; }).catch(() => {});
+  sh.querySelector("#send").onclick = async () => {
+    const code = sh.querySelector("#code").value.trim(); if (!code) return;
+    try { const x = await Cloud.call("friendAdd", { code }); sh.querySelector("#msg").innerHTML = `<span class="badge ok">✓ ${x.status === "ok" ? `已和 ${esc(x.friend.nick)} 成为好友` : "好友申请已发送"}</span>`; setTimeout(() => { close(); after && after(); }, 1000); }
+    catch (e) { sh.querySelector("#msg").textContent = e.message; }
+  };
+  sh.querySelector("#code").focus();
+}
+const LV_TITLE = { A1: "零基础入门", A2: "基础进阶", B1: "独立表达", B2: "流利交流", C1: "高级运用", C2: "接近母语" };
+const LV_SUB = { A1: "从字母开始，学会打招呼和自我介绍", A2: "打好基础，掌握日常交流能力", B1: "能独立应对工作、旅行和生活", B2: "流利讨论观点，读懂一般报刊", C1: "专业话题、谈判辩论都不在话下", C2: "学术、法律、文学，接近母语水平" };
