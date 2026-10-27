@@ -1,0 +1,16 @@
+{
+  "version": "2.0",
+  "envId": "{{env.TCB_ENV_ID}}",
+  "functionRoot": "./functions",
+  "functions": [
+    {
+      "name": "api",
+      "timeout": 20,
+      "runtime": "Nodejs18.15",
+      "memorySize": 256,
+      "installDependency": true,
+      "handler": "index.main",
+      "envVariables": { "ADMIN_UIDS": "{{env.ADMIN_UIDS}}", "APPLE_AUDIENCE": "io.github.shizhongzhou.maomao" }
+    }
+  ]
+}

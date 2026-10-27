@@ -1,0 +1,43 @@
+name: Deploy cloud (CloudBase)
+# Deploys the cloud function and the website to Tencent CloudBase (China).
+# Needs repository secrets: TCB_SECRET_ID, TCB_SECRET_KEY (a CAM key with CloudBase access), TCB_ENV_ID,
+# and optionally ADMIN_UIDS (comma separated user ids allowed into the admin page).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["cloud/**", "*.js", "*.css", "index.html", "img/**", "data/**"]
+concurrency: { group: cloudbase, cancel-in-progress: false }
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      TCB_SECRET_ID: ${{ secrets.TCB_SECRET_ID }}
+      TCB_SECRET_KEY: ${{ secrets.TCB_SECRET_KEY }}
+      TCB_ENV_ID: ${{ secrets.TCB_ENV_ID }}
+      ADMIN_UIDS: ${{ secrets.ADMIN_UIDS }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Skip until CloudBase is set up
+        id: gate
+        run: |
+          if [ -z "$TCB_SECRET_ID" ] || [ -z "$TCB_ENV_ID" ]; then echo "::notice::CloudBase secrets not set yet - skipping deploy"; echo "go=0" >> $GITHUB_OUTPUT; else echo "go=1" >> $GITHUB_OUTPUT; fi
+      - uses: actions/setup-node@v4
+        if: steps.gate.outputs.go == '1'
+        with: { node-version: 20 }
+      - name: CloudBase CLI login
+        if: steps.gate.outputs.go == '1'
+        run: |
+          npm i -g @cloudbase/cli@2 >/dev/null 2>&1
+          tcb login --apiKeyId "$TCB_SECRET_ID" --apiKey "$TCB_SECRET_KEY"
+      - name: Deploy cloud function "api"
+        if: steps.gate.outputs.go == '1'
+        working-directory: cloud
+        run: |
+          sed -i "s|{{env.TCB_ENV_ID}}|$TCB_ENV_ID|; s|{{env.ADMIN_UIDS}}|$ADMIN_UIDS|" cloudbaserc.json
+          tcb fn deploy api -e "$TCB_ENV_ID" --force 2>&1 | tail -20
+      - name: Deploy website to CloudBase static hosting
+        if: steps.gate.outputs.go == '1'
+        run: |
+          mkdir site && cp index.html *.js *.css manifest.webmanifest site/ && cp -R data icons img site/
+          tcb hosting deploy site / -e "$TCB_ENV_ID" 2>&1 | tail -5

@@ -66,6 +66,10 @@ function route() {
     case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["考试加油！", "我相信你", "Уда́чи! 祝你好运"]; break;
     case "meow": tab = "meow"; pageMeow(); roam = false; break;
     case "play": tab = "home"; pagePlay(); roam = false; break;
+    case "rank": tab = "home"; pageRank(p1); break;
+    case "friends": tab = "home"; pageFriends(); break;
+    case "friend": tab = "home"; pageFriendCat(p1); roam = false; break;
+    case "admin": tab = "account"; pageAdmin(); roam = false; break;
     case "shop": tab = "meow"; pageShop(p1); break;
     case "dress": tab = "home"; pageDress(); roam = false; break;
     case "vet": tab = "meow"; pageVet(); roam = false; break;
@@ -260,6 +264,7 @@ function pageHome() {
       <div><b>${fmt(words)}</b><span>已学单词</span></div>
       <div><b>${v.daily.correct}<small> / ${v.goal}</small></b><span>今日答对</span></div>
     </section>
+    <nav class="hm-social"><a href="#/rank">${svgI("M6 20V10M12 20V4M18 20v-7", "stroke")}排行榜</a><a href="#/friends">${svgI("M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM3 21c0-3.5 3-6 6-6s6 2.5 6 6M17 11a3 3 0 1 0 0-6M21 21c0-2.6-1.7-4.6-4-5.4", "stroke")}好友</a></nav>
     <section class="hm-course">
       <div class="row"><div><small>当前课程</small><b>${lp ? lp.lv : lv} · ${esc(LEVELS[lp ? lp.lv : lv].title)}</b><span>${lp ? esc(lp.name) : "从字母和第一批单词开始"}</span></div><em>今日 ${v.daily.correct}/${v.goal}</em></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
@@ -615,8 +620,9 @@ function pageAccount() {
       <section class="card"><h2>搬家：导出 / 导入进度</h2><p class="hint">网页版和 App 的进度是分开保存的。在旧的地方点“导出”，到新的地方点“导入”并粘贴，猫咪就搬过来了。</p>
         <div class="row2"><button class="btn ghost" id="exp">导出进度</button><button class="btn ghost" id="imp">导入进度</button></div>
         <textarea id="moveBox" rows="3" hidden placeholder="把导出的进度码粘贴到这里"></textarea><p class="hint" id="moveHint"></p></section>
-      <section class="card dark sync"><b>云端同步</b><p>现在账号和进度只保存在这台设备上。登录同步、换手机不丢猫，正在开发中。</p></section>
+      <div class="cloud-slot"></div>
       <section class="card"><h2>数据</h2><button class="btn ghost" id="reset">清除本机数据，重新开始</button><p class="hint" id="resetHint"></p></section>`;
+    box.querySelector(".cloud-slot").replaceWith(cloudCard());
     const mb = box.querySelector("#moveBox"), mh = box.querySelector("#moveHint");
     box.querySelector("#exp").onclick = async () => {
       const code = "MM1:" + btoa(unescape(encodeURIComponent(JSON.stringify(Pet.state))));

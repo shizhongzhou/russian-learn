@@ -54,6 +54,7 @@ function feedScene(kind = "kibble", onDone) {
 /* ---------- boot ---------- */
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
 route();
+if (typeof Cloud !== "undefined") Cloud.start();
 
 /* ========== intro (v2): 小橘 walks out, pounces on the yarn ball, looks at you, startles and runs off.
    The full story plays on the first open of the day; later opens just show the logo for a moment. Tap to skip. ========== */
