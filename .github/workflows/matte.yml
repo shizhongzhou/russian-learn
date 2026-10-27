@@ -42,3 +42,22 @@ jobs:
           rm -rf out/$n/raw
       - uses: actions/upload-artifact@v4
         with: { name: "cut-${{ strategy.job-index }}", path: out, retention-days: 5 }
+  publish:
+    needs: cut
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "cut-*", path: incoming, merge-multiple: true }
+      - name: Commit to pet-art branch
+        shell: bash
+        run: |
+          git config user.name "pet-bot"; git config user.email "actions@users.noreply.github.com"
+          git fetch -q origin pet-art || true
+          if git rev-parse -q --verify origin/pet-art >/dev/null; then git checkout -q -B pet-art origin/pet-art; else git checkout -q --orphan pet-art; git rm -rqf . ; fi
+          mkdir -p anim && cp -r incoming/* anim/
+          git add anim && git commit -qm "orange cat clips" && git push -q origin pet-art
+          echo "::notice::published $(find anim -type f | wc -l) files"

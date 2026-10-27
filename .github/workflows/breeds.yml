@@ -23,5 +23,25 @@ jobs:
           cp all/${{ matrix.part }}*.png src/
           if ! python scripts/matte_imgs.py src out > log.txt 2>&1; then tail -15 log.txt | while IFS= read -r l; do echo "::error::$l"; done; exit 1; fi
           echo "::notice::$(ls out | wc -l) files $(du -sh out | cut -f1)"
+          python -c "import json;d=json.load(open('out/sizes.json'));print('::notice::'+' '.join(f'{k}:{len(v)}' for k,v in sorted(d.items())))"
       - uses: actions/upload-artifact@v4
         with: { name: "breeds-${{ matrix.part }}", path: out, retention-days: 5 }
+  publish:
+    needs: cut
+    if: always()
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "breeds-*", path: incoming, merge-multiple: true }
+      - name: Commit to pet-art branch
+        shell: bash
+        run: |
+          git config user.name "pet-bot"; git config user.email "actions@users.noreply.github.com"
+          git fetch -q origin pet-art || true
+          if git rev-parse -q --verify origin/pet-art >/dev/null; then git checkout -q -B pet-art origin/pet-art; else git checkout -q --orphan pet-art; git rm -rqf . ; fi
+          mkdir -p breeds && cp -r incoming/* breeds/
+          git add breeds && git commit -qm "breed cut-outs" && git push -q origin pet-art
+          echo "::notice::published $(find breeds -type f | wc -l) files"
