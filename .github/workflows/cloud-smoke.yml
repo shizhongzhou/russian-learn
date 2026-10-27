@@ -11,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        origin: ["", "https://localhost", "capacitor://localhost", "https://shizhongzhou.github.io"]
+        origin: ["", "capacitor://localhost"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

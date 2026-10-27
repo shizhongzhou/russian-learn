@@ -40,6 +40,50 @@ const synth = TTS ? null : window.speechSynthesis;
 let ruVoices = [];
 let rate = store.get("rate", 1);
 let playToken = 0;
+let nativeRu = true;          // false when the phone has no Russian voice → use the cloud voice
+
+/* cloud voice: mp3 from the "tts" cloud function, for phones / browsers without a Russian voice
+   (most Chinese Android browsers, phones without a Russian TTS pack) */
+const CLOUD_TTS = !!(window.CLOUD_CONFIG && window.CLOUD_CONFIG.env) && !/github\.io$/.test(location.hostname);
+const ttsCache = new Map();   // "voice|text" → Promise<blob url>
+const player = new Audio();
+player.preload = "auto";
+let playerDone = null;        // resolves the current cloud playback
+const SILENT = "data:audio/mpeg;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjYwLjE2LjEwMAAAAAAAAAAAAAAA//NwwAAAAAAAAAAAAEluZm8AAAAPAAAABgAAAykAWlpaWlpaWlpaWlpaWlpaWnt7e3t7e3t7e3t7e3t7e3t7nJycnJycnJycnJycnJycnL29vb29vb29vb29vb29vb293t7e3t7e3t7e3t7e3t7e3t7/////////////////////AAAAAExhdmM2MC4zMQAAAAAAAAAAAAAAACQCowAAAAAAAAMpso+sIAAAAAAAAAAAAAAAAAD/80DEAAAAA0gAAAAATEFNRTMuMTAwVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQsRbAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVVUxBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf/zQMSkAAADSAAAAABVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NCxKMAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVTEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//NAxKQAAANIAAAAAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVX/80LEowAAA0gAAAAAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVU=";
+// mobile browsers only allow audio started from a tap: unlock the shared player on the first touch
+const unlock = () => { document.removeEventListener("pointerdown", unlock, true); document.removeEventListener("keydown", unlock, true);
+  if (player.src) return; player.src = SILENT; player.play().catch(() => {}); };
+document.addEventListener("pointerdown", unlock, true); document.addEventListener("keydown", unlock, true);
+function cloudAudio(text, voice) {
+  const k = voice + "|" + text;
+  if (!ttsCache.has(k)) {
+    const p = Cloud.tts(text, voice).then(b64 => {
+      const bin = atob(b64), u = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([u], { type: "audio/mpeg" }));
+    });
+    p.catch(() => ttsCache.delete(k));
+    ttsCache.set(k, p);
+    if (ttsCache.size > 400) { const [old] = ttsCache.keys(); ttsCache.get(old).then(URL.revokeObjectURL, () => {}); ttsCache.delete(old); }
+  }
+  return ttsCache.get(k);
+}
+async function cloudSpeak(text, voice, r) {
+  let url;
+  try { url = await cloudAudio(text, voice); }
+  catch (e) { voiceProblem(e.message || "语音加载失败"); return; }
+  return new Promise(resolve => {
+    const fin = () => { player.onended = player.onerror = null; playerDone = null; resolve(); };
+    playerDone = fin;
+    player.onended = player.onerror = fin;
+    player.src = url; player.playbackRate = r; player.defaultPlaybackRate = r;
+    const p = player.play();
+    if (p && p.catch) p.catch(() => { voiceProblem("点一下屏幕再播放（浏览器需要先允许声音）"); fin(); });
+  });
+}
+let probT = 0;
+function voiceProblem(msg) { if (Date.now() - probT > 4000 && window.Pet && Pet.toast) { probT = Date.now(); Pet.toast(msg, "warn"); } }
+const useCloud = () => CLOUD_TTS && typeof Cloud !== "undefined" && (TTS ? !nativeRu : !(synth && ruVoices.length));
 
 function loadVoices() {
   if (!synth) return;
@@ -48,18 +92,21 @@ function loadVoices() {
   // prefer higher-quality voices first
   ruVoices.sort((a, b) => score(b) - score(a));
   const warn = document.getElementById("voice-warning");
-  if (all.length && !ruVoices.length) {
+  if (all.length && !ruVoices.length && !CLOUD_TTS) {
     warn.hidden = false;
-    warn.textContent = "你的浏览器/系统里没有找到俄语语音，所以无法朗读。电脑上可用 Chrome 或 Edge；手机上请在系统设置里下载俄语（Русский）语音包后刷新页面。";
+    warn.textContent = "你的浏览器/系统里没有找到俄语语音，所以无法朗读。电脑上可用 Chrome 或 Edge；手机上请用 App，或在系统设置里下载俄语（Русский）语音包后刷新页面。";
   } else warn.hidden = true;
 }
 function score(v) { return (/google|natural|neural|premium|enhanced|milena|yuri|katya|svetlana|dmitry/i.test(v.name) ? 2 : 0) + (v.localService ? 0 : 1); }
 if (TTS) {
   TTS.isLanguageSupported({ lang: "ru-RU" }).then(r => {
-    if (r && r.supported === false) { const w = document.getElementById("voice-warning"); w.hidden = false; w.textContent = "手机里没有俄语朗读语音。请到 设置 → 系统 → 语言 → 文字转语音 里下载俄语（Русский）语音包。"; }
+    if (r && r.supported === false) {
+      nativeRu = false;
+      if (!CLOUD_TTS) { const w = document.getElementById("voice-warning"); w.hidden = false; w.textContent = "手机里没有俄语朗读语音。请到 设置 → 系统 → 语言 → 文字转语音 里下载俄语（Русский）语音包。"; }
+    }
   }).catch(() => {});
 } else if (synth) { loadVoices(); synth.onvoiceschanged = loadVoices; }
-else {
+else if (!CLOUD_TTS) {
   const warn = document.getElementById("voice-warning");
   warn.hidden = false; warn.textContent = "当前浏览器不支持语音朗读（Web Speech API）。请换用 Chrome、Edge 或 Safari。";
 }
@@ -67,26 +114,33 @@ else {
 const clean = s => s.replace(/́/g, "").replace(/[«»—]/g, " ");
 
 function speak(text, { voice = 0, rate: r = rate } = {}) {
-  if (TTS) return TTS.speak({ text: clean(text), lang: "ru-RU", rate: r, pitch: voice === 1 ? 0.75 : 1, volume: 1, category: "playback" }).catch(() => {});
+  const t = clean(text);
+  if (useCloud()) return cloudSpeak(t, voice, r);
+  if (TTS) return TTS.speak({ text: t, lang: "ru-RU", rate: r, pitch: voice === 1 ? 0.75 : 1, volume: 1, category: "playback" })
+    .catch(() => { if (CLOUD_TTS) { nativeRu = false; return cloudSpeak(t, voice, r); } });
   return new Promise(resolve => {
     if (!synth) return resolve();
-    const u = new SpeechSynthesisUtterance(clean(text));
+    const u = new SpeechSynthesisUtterance(t);
     u.lang = "ru-RU";
     u.rate = r;
     if (ruVoices.length) u.voice = ruVoices[voice % ruVoices.length];
     // with one voice only, shift pitch so two speakers sound different
     if (voice === 1 && ruVoices.length < 2) u.pitch = 0.7;
-    u.onend = u.onerror = () => resolve();
+    u.onend = () => resolve();
+    u.onerror = e => { if (CLOUD_TTS && e.error !== "interrupted" && e.error !== "canceled") { ruVoices = []; cloudSpeak(t, voice, r).then(resolve); } else resolve(); };
     synth.speak(u);
   });
 }
-function stopAll() { playToken++; if (TTS) TTS.stop().catch(() => {}); if (synth) synth.cancel(); document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing")); }
+/* fetch the next sentences of a sequence while the current one plays */
+function prefetch(items) { if (useCloud()) items.slice(0, 3).forEach(it => cloudAudio(clean(it.text), it.voice || 0).catch(() => {})); }
+function stopAll() { playToken++; if (TTS) TTS.stop().catch(() => {}); if (synth) synth.cancel(); try { player.pause(); } catch (_) {} if (playerDone) playerDone(); document.querySelectorAll(".playing").forEach(e => e.classList.remove("playing")); }
 
 async function playSequence(items) { // items: [{el, text, voice}]
   stopAll();
   const token = playToken;
-  for (const it of items) {
+  for (const [k, it] of items.entries()) {
     if (token !== playToken) return;
+    prefetch(items.slice(k + 1));
     it.el && it.el.classList.add("playing");
     it.el && it.el.scrollIntoView({ block: "nearest", behavior: "smooth" });
     await speak(it.text, { voice: it.voice || 0 });

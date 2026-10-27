@@ -1,0 +1,7 @@
+{
+  "name": "maomao-tts",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.js",
+  "dependencies": { "@cloudbase/node-sdk": "^3.0.0", "ws": "^8.18.0" }
+}

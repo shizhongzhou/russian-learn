@@ -30,12 +30,16 @@ const { chromium } = require("playwright");
     for (const a of ["whoami", "load"]) { try { r[a] = await Cloud.call(a); } catch (e) { r[a] = "ERR " + (e.code || "") + " " + e.message; } }
     try { await Cloud.push(true); r.push = Cloud.status(); } catch (e) { r.push = "ERR " + e.message; }
     try { r.board = (await Cloud.call("leaderboard", { by: "growth" })).top.length; } catch (e) { r.board = "ERR " + e.message; }
+    try { const t0 = Date.now(); const a = await Cloud.tts("Привет! Как дела?", 0); r.tts = a.length + "b64 " + (Date.now() - t0) + "ms";
+      const t1 = Date.now(); await Cloud.tts("Привет! Как дела?", 0); r.ttsCached = (Date.now() - t1) + "ms";
+      r.tts1 = (await Cloud.tts("Меня зовут Анна.", 1)).length; } catch (e) { r.tts = "ERR " + e.message; }
+    try { ruVoices = []; await Promise.race([speak("Спасибо большое"), new Promise(res => setTimeout(res, 20000))]); r.speak = { cache: ttsCache.size, src: String(player.src).slice(0, 5), err: player.error && player.error.code }; } catch (e) { r.speak = "ERR " + e.message; }
     try { const d = await Cloud.sendCode("email", "maomao-smoke-test@example.com"); r.otpEmail = d && typeof d.verifyOtp === "function" ? "sent" : JSON.stringify(d).slice(0, 120); } catch (e) { r.otpEmail = "ERR " + e.message; }
     return r;
   });
   const line = JSON.stringify(out);
   console.log(line); logs.forEach(l => console.log("::warning::" + l));
-  const ok = out.ready === true && out.whoami && !String(out.whoami).startsWith("ERR");
+  const ok = out.ready === true && out.whoami && !String(out.whoami).startsWith("ERR") && !String(out.tts).startsWith("ERR");
   console.log((ok ? "::notice::CLOUD OK " : "::error::CLOUD FAIL ") + "[" + (O || "localhost:8080") + "] " + line.slice(0, 700));
   await b.close(); process.exit(ok ? 0 : 1);
 })();

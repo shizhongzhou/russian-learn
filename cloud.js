@@ -54,6 +54,15 @@ const Cloud = (() => {
     return res.data;
   }
 
+  /* Russian text-to-speech in the cloud → mp3 as base64 */
+  async function tts(text, voice = 0) {
+    if (!(await ready())) throw nice(lastErr || "云服务未开启");
+    let r; try { r = await app.callFunction({ name: "tts", data: { text, voice } }); } catch (e) { throw nice(e); }
+    const res = r && r.result || {};
+    if (!res.ok || !res.a) throw new Error("这句暂时读不出来");
+    return res.a;
+  }
+
   /* ---------- save sync ---------- */
   function isoWeek(t = Date.now()) {
     const d = new Date(t + 8 * 3600e3); d.setUTCHours(0, 0, 0, 0); d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
@@ -180,6 +189,6 @@ const Cloud = (() => {
     const id = user.phone || user.phone_number || user.email || "Apple 账号";
     return { state: "user", text: String(id).replace(/(\d{3})\d{4}(\d{3,4})/, "$1****$2") };
   };
-  return { enabled, ready, call, start, push, pull, sendCode, verifyCode, appleLogin, logout, label, claimGifts,
+  return { enabled, ready, call, tts, start, push, pull, sendCode, verifyCode, appleLogin, logout, label, claimGifts,
     user: () => user, onChange: fn => listeners.add(fn), status: () => ({ syncedAt: meta.syncedAt, localAt: meta.localAt, err: lastErr }) };
 })();
