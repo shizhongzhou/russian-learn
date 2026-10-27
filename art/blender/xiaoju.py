@@ -301,13 +301,13 @@ def pose(t, clip):
         set_bone(n + "_up", h, k - h); set_bone(n + "_lo", k, p - k)
 
 def bake(clip, frames, fps=24):
+    # keys are sampled every frame, so linear interpolation keeps the gait exact (works in Blender 4.x and 5.x)
+    bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"
     act = bpy.data.actions.new(clip); arm.animation_data_create(); arm.animation_data.action = act
     for f in range(frames):
         pose(f / fps, clip)
         for pb in arm.pose.bones:
             pb.keyframe_insert("location", frame=f + 1); pb.keyframe_insert("rotation_quaternion", frame=f + 1)
-    for fc in act.fcurves:
-        for kp in fc.keyframe_points: kp.interpolation = "LINEAR"
     return act
 
 CLIPS = {"walk": 12, "run": 9, "idle": 48, "crouch": 1, "pounce": 1}   # walk: 0.5 s loop; run: 0.36 s loop
