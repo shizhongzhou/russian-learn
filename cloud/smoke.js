@@ -30,6 +30,7 @@ const { chromium } = require("playwright");
     for (const a of ["whoami", "load"]) { try { r[a] = await Cloud.call(a); } catch (e) { r[a] = "ERR " + (e.code || "") + " " + e.message; } }
     try { await Cloud.push(true); r.push = Cloud.status(); } catch (e) { r.push = "ERR " + e.message; }
     try { r.board = (await Cloud.call("leaderboard", { by: "growth" })).top.length; } catch (e) { r.board = "ERR " + e.message; }
+    try { const d = await Cloud.sendCode("email", "maomao-smoke-test@example.com"); r.otpEmail = d && typeof d.verifyOtp === "function" ? "sent" : JSON.stringify(d).slice(0, 120); } catch (e) { r.otpEmail = "ERR " + e.message; }
     return r;
   });
   const line = JSON.stringify(out);
