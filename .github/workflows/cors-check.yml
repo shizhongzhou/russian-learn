@@ -9,14 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
-          U=https://maomao-eyu-d9g3u5l5rd2092a1a.api.tcloudbasegateway.com/auth/v1/verification
-          for O in capacitor://localhost https://shizhongzhou.github.io https://maomao-maomao-eyu-d9g3u5l5rd2092a1a.webapps.tcloudbase.com https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com; do
-            H=$(curl -s -o /dev/null -D - -X OPTIONS "$U" -H "Origin: $O" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type,authorization,x-device-id,x-request-id,x-sdk-version" | tr -d '\r' | grep -i -E "^HTTP|access-control-allow-(origin|headers)" | tr '\n' ' ')
-            echo "::notice::PREFLIGHT $O => $H"
-            P=$(curl -s -D - -X POST "$U" -H "Origin: $O" -H "content-type: application/json" -d '{"email":"maomao-smoke-test@example.com","target":"ANY"}' | tr -d '\r' | grep -i -E "^HTTP|access-control-allow-origin|^\{" | tr '\n' ' ' | cut -c1-300)
-            echo "::notice::POST $O => $P"
+          B=https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com/audio
+          out=""
+          for S in ef/ef8d9fa8be9d1ed6 6a/6a5b39c90e1d0ebb cc/cc3ec67fd12d1467 ef/ef08c5a6ccf09784 00/0000000000000000; do
+            out="$out | $S $(curl -s -o /dev/null -w '%{http_code} %{size_download}B %{content_type} %{time_total}s' $B/$S.mp3)"
           done
-          B=https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com
-          for S in $B/ $B/app.js $B/audio/ef/ef8d9fa8be9d1ed6.mp3 $B/audio/6a/6a5b39c90e1d0ebb.mp3 $B/audio/cc/cc3ec67fd12d1467.mp3 $B/audio/ef/ef08c5a6ccf09784.mp3 $B/audio/00/0000000000000000.mp3; do
-            echo "::notice::SITE $S => $(curl -s -o /dev/null -w '%{http_code} %{size_download} %{content_type} %{time_total}s' $S)"
-          done
+          echo "::notice::AUDIO $out"
