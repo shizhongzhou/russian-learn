@@ -1,4 +1,4 @@
-name: Vendor CloudBase SDK
+name: Vendor libraries (CloudBase SDK, Matter.js)
 # Downloads the CloudBase web SDK into vendor/ so the app (and the native builds) load it locally.
 on:
   workflow_dispatch:
@@ -17,6 +17,8 @@ jobs:
           V=3.10.4
           curl -fsSL -o vendor/cloudbase.full.js "https://static.cloudbase.net/cloudbase-js-sdk/$V/cloudbase.full.js" || { V=latest; curl -fsSL -o vendor/cloudbase.full.js "https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js"; }
           echo "/* CloudBase JS SDK $V — https://static.cloudbase.net/cloudbase-js-sdk/$V/cloudbase.full.js */" > vendor/CLOUDBASE_SDK_VERSION.txt
+          curl -fsSL -o vendor/matter.min.js "https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js" || curl -fsSL -o vendor/matter.min.js "https://unpkg.com/matter-js@0.19.0/build/matter.min.js"
+          echo "::notice::matter.js $(wc -c < vendor/matter.min.js) bytes (MIT, https://brm.io/matter-js/)"
           ls -la vendor; echo "::notice::vendored cloudbase sdk $V ($(wc -c < vendor/cloudbase.full.js) bytes)"
           git config user.name "sdk-bot"; git config user.email "actions@users.noreply.github.com"
-          git add vendor && git commit -qm "Vendor CloudBase JS SDK $V" && git pull -q --rebase && git push -q || echo "no change"
+          git add vendor && git commit -qm "Vendor CloudBase JS SDK $V + Matter.js 0.19.0" && git pull -q --rebase && git push -q || echo "no change"
