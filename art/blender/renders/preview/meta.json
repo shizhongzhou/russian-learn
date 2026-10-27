@@ -1,0 +1,13 @@
+{
+ "walk_ground_speed_units_per_s": 1.0967741935483872,
+ "run_ground_speed_units_per_s": 3.703703703703704,
+ "ortho_scale": 2.549999952316284,
+ "resolution": 640,
+ "clips": {
+  "walk": 12,
+  "run": 9,
+  "idle": 48,
+  "crouch": 1,
+  "pounce": 1
+ }
+}
