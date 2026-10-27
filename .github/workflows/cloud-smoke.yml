@@ -16,7 +16,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
-      - run: |
+      - name: Install browser
+        run: |
+          npm i --no-save playwright@1.48.2 2>&1 | tail -3
+          npx playwright install --with-deps chromium 2>&1 | tail -3
+      - name: Smoke test
+        run: |
           python3 -m http.server 8080 >/dev/null 2>&1 &
-          npm i --no-save playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
-          node cloud/smoke.js
+          sleep 1
+          node cloud/smoke.js 2>&1 | tee out.txt; code=${PIPESTATUS[0]}
+          if [ $code -ne 0 ]; then tail -5 out.txt | while IFS= read -r l; do echo "::error::$l"; done; fi
+          exit $code
