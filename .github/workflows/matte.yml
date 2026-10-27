@@ -31,6 +31,7 @@ jobs:
         shell: bash
         run: |
           echo "::add-mask::$KEY"
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg >/dev/null
           pip install -q "rembg[cpu]==2.0.67" pillow numpy
           mkdir src && openssl enc -d -aes-256-cbc -pbkdf2 -pass pass:$KEY -in art/pet-src/${{ github.event.inputs.pet }}.tar.enc | tar -x -C src
           f="${{ matrix.file }}"; n="${f%.mp4}"
