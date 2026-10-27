@@ -39,7 +39,7 @@ jobs:
       - name: Deploy website to CloudBase static hosting
         if: steps.gate.outputs.go == '1'
         run: |
-          mkdir site && cp index.html *.js *.css manifest.webmanifest site/ && cp -R data icons img site/
+          mkdir site && cp index.html *.js *.css manifest.webmanifest site/ && cp -R data icons img site/ && cp -R vendor site/ 2>/dev/null || true
           tcb hosting deploy site / -e "$TCB_ENV_ID" 2>&1 | tail -5
       - name: Smoke test (guest login + cloud function)
         if: steps.gate.outputs.go == '1'

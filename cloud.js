@@ -6,7 +6,8 @@
    Works without configuration too: if CLOUD_CONFIG.env is empty every call is a no-op. */
 const Cloud = (() => {
   const CFG = window.CLOUD_CONFIG || {};
-  const SDK = "https://static.cloudbase.net/cloudbase-js-sdk/3.0.1/cloudbase.full.js";
+  const SDK = "vendor/cloudbase.full.js";                 // vendored copy (see .github/workflows/vendor-sdk.yml)
+  const SDK_CDN = "https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js";
   const META_KEY = "mm_cloud_v1";
   const meta = Object.assign({ uid: "", syncedAt: 0, localAt: 0 }, store.get(META_KEY, {}));
   const saveMeta = () => store.set(META_KEY, meta);
@@ -17,7 +18,8 @@ const Cloud = (() => {
 
   function loadSDK() {
     if (window.cloudbase) return Promise.resolve();
-    return new Promise((res, rej) => { const s = document.createElement("script"); s.src = SDK; s.async = true; s.onload = res; s.onerror = () => rej(new Error("SDK")); document.head.append(s); });
+    const load = src => new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.async = true; s.onload = res; s.onerror = () => rej(new Error("SDK " + src)); document.head.append(s); });
+    return load(SDK).catch(() => load(SDK_CDN));
   }
   function ready() {
     if (!enabled()) return Promise.resolve(false);

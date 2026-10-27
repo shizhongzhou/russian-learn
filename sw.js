@@ -1,5 +1,5 @@
 /* 猫猫俄语通 — offline cache. Shell: cache-first with background refresh; data: stale-while-revalidate. */
-const V = "mm-v9";
+const V = "mm-v10";
 const SHELL = ["./", "index.html", "style.css", "cat.js", "pet.js", "app.js", "pages.js", "study.js", "exam.js", "library.js", "feed.js", "play.js", "cloud-config.js", "cloud.js", "social.js", "img/pose/walk.webp", "img/pose/crouch.webp", "img/pose/pounce.webp", "img/pose/ball.webp", "img/pose/hero.webp", "img/item/ball.webp", "img/item/wand.webp", "img/item/bowl.webp", "img/item/feather.webp", "manifest.webmanifest", "icons/icon-192.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
