@@ -59,7 +59,7 @@ const Cloud = (() => {
     if (!(await ready())) throw nice(lastErr || "云服务未开启");
     let r; try { r = await app.callFunction({ name: "tts", data: { text, voice } }); } catch (e) { throw nice(e); }
     const res = r && r.result || {};
-    if (!res.ok || !res.a) throw new Error("这句暂时读不出来");
+    if (!res.ok || !res.a) { console.warn("tts", res.msg); throw new Error("这句暂时读不出来" + (res.msg ? "（" + String(res.msg).slice(0, 80) + "）" : "")); }
     return res.a;
   }
 
