@@ -97,9 +97,14 @@ function pageWelcome() {
       box.innerHTML = `<div class="welcome-cat">${catSVG({ breed: "orange", stage: 4, mood: "cheer", size: 180 })}</div>
         <h1 class="display">猫猫俄语通</h1>
         <p class="lead">学俄语，养一只猫。你学得越多，它吃得越饱、长得越可爱；不学习它会饿、会生病。</p>
+        ${Cloud.enabled() ? (() => { const u = Cloud.user(), L = Cloud.label(); return u && !u.is_anonymous
+          ? `<p class="wl-in">已登录：${esc(L.text)} · 接下来创建你的猫</p>`
+          : `<button class="btn big" id="login">手机号 / 邮箱登录</button><p class="hint">已有账号？登录后会自动取回你的猫和学习进度。没有账号会自动注册。</p><div class="wl-or"><span>或者先体验一下</span></div>`; })() : ""}
         <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周"></label>
-        <button class="btn big" id="go">创建账号</button>
-        <p class="hint">账号和进度保存在这台设备上。云端同步即将推出。</p>`;
+        <button class="btn big ${Cloud.enabled() && !(Cloud.user() && !Cloud.user().is_anonymous) ? "ghost" : ""}" id="go">${Cloud.enabled() && !(Cloud.user() && !Cloud.user().is_anonymous) ? "游客开始" : "下一步"}</button>
+        <p class="hint">${Cloud.enabled() ? "游客的进度也会备份到云端，之后在「账号」页登录即可换设备继续。" : "账号和进度保存在这台设备上。"}</p>`;
+      const lg = box.querySelector("#login");
+      if (lg) lg.onclick = () => loginSheet(() => { if (!Pet.state.profile) { Pet.toast("登录成功！给自己起个昵称，再选一只猫", "good"); draw(); } });
       const inp = box.querySelector("#nick");
       inp.value = nick;
       box.querySelector("#go").onclick = () => { nick = inp.value.trim() || "同学"; step = 2; draw(); };

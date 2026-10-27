@@ -29,7 +29,7 @@ function cloudCard() {
   draw();
   return sec;
 }
-function loginSheet() {
+function loginSheet(onDone) {
   const apple = IS_NATIVE && !!capPlugin("SignInWithApple") && /iphone|ipad|mac/i.test(navigator.userAgent);
   const box = h(`<div class="cloud-pick" role="dialog" aria-modal="true" aria-label="登录"><div class="cp-card login">
     <div class="row"><h2>登录 / 注册</h2><button class="iconbtn" id="x" aria-label="关闭">×</button></div>
@@ -66,12 +66,12 @@ function loginSheet() {
     const code = $("#code").value.trim();
     if (!/^\d{4,6}$/.test(code)) { msg.textContent = "请输入收到的验证码"; return; }
     $("#go").disabled = true; msg.textContent = "登录中…";
-    try { await Cloud.verifyCode(pending, code); clearInterval(timer); box.remove(); Pet.toast("登录成功，猫咪已同步", "good"); }
+    try { await Cloud.verifyCode(pending, code); clearInterval(timer); box.remove(); if (onDone) onDone(); else Pet.toast("登录成功，猫咪已同步", "good"); }
     catch (e) { msg.textContent = e.message; $("#go").disabled = false; }
   };
   if ($("#apple")) $("#apple").onclick = async () => {
     msg.textContent = "正在通过 Apple 登录…";
-    try { await Cloud.appleLogin(); box.remove(); Pet.toast("登录成功，猫咪已同步", "good"); } catch (e) { msg.textContent = e.message; }
+    try { await Cloud.appleLogin(); box.remove(); if (onDone) onDone(); else Pet.toast("登录成功，猫咪已同步", "good"); } catch (e) { msg.textContent = e.message; }
   };
 }
 

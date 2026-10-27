@@ -919,3 +919,6 @@ h2{font-weight:700}
 .ad-table th,.ad-table td{padding:8px 6px;border-bottom:1px solid #F2F2EF;text-align:left;white-space:nowrap}
 .ad-table th{color:var(--muted);font-weight:600}
 .cloudcard .uid span{user-select:all;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.wl-or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;margin:6px 0}
+.wl-or::before,.wl-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.wl-in{margin:0;padding:12px 16px;border-radius:16px;background:var(--sage);color:var(--sage-ink);font-weight:600;font-size:14px}

@@ -129,7 +129,8 @@ const Cloud = (() => {
   async function sendCode(kind, target) {
     await ready();
     const arg = kind === "phone" ? { phone: target } : { email: target };
-    const r = await auth.signInWithOtp(arg);
+    let r = await auth.signInWithOtp(arg);
+    if (r.error && kind === "phone" && !/^\+/.test(target)) r = await auth.signInWithOtp({ phone: "+86 " + target });   // some SDK versions want the country code
     if (r.error) throw new Error(r.error.message || "验证码发送失败");
     return r.data;          // has .verifyOtp({ token })
   }
