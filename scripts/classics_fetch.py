@@ -21,7 +21,7 @@ def parse(title):
     d = api(action="parse", page=title, prop="text", redirects=1, disablelimitreport=1, disableeditsection=1)
     if "error" in d: return None, None
     return d["parse"]["title"], BeautifulSoup(d["parse"]["text"], "html.parser")
-DROP = [".ws-noexport", ".noprint", "table", ".reference", "sup", ".mw-editsection", "#headertemplate", ".headertemplate", "ol.references", ".references",
+DROP = [".ws-noexport", ".noprint", ".reference", "sup", ".mw-editsection", "#headertemplate", ".headertemplate", "ol.references", ".references",
         "style", "script", ".mw-references-wrap", ".ws-pagenum", ".pagenum", ".infobox", ".navbox", ".metadata", "span.ws-pagenum", ".prp-page-qualityheader", ".mw-empty-elt", ".plainlinks"]
 def sublinks(soup, base):
     out = []
@@ -34,6 +34,13 @@ def text_of(soup):
     s = BeautifulSoup(str(soup), "html.parser")
     for sel in DROP:
         for x in s.select(sel): x.decompose()
+    for tb in s.find_all("table"):
+        cls = " ".join(tb.get("class", [])) + " " + (tb.get("id") or "")
+        if re.search(r"header|nav|info|metadata|toc|messagebox|ambox", cls, re.I) or (len(tb.get_text(strip=True)) < 200 and not tb.select(".poem")):
+            tb.decompose()
+    for pd in s.select("div.poem"):
+        if not pd.find("p"):
+            pd.name = "p"
     paras = []
     for el in s.find_all(["p", "h2", "h3", "h4", "dd"]):
         if el.find_parent(["p", "dd"]) : continue
@@ -97,7 +104,7 @@ def resplit(chapters, soft=9000, hard=40000):
     out = []
     for label, ps in chapters:
         if sum(len(p) for p in ps) <= hard: out.append((label, ps)); continue
-        part, cur, curl, size = "", [], None, 0
+        part, cur, curl, size, cont = "", [], None, 0, 1
         def flush():
             nonlocal cur, size
             if cur: out.append((" · ".join(x for x in (label, part, curl) if x), cur))
@@ -106,17 +113,23 @@ def resplit(chapters, soft=9000, hard=40000):
             if p.startswith("## "):
                 h = p[3:].strip().rstrip(".")
                 if re.match(r"^(ЧАСТЬ|Часть|КНИГА|Книга)", h):
-                    flush(); part = h; curl = None; continue
+                    flush(); part = h; curl = None; cont = 1; continue
                 if size >= soft or not cur:
-                    flush(); curl = h; continue
+                    flush(); curl = h; cont = 1; continue
             cur.append(p); size += len(p)
-            if size >= hard: flush(); curl = (curl or "") + " (续)"
+            if size >= hard:
+                flush(); cont += 1; curl = f"{(curl or '').split(' (')[0]} ({cont})".strip()
         flush()
     return out
 def search(w):
     sur = w["author"].split()[-1]
     for q in (f'intitle:"{w["title"].split(",")[0]}" {sur}', f'{w["title"]} {sur}'):
-        hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+        d = {}
+        for t in range(4):
+            d = api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)
+            if "query" in d: break
+            time.sleep(5 + 5 * t)
+        hits = [x["title"] for x in d.get("query", {}).get("search", [])]
         for h in hits:
             if norm(h).startswith(norm(w["title"])) and f"({sur}" in h and "/" not in h: return h
         for h in hits:

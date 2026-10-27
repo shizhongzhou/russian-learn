@@ -9,6 +9,7 @@ const BOOK_ZH = { "Александр Пушкин": "普希金", "Михаил 
 const KIND_ZH = { "стихи": "诗", "басня": "寓言", "сказка": "童话诗", "пьеса": "剧本", "комедия": "喜剧", "поэма": "长诗", "роман": "长篇小说", "роман в стихах": "诗体小说", "повесть": "中篇小说", "рассказ": "短篇小说", "рассказ для детей": "儿童故事", "стихотворение в прозе": "散文诗", "сказ": "民间故事体", "повесть-феерия": "童话中篇" };
 const bookProg = id => { const S = Pet.state; S.bookProg = S.bookProg || {}; return S.bookProg[id] || (S.bookProg[id] = { ch: 0, done: {} }); };
 const readMins = n => Math.max(1, Math.round(n / 900));
+const readLen = n => { const m = readMins(n); return m < 90 ? `${m} 分钟` : `${Math.round(m / 60)} 小时`; };
 
 async function drawClassics(el) {
   const S = Pet.state;
@@ -24,7 +25,7 @@ async function drawClassics(el) {
       <div class="pills cl-lv">${["all", ...ORDER].map(x => `<button data-l="${x}" aria-pressed="${x === lv}">${x === "all" ? "全部" : x}</button>`).join("")}</div>
       <div class="books">${list.map((b, i) => { const p = S.bookProg && S.bookProg[b.id]; const pct = p ? Math.round(Object.keys(p.done || {}).length / b.ch.length * 100) : 0;
         return `<a class="book" href="#/book/${b.id}"><span class="cover" style="background:${COVER_BG[(all.indexOf(b)) % COVER_BG.length]}"><i class="lvtag">${b.level}</i><span class="ct" lang="ru">${esc(b.title)}</span><span>${BOOK_EM[b.kind] || "📖"}</span></span>
-          <b lang="ru">${esc(b.title)}</b><small>${BOOK_ZH[b.author] || esc(b.author)} · ${readMins(b.chars)} 分钟</small>${pct ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ""}</a>`; }).join("") || `<p class="empty3" style="grid-column:1/-1">这个级别还没有书</p>`}</div>`;
+          <b lang="ru">${esc(b.title)}</b><small>${BOOK_ZH[b.author] || esc(b.author)} · ${readLen(b.chars)}</small>${pct ? `<div class="bar"><i style="width:${pct}%"></i></div>` : ""}</a>`; }).join("") || `<p class="empty3" style="grid-column:1/-1">这个级别还没有书</p>`}</div>`;
     el.querySelectorAll("[data-l]").forEach(b => b.onclick = () => { lv = b.dataset.l; store.set("clsLv", lv); draw(); });
   };
   draw();
@@ -38,9 +39,9 @@ async function pageClassicBook(id) {
   const p = bookProg(id);
   body.innerHTML = `<section class="card clhero"><span class="cover" style="background:${COVER_BG[all.indexOf(b) % COVER_BG.length]}"><span class="ct" lang="ru">${esc(b.title)}</span><span>${BOOK_EM[b.kind] || "📖"}</span></span>
     <div class="grow"><h2 lang="ru">${esc(b.title)}</h2><p lang="ru">${esc(b.author)}</p><small>${BOOK_ZH[b.author] || ""} · ${b.year} 年 · ${KIND_ZH[b.kind] || esc(b.kind)}</small>
-      <div class="tags"><i>${b.level}</i><i>${b.ch.length} 部分</i><i>约 ${readMins(b.chars)} 分钟</i></div></div></section>
+      <div class="tags"><i>${b.level}</i><i>${b.ch.length} 部分</i><i>约 ${readLen(b.chars)}</i></div></div></section>
     <a class="btn lime big" href="#/book/${id}/${p.ch || 0}">${p.t ? "继续阅读" : "开始阅读"}</a>
-    ${b.ch.length > 1 ? `<h3 class="cl-h">目录</h3><nav class="rows clch">${b.ch.map((c, n) => `<a href="#/book/${id}/${n}"><span class="grow"><b lang="ru">${esc(c.t || "Часть " + (n + 1))}</b><small>约 ${readMins(c.n)} 分钟</small></span>${p.done && p.done[n] ? `<span class="okdot">✓</span>` : ""}${GO}</a>`).join("")}</nav>` : ""}
+    ${b.ch.length > 1 ? `<h3 class="cl-h">目录</h3><nav class="rows clch">${b.ch.map((c, n) => `<a href="#/book/${id}/${n}"><span class="grow"><b lang="ru">${esc(c.t || "Часть " + (n + 1))}</b><small>约 ${readLen(c.n)}</small></span>${p.done && p.done[n] ? `<span class="okdot">✓</span>` : ""}${GO}</a>`).join("")}</nav>` : ""}
     <p class="hint">原文来源：<a href="${esc(b.src)}" target="_blank" rel="noopener">维基文库 Wikisource</a>（公有领域作品）。旧式拼写已转换为现代拼写。</p>`;
 }
 

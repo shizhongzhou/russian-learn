@@ -683,3 +683,11 @@ svg.sparks{position:absolute;width:56px;height:56px;fill:none;stroke:var(--lime-
 .clpop .ib{border:0;background:#F3F5EE;border-radius:10px;width:36px;height:36px;display:grid;place-items:center}
 .clpop .ib svg{width:20px;height:20px;fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:round}
 .clpop .zh{margin:0}
+.classics .book .cover{display:flex;flex-direction:column;width:100%}
+.cltext p{hyphens:manual}
+.clpop{z-index:70;bottom:calc(88px + env(safe-area-inset-bottom))}
+.book .cover .ct,.clhero .cover .ct{position:static;font-size:14px;text-align:left;margin-top:20px;display:block}
+.clhero .cover .ct{margin-top:0;font-size:15px}
+.classics .book .cover>span:last-child{font-size:34px}
+.classics .book small{text-align:left}.classics .book b{text-align:left}
+.classics .book{text-align:left;align-items:stretch}
