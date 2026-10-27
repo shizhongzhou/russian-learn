@@ -11,12 +11,19 @@ import bpy, math, sys, os, json
 from mathutils import Vector, Matrix, Quaternion
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
+INTERACTIVE = not bpy.app.background      # run from Blender's Scripting tab: build + animate, no rendering
 OUT = os.path.abspath(argv[0] if argv else "out")
-MODE = argv[1] if len(argv) > 1 else "preview"
-os.makedirs(OUT, exist_ok=True)
+MODE = "interactive" if INTERACTIVE else (argv[1] if len(argv) > 1 else "preview")
+if not INTERACTIVE: os.makedirs(OUT, exist_ok=True)
 
 # ---------------------------------------------------------------- scene
-bpy.ops.wm.read_factory_settings(use_empty=True)
+if bpy.app.background:
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+else:   # clear whatever is in the open file (keeps this script's text block alive)
+    if bpy.context.object and bpy.context.object.mode != "OBJECT": bpy.ops.object.mode_set(mode="OBJECT")
+    for o in list(bpy.data.objects): bpy.data.objects.remove(o, do_unlink=True)
+    for coll in (bpy.data.meshes, bpy.data.materials, bpy.data.armatures, bpy.data.actions, bpy.data.lights, bpy.data.cameras):
+        for d in list(coll): coll.remove(d)
 scene = bpy.context.scene
 scene.render.engine = "CYCLES"
 scene.cycles.device = "CPU"
@@ -332,7 +339,14 @@ meta = {"walk_ground_speed_units_per_s": 0.34 / (0.62 * 0.5), "run_ground_speed_
 def render_to(path):
     scene.render.filepath = path; bpy.ops.render.render(write_still=True)
 
-if MODE == "preview":
+if MODE == "interactive":
+    bake("walk", CLIPS["walk"])
+    scene.frame_start, scene.frame_end = 1, CLIPS["walk"]; scene.frame_set(1)
+    for a in bpy.context.screen.areas:          # material preview so the colours show; look through the camera
+        if a.type == "VIEW_3D":
+            a.spaces[0].shading.type = "MATERIAL"
+    print("小橘 ready: press Space in the 3D view to play the walk. Other clips:", list(CLIPS))
+elif MODE == "preview":
     scene.render.resolution_x = scene.render.resolution_y = 480
     for clip in ("walk", "idle", "crouch", "pounce", "run"):
         bake(clip, CLIPS[clip]); scene.frame_set(1); render_to(f"{OUT}/preview_{clip}.png")
@@ -354,5 +368,5 @@ else:
         bpy.ops.export_scene.gltf(filepath=f"{OUT}/xiaoju.glb", export_animations=True)
     except Exception as e:
         print("glb export failed:", e)
-json.dump(meta, open(f"{OUT}/meta.json", "w"), indent=1)
+if not INTERACTIVE: json.dump(meta, open(f"{OUT}/meta.json", "w"), indent=1)
 print("DONE", OUT)
