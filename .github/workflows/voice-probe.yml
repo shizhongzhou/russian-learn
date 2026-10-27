@@ -1,0 +1,16 @@
+name: Voice probe
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/voice-probe.yml"]
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          for v in irina/medium denis/medium dmitri/medium ruslan/medium; do
+            n=$(echo $v | cut -d/ -f1); q=$(echo $v | cut -d/ -f2)
+            c=$(curl -sL "https://huggingface.co/rhasspy/piper-voices/raw/main/ru/ru_RU/$n/$q/MODEL_CARD" | tr '\n' ' ' | cut -c1-400)
+            echo "::notice::$n => $c"
+          done
