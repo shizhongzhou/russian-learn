@@ -62,9 +62,17 @@ async function pageClassicRead(id, n) {
   let ch;
   try { ch = await getJSON(`data/books/${id}/${n}.json`); } catch (e) { txt.innerHTML = `<p class="empty3">加载失败，请检查网络</p>`; return; }
   const p = bookProg(id); p.ch = n; p.t = Date.now(); Pet.save();
+  // poems split into one paragraph per line → join runs of short lines back into stanzas
+  let paras = ch.p;
+  if (paras.filter(x => x.length < 70).length > paras.length * 0.6) {
+    const out = []; let run = [];
+    const end = () => { if (run.length) out.push(run.join("\n")); run = []; };
+    for (const x of paras) { if (x.length < 70 && !x.startsWith("## ")) run.push(x); else { end(); out.push(x); } if (run.length >= 8 && /[.!?…»]$/.test(x)) end(); }
+    end(); paras = out;
+  }
   const wrap = s => esc(s).replace(/([А-Яа-яЁё́-]+)/g, `<w>$1</w>`);
   txt.innerHTML = `${ch.t ? `<h2>${esc(ch.t)}</h2>` : n === 0 ? `<h2>${esc(b.title)}</h2><p class="by">${esc(b.author)}</p>` : ""}` +
-    ch.p.map(x => x.startsWith("## ") ? `<h3>${wrap(x.slice(3))}</h3>` : `<p${x.includes("\n") ? ' class="verse"' : ""}>${wrap(x)}</p>`).join("") + `<div class="clend"></div>`;
+    paras.map(x => { if (!x.includes("\n")) return x; const ls = x.split("\n"), blank = ls.filter(l => !l.trim()).length; return blank >= (ls.length - blank) * 0.7 ? x.replace(/\n\s*\n/g, "\n").replace(/^(.*\n){8}/gm, m => m) : x; }).map(x => x.includes("\n") ? x.replace(/^\d{1,3}(?=[А-ЯЁ«—])/gm, "") : x).map(x => x.startsWith("## ") ? `<h3>${wrap(x.slice(3))}</h3>` : `<p${x.includes("\n") ? ' class="verse"' : ""}>${wrap(x)}</p>`).join("") + `<div class="clend"></div>`;
   box.querySelector(".clnav").innerHTML = `${n > 0 ? `<a class="btn soft" href="#/book/${id}/${n - 1}">上一部分</a>` : `<span></span>`}<span class="hint">${n + 1} / ${b.ch.length}</span>${n < b.ch.length - 1 ? `<a class="btn lime" href="#/book/${id}/${n + 1}">下一部分</a>` : `<a class="btn lime" href="#/library/classics">读完了</a>`}`;
   // finishing a chapter: reached the end and spent a reasonable time on it
   const t0 = Date.now(), need = Math.min(120e3, Math.max(15e3, b.ch[n].n * 25));
