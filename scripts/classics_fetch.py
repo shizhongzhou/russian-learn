@@ -61,10 +61,11 @@ def ed_rank(t):
     elif "(ВТ" in tail: r = 3
     elif "с ударениями" in tail: r = -2
     elif "Версия" in tail: r = 1
+    elif tail.startswith("Вариант"): r = 2 + (1 if "ПСС" in tail else 0)
     m = re.search(r"(1[89]\d\d|20\d\d)", tail)
     if m: r += int(m.group(1)) / 10000
     return r
-EDITION = re.compile(r"(\((СО|ДО|ВТ)|ВТ:Ё|Версия \d|^(ПСС|СС|С) |^\d{4}( |$)|^СО$|^ДО$|Редакция|^Б-ка)")
+EDITION = re.compile(r"(^Вариант|\((СО|ДО|ВТ)|ВТ:Ё|Версия \d|^(ПСС|СС|С) |^\d{4}( |$)|^СО$|^ДО$|Редакция|^Б-ка)")
 def is_edition(t): return bool(EDITION.search(t.rsplit("/", 1)[-1]))
 def chapter_title(t, root): return t[len(root) + 1:] if t.startswith(root + "/") else t.rsplit("/", 1)[-1]
 def collect(title, depth=0, label=None):
@@ -91,6 +92,27 @@ def collect(title, depth=0, label=None):
             out += sub
         if out: return out
     return [(label or "", paras)] if body > 0 else []
+def resplit(chapters, soft=9000, hard=40000):
+    """break very long chapters (whole volumes) at their own headings so one screen-load stays small"""
+    out = []
+    for label, ps in chapters:
+        if sum(len(p) for p in ps) <= hard: out.append((label, ps)); continue
+        part, cur, curl, size = "", [], None, 0
+        def flush():
+            nonlocal cur, size
+            if cur: out.append((" · ".join(x for x in (label, part, curl) if x), cur))
+            cur, size = [], 0
+        for p in ps:
+            if p.startswith("## "):
+                h = p[3:].strip().rstrip(".")
+                if re.match(r"^(ЧАСТЬ|Часть|КНИГА|Книга)", h):
+                    flush(); part = h; curl = None; continue
+                if size >= soft or not cur:
+                    flush(); curl = h; continue
+            cur.append(p); size += len(p)
+            if size >= hard: flush(); curl = (curl or "") + " (续)"
+        flush()
+    return out
 def search(w):
     sur = w["author"].split()[-1]
     for q in (f'intitle:"{w["title"].split(",")[0]}" {sur}', f'{w["title"]} {sur}'):
@@ -115,6 +137,7 @@ for w in works:
     except Exception as e:
         import traceback; report.append(f"ERR {w['id']} {e!r} {traceback.format_exc()[-400:]}"); print(report[-1], flush=True); continue
     chapters = [(l, [modernize(p) for p in ps]) for l, ps in chapters if ps]
+    chapters = resplit(chapters)
     total = sum(len(p) for _, ps in chapters for p in ps)
     if total < 200: report.append(f"SHORT {w['id']} {root} {total}"); continue
     d = os.path.join(OUT, w["id"]); os.makedirs(d, exist_ok=True)
