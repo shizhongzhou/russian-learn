@@ -1,0 +1,25 @@
+name: Publish artifacts to pet-art
+on:
+  workflow_dispatch:
+    inputs:
+      run: { description: "run id", required: true }
+      pattern: { description: "artifact name pattern", required: true }
+      dest: { description: "folder on pet-art", required: true }
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions: { contents: write, actions: read }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/download-artifact@v4
+        with: { pattern: "${{ github.event.inputs.pattern }}", path: incoming, merge-multiple: true, run-id: "${{ github.event.inputs.run }}", github-token: "${{ github.token }}" }
+      - shell: bash
+        run: |
+          D="${{ github.event.inputs.dest }}"
+          git config user.name "pet-bot"; git config user.email "actions@users.noreply.github.com"
+          git fetch -q origin pet-art || true
+          if git rev-parse -q --verify origin/pet-art >/dev/null; then git checkout -q -B pet-art origin/pet-art; else git checkout -q --orphan pet-art; git rm -rqf . ; fi
+          mkdir -p "$D" && cp -r incoming/* "$D"/
+          git add "$D" && git commit -qm "publish $D" && git push -q origin pet-art
+          echo "::notice::published $(find "$D" -type f | wc -l) files"
