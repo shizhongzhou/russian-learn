@@ -41,3 +41,9 @@ jobs:
         run: |
           mkdir site && cp index.html *.js *.css manifest.webmanifest site/ && cp -R data icons img site/
           tcb hosting deploy site / -e "$TCB_ENV_ID" 2>&1 | tail -5
+      - name: Smoke test (guest login + cloud function)
+        if: steps.gate.outputs.go == '1'
+        run: |
+          python3 -m http.server 8080 >/dev/null 2>&1 &
+          npm i --no-save playwright@1.48.2 >/dev/null 2>&1 && npx playwright install --with-deps chromium >/dev/null 2>&1
+          node cloud/smoke.js
