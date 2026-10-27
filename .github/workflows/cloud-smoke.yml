@@ -1,5 +1,5 @@
 name: Cloud smoke test
-# Opens the app in a headless browser, lets it sign in as a guest and calls the cloud function.
+# Opens the app in a headless browser, lets it sign in as a guest and calls the cloud function (run 2).
 on:
   workflow_dispatch:
   push:
