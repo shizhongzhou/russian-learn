@@ -5,10 +5,11 @@ from PIL import Image
 OUT = sys.argv[1]; os.makedirs(OUT, exist_ok=True)
 Q = {
   "moscow": "Saint Basil's Cathedral Red Square", "spb": "Winter Palace Saint Petersburg Palace Square", "baikal": "Lake Baikal shore",
-  "kazan": "Kazan Kremlin Kul Sharif", "tokyo": "Tokyo Tower night", "kyoto": "Kiyomizu-dera three-storey pagoda", "osaka": "Osaka Castle",
+  "kazan": "Kazan Kremlin Kul Sharif", "tokyo": "Tokyo Tower night", "kyoto": "Kiyomizu-dera Kyoto", "osaka": "Osaka Castle",
   "paris": "Eiffel Tower Paris", "lyon": "Lyon Fourviere Saone", "nice": "Nice Promenade des Anglais beach", "marseille": "Marseille Vieux-Port Notre-Dame de la Garde",
-  "beijing": "Forbidden City Beijing", "harbin": "Church of Saint Sophia Harbin exterior square", "chengdu": "giant panda Chengdu",
+  "beijing": "Forbidden City Beijing", "harbin": "Saint Sophia Cathedral Harbin", "chengdu": "giant panda Chengdu",
 }
+SKIP = ("ladies", "door", "yukata", "interior", "inside")
 OK = ("cc0", "public domain", "pd", "cc by", "cc-by")
 UA = {"User-Agent": "PetRussianLearningApp/1.0 (https://github.com/shizhongzhou/russian-learn; educational) python-urllib"}
 import time
@@ -30,6 +31,7 @@ for key, q in Q.items():
           ii = (p.get("imageinfo") or [{}])[0]; md = ii.get("extmetadata", {})
           lic = (md.get("LicenseShortName", {}).get("value") or "").lower()
           if not any(lic.startswith(o) for o in OK) or "nc" in lic or "nd" in lic: continue
+          if any(w in p["title"].lower() for w in SKIP): continue
           w, h = ii.get("width", 0), ii.get("height", 0)
           if w < 1200 or not (1.2 <= w / max(h, 1) <= 2.0): continue
           best = (p, ii, md); break
