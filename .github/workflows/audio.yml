@@ -1,0 +1,47 @@
+name: Pre-record audio
+# Records every Russian text the app reads aloud (scripts/say-texts.js) with Piper and packs it for CloudBase hosting.
+# Run manually; pass a pre-signed CloudBase upload URL to upload the result.
+on:
+  workflow_dispatch:
+    inputs:
+      url: { description: "pre-signed upload URL (optional)", required: false, default: "" }
+jobs:
+  gen:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: { shard: [0, 1, 2, 3, 4, 5] }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install Piper + voices
+        run: |
+          pip install -q piper-tts==1.3.0
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          for v in dmitri denis; do for e in onnx onnx.json; do
+            curl -sSL -o ru_RU-$v-medium.$e "https://huggingface.co/rhasspy/piper-voices/resolve/main/ru/ru_RU/$v/medium/ru_RU-$v-medium.$e"; done; done
+          ls -la *.onnx
+      - name: Record
+        run: |
+          node scripts/say-texts.js all > texts.json
+          python scripts/gen-audio.py texts.json ${{ matrix.shard }} 6 out
+          echo "::notice::shard ${{ matrix.shard }}: $(find out -name '*.mp3' | wc -l) files, $(du -sh out | cut -f1)"
+      - uses: actions/upload-artifact@v4
+        with: { name: "audio-${{ matrix.shard }}", path: out, retention-days: 3 }
+  pack:
+    needs: gen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { pattern: "audio-*", path: dist, merge-multiple: true }
+      - name: Zip and upload
+        env: { URL: "${{ github.event.inputs.url }}" }
+        run: |
+          echo "::add-mask::$URL"
+          echo '{"name":"maomao-audio","version":"1.0.0"}' > package.json
+          zip -qr0 audio.zip dist package.json
+          echo "::notice::$(find dist -name '*.mp3' | wc -l) files, zip $(du -sh audio.zip | cut -f1)"
+          if [ -n "$URL" ]; then
+            code=$(curl -sS -o resp.txt -w "%{http_code}" -X PUT -H "Content-Type: application/zip" --data-binary @audio.zip "$URL")
+            echo "::notice::upload HTTP $code"; [ "$code" = 200 ]
+          fi
