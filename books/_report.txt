@@ -1,0 +1,141 @@
+OK b000 Сказка о рыбаке и рыбке ← Сказка о рыбаке и рыбке (Пушкин) · 1 ch · 8328 chars
+ERR b001 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+ERR b002 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b003 Я помню чудное мгновенье ← К *** («Я помню чудное мгновенье...») (Пушкин) · 1 ch · 800 chars
+OK b004 Я вас любил ← Я вас любил: любовь ещё, быть может (Пушкин) · 1 ch · 1029 chars
+OK b005 Выстрел ← Повести покойного Ивана Петровича Белкина (Пушкин)/Выстрел · 1 ch · 22892 chars
+OK b006 Метель ← Повести покойного Ивана Петровича Белкина (Пушкин)/Метель · 1 ch · 22178 chars
+OK b007 Гробовщик ← Повести покойного Ивана Петровича Белкина (Пушкин)/Гробовщик · 1 ch · 13141 chars
+OK b008 Станционный смотритель ← Повести покойного Ивана Петровича Белкина (Пушкин)/Станционный смотритель · 1 ch · 21990 chars
+OK b009 Барышня-крестьянка ← Повести покойного Ивана Петровича Белкина (Пушкин)/Барышня-крестьянка · 1 ch · 34942 chars
+OK b010 Пиковая дама ← Пиковая дама (Пушкин) · 2 ch · 45787 chars
+OK b011 Капитанская дочка ← Капитанская дочка (Пушкин)/1960 (СО) · 15 ch · 210061 chars
+OK b012 Дубровский ← Дубровский (Пушкин) · 19 ch · 135820 chars
+OK b013 Евгений Онегин ← Евгений Онегин (Пушкин)/ПСС 1977 (СО) · 12 ch · 163799 chars
+OK b014 Парус ← Парус (Лермонтов) · 1 ch · 792 chars
+OK b015 Бородино ← Бородино (Лермонтов) · 1 ch · 3676 chars
+SHORT b016 Мцыри (Лермонтов) 0
+OK b017 Герой нашего времени ← Герой нашего времени (Лермонтов)/СО · 11 ch · 261380 chars
+OK b018 Ночь перед Рождеством ← Ночь перед Рождеством (Гоголь) · 3 ch · 81994 chars
+OK b019 Шинель ← Шинель (Гоголь) · 2 ch · 65479 chars
+OK b020 Нос ← Нос (Гоголь) · 3 ch · 48907 chars
+OK b021 Тарас Бульба ← Тарас Бульба (Гоголь) · 12 ch · 232232 chars
+OK b022 Ревизор ← Ревизор (Гоголь) · 6 ch · 128118 chars
+OK b023 Мёртвые души ← Мёртвые души (Гоголь) · 51 ch · 1457919 chars
+OK b024 Муму ← Муму (Тургенев) · 2 ch · 53229 chars
+OK b025 Русский язык ← Русский язык (Тургенев) · 1 ch · 308 chars
+OK b026 Воробей ← Воробей (Тургенев) · 1 ch · 1277 chars
+ERR b027 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b028 Ася ← Ася (Тургенев) · 7 ch · 84898 chars
+OK b029 Первая любовь ← Первая любовь (Тургенев) · 22 ch · 116892 chars
+OK b030 Отцы и дети ← Отцы и дети (Тургенев) · 28 ch · 351997 chars
+OK b031 Филипок ← Филипок (Толстой) · 1 ch · 2528 chars
+ERR b032 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b033 Прыжок ← Прыжок (Толстой) · 1 ch · 3029 chars
+ERR b034 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+ERR b035 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+ERR b036 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b037 После бала ← После бала (Толстой) · 1 ch · 18682 chars
+OK b038 Детство ← Детство (Толстой) · 29 ch · 191711 chars
+OK b039 Смерть Ивана Ильича ← Смерть Ивана Ильича (Толстой) · 8 ch · 115887 chars
+ERR b040 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b041 Анна Каренина ← Анна Каренина (Толстой) · 239 ch · 1693219 chars
+OK b042 Война и мир ← Война и мир (Толстой) · 74 ch · 2869071 chars
+OK b043 Мальчик у Христа на ёлке ← Мальчик у Христа на ёлке (Достоевский) · 1 ch · 10734 chars
+OK b044 Белые ночи ← Белые ночи (Достоевский) · 6 ch · 101311 chars
+OK b045 Бедные люди ← Бедные люди (Достоевский) · 25 ch · 499979 chars
+ERR b046 KeyError('query') 
+                            ^^^^^^^^^
+  File "/home/runner/work/russian-learn/russian-learn/scripts/classics_fetch.py", line 119, in search
+    hits = [x["title"] for x in api(action="query", list="search", srsearch=q, srnamespace=0, srlimit=15)["query"]["search"]]
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+KeyError: 'query'
+
+OK b047 Идиот ← Идиот (Достоевский) · 50 ch · 1299961 chars
+OK b048 Братья Карамазовы ← Братья Карамазовы (Достоевский) · 193 ch · 3557218 chars
+OK b049 Злоумышленник ← Злоумышленник (Чехов) · 1 ch · 6504 chars
+OK b050 Хамелеон ← Хамелеон (Чехов) · 1 ch · 5878 chars
+OK b051 Толстый и тонкий ← Толстый и тонкий (Чехов)/ПСС 1975 · 1 ch · 3441 chars
+OK b052 Смерть чиновника ← Смерть чиновника (Чехов) · 1 ch · 4500 chars
+OK b053 Лошадиная фамилия ← Лошадиная фамилия (Чехов) · 1 ch · 5999 chars
+OK b054 Ванька ← Ванька (Чехов, 1886) · 1 ch · 7115 chars
+OK b055 Каштанка ← Каштанка (Чехов) · 1 ch · 36679 chars
+OK b056 Тоска ← Тоска (Чехов) · 1 ch · 9170 chars
+OK b057 Спать хочется ← Спать хочется (Чехов) · 1 ch · 9912 chars
+OK b058 Человек в футляре ← Человек в футляре (Чехов) · 1 ch · 24724 chars
+OK b059 Крыжовник ← Крыжовник (Чехов) · 1 ch · 19702 chars
+OK b060 О любви ← О любви (Чехов) · 1 ch · 18191 chars
+OK b061 Дама с собачкой ← Дама с собачкой (Чехов) · 1 ch · 30870 chars
+OK b062 Палата № 6 ← Палата № 6 (Чехов) · 19 ch · 102224 chars
+OK b063 Вишнёвый сад ← Вишнёвый сад (Чехов) · 4 ch · 73160 chars
+OK b064 Чайка ← Чайка (Чехов) · 4 ch · 80958 chars
+OK b065 Три сестры ← Три сестры (Чехов) · 4 ch · 94512 chars
+OK b066 Ворона и Лисица ← Ворона и Лисица (Крылов) · 1 ch · 1001 chars
+OK b067 Стрекоза и Муравей ← Стрекоза и Муравей (Крылов) · 1 ch · 4031 chars
+SHORT b068 Лебедь, Щука и Рак (Крылов) 0
+OK b069 Квартет ← Квартет (Крылов) · 1 ch · 1197 chars
+OK b070 Слон и Моська ← Слон и Моська (Крылов) · 1 ch · 218 chars
+OK b071 Горе от ума ← Горе от ума (Грибоедов) · 4 ch · 80741 chars
+OK b072 Обломов ← Обломов (Гончаров) · 102 ch · 1835382 chars
+OK b073 Левша ← Левша (Лесков) · 2 ch · 55176 chars
+OK b074 Весенняя гроза ← Весенняя гроза (Тютчев) · 1 ch · 860 chars
+SHORT b075 Умом Россию не понять (Тютчев) 0
+SHORT b076 Шёпот, робкое дыханье (Фет) 177
+SHORT b077 Мороз, Красный нос (Некрасов) 0
+OK b078 Ночь, улица, фонарь, аптека ← Ночь, улица, фонарь, аптека (Блок) · 1 ch · 368 chars
+SHORT b079 Двенадцать (Блок) 0
+SHORT b080 Берёза (Есенин) 0
+SHORT b081 Письмо матери (Есенин) 0
+OK b082 Тёмные аллеи ← Тёмные аллеи (Бунин) · 1 ch · 8087 chars
+OK b083 Антоновские яблоки ← Антоновские яблоки (Бунин) · 1 ch · 31891 chars
+OK b084 Гранатовый браслет ← Гранатовый браслет (Куприн) · 13 ch · 90707 chars
+OK b085 Белый пудель ← Белый пудель (Куприн) · 2 ch · 60417 chars
+OK b086 Алые паруса ← Алые паруса (Грин)/1965 · 7 ch · 132168 chars
