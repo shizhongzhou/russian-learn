@@ -2,13 +2,16 @@ name: Cloud smoke test
 # Opens the app in a headless browser, lets it sign in as a guest and calls the cloud function (run 3).
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["cloud/smoke.js"]
 jobs:
   smoke:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        origin: ["localhost:8080"]
+        origin: ["", "https://localhost", "capacitor://localhost", "https://shizhongzhou.github.io"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -21,6 +24,6 @@ jobs:
         run: |
           python3 -m http.server 8080 >/dev/null 2>&1 &
           sleep 1
-          node cloud/smoke.js 2>&1 | tee out.txt; code=${PIPESTATUS[0]}
+          ORIGIN="${{ matrix.origin }}" node cloud/smoke.js 2>&1 | tee out.txt; code=${PIPESTATUS[0]}
           if [ $code -ne 0 ]; then tail -5 out.txt | while IFS= read -r l; do echo "::error::$l"; done; fi
           exit $code

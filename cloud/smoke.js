@@ -3,10 +3,23 @@
 const { chromium } = require("playwright");
 (async () => {
   const b = await chromium.launch(); const p = await b.newPage(); const logs = [];
+  // pretend the page runs at another origin (the native apps' web views) when talking to CloudBase
+  const O = process.env.ORIGIN;
+  if (O) await p.route(u => /tcloudbase|tencentcloudapi|tcb-api|tcb\.qcloud/.test(u.toString()), async route => {
+    const req = route.request();
+    if (req.method() === "OPTIONS") return route.fulfill({ status: 204, headers: { "access-control-allow-origin": "http://localhost:8080", "access-control-allow-credentials": "true", "access-control-allow-headers": req.headers()["access-control-request-headers"] || "*", "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS" } });
+    const h = { ...req.headers(), origin: O, referer: O + "/" };
+    try {
+      const resp = await route.fetch({ headers: h });
+      const rh = { ...resp.headers(), "access-control-allow-origin": "http://localhost:8080", "access-control-allow-credentials": "true" };
+      if (resp.status() >= 400) logs.push("HTTP " + resp.status() + " " + req.url().slice(0, 90) + " " + (await resp.text()).slice(0, 160));
+      await route.fulfill({ response: resp, headers: rh });
+    } catch (e) { logs.push("fetch fail " + e.message.slice(0, 120)); await route.abort(); }
+  });
   p.on("console", m => { if (/cloud|error/i.test(m.text())) logs.push(m.text().slice(0, 200)); });
   p.on("pageerror", e => logs.push("pageerror " + e.message.slice(0, 200)));
   await p.addInitScript(() => {
-    localStorage.setItem("mm_pet_v1", JSON.stringify({ profile: { nick: "冒烟测试", created: Date.now() }, cat: { breed: "orange", name: "测试猫" }, growth: 10, lastStudy: Date.now(), lastTick: Date.now() }));
+    localStorage.setItem("mm_pet_v1", JSON.stringify({ profile: { nick: "冒烟测试" + (process.env.ORIGIN ? "-" + process.env.ORIGIN.split(":")[0] : ""), created: Date.now() }, cat: { breed: "orange", name: "测试猫" }, growth: 10, lastStudy: Date.now(), lastTick: Date.now() }));
     localStorage.setItem("introDay", JSON.stringify(new Date().toDateString()));
   });
   await p.goto("http://localhost:8080/index.html#/account", { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -22,6 +35,6 @@ const { chromium } = require("playwright");
   const line = JSON.stringify(out);
   console.log(line); logs.forEach(l => console.log("::warning::" + l));
   const ok = out.ready === true && out.whoami && !String(out.whoami).startsWith("ERR");
-  console.log((ok ? "::notice::CLOUD OK " : "::error::CLOUD FAIL ") + line.slice(0, 900));
+  console.log((ok ? "::notice::CLOUD OK " : "::error::CLOUD FAIL ") + "[" + (O || "localhost:8080") + "] " + line.slice(0, 700));
   await b.close(); process.exit(ok ? 0 : 1);
 })();
