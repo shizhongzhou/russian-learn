@@ -1,13 +1,17 @@
 "use strict";
-/* ========== 猫猫俄语通 — ТРКИ-2 style mock exam (original practice paper) ========== */
-let TRKI = null;
-const loadTrki = async () => TRKI || (TRKI = await getJSON("data/trki_b2.json"));
+/* ========== 宠物俄语通 — ТРКИ-style mock exams, one original practice paper per level ========== */
+let TRKI = null, TRKI_LV = "B2";
+const TRKI_CACHE = {};
+const loadTrki = async (lv = TRKI_LV) => { TRKI_LV = lv; TRKI = TRKI_CACHE[lv] || (TRKI_CACHE[lv] = await getJSON(`data/trki_${lv.toLowerCase()}.json`)); TRKI.exam = TRKI.exam || "ТРКИ-2"; return TRKI; };
+/* progress key: B2 keeps the old keys so earlier results stay */
+const trkiKey = (id, lv = TRKI_LV) => lv === "B2" ? id : `${lv}:${id}`;
+const trkiRec = (id, lv) => (Pet.state.trki || {})[trkiKey(id, lv)];
 const shuffleOpts = (o, a) => {   // shuffle options, keep track of the right one
   const idx = o.map((_, i) => i).sort(() => Math.random() - 0.5);
   return { o: idx.map(i => o[i]), a: idx.indexOf(a) };
 };
 const ABC = "АБВГ";
-const trkiHead = (title, sub) => `<header class="subhead"><a class="iconbtn" href="#/trki" aria-label="返回模拟考试">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>${sub || "ТРКИ-2 模拟考试"}</small><b>${title}</b></div><span class="timer" aria-live="off"></span></header>`;
+const trkiHead = (title, sub) => `<header class="subhead"><a class="iconbtn" href="#/trki/${TRKI_LV}" aria-label="返回模拟考试">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>${sub || TRKI_LV + " · " + TRKI.exam + " 模拟考试"}</small><b>${title}</b></div><span class="timer" aria-live="off"></span></header>`;
 function startTimer(box, minutes) {
   const el = box.querySelector(".timer"), end = Date.now() + minutes * 60e3;
   const t = later(() => {
@@ -17,30 +21,32 @@ function startTimer(box, minutes) {
   }, 1000);
 }
 
-async function pageTrki(part) {
-  const T = await loadTrki(), S = Pet.state;
+async function pageTrki(lv, part) {
+  if (!LEVELS[lv]) { part = lv; lv = "B2"; }
+  const T = await loadTrki(lv), S = Pet.state;
   S.trki = S.trki || {};
   if (part) {
     const sec = T.sections.find(s => s.id === part);
     if (sec) return sec.items || sec.texts ? trkiObjective(sec) : sec.id === "write" ? trkiWrite(sec) : trkiSpeak(sec);
   }
-  const box = h(`<div class="page trki"><header class="subhead"><a class="iconbtn" href="#/learn" aria-label="返回学习">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>B2 · 第二级</small><b>ТРКИ-2 模拟考试</b></div></header>
-    <section class="card note"><p>${esc(T.note)} 真实考试分两天进行：阅读、写作、词汇语法，第二天听力、口语。每个部分都可以单独练习。</p></section>
-    <div class="trki-secs">${T.sections.map(s => { const r = S.trki[s.id]; const n = s.items ? s.items.length : s.texts ? s.texts.reduce((a, t) => a + t.items.length, 0) : s.tasks.length;
-      return `<a class="card trki-sec ${r && r.passed ? "pass" : ""}" href="#/trki/${s.id}"><div><small>${s.minutes} 分钟 · ${s.items || s.texts ? n + " 题" : n + " 个任务"}</small><b lang="ru">${esc(s.name)}</b><span>${esc(s.zh)}</span></div>
+  const box = h(`<div class="page trki"><header class="subhead"><a class="iconbtn" href="#/exams/${lv}" aria-label="返回考试">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>${lv} · ${esc(T.examZh || "")}</small><b>${esc(T.exam)} 模拟考试</b></div></header>
+    <section class="card note"><p>${esc(T.note)} 真实考试包括词汇语法、阅读、听力、写作、口语五个部分。每个部分都可以单独练习。</p></section>
+    <div class="trki-secs">${T.sections.map(s => { const r = S.trki[trkiKey(s.id)]; const n = s.items ? s.items.length : s.texts ? s.texts.reduce((a, t) => a + t.items.length, 0) : s.tasks.length;
+      return `<a class="card trki-sec ${r && r.passed ? "pass" : ""}" href="#/trki/${lv}/${s.id}"><div><small>${s.minutes} 分钟 · ${s.items || s.texts ? n + " 题" : n + " 个任务"}</small><b lang="ru">${esc(s.name)}</b><span>${esc(s.zh)}</span></div>
         <em>${r ? (r.passed ? "✓ 已通过" : "未通过") + (r.best != null ? ` · 最好 ${r.best}%` : "") : "开始 ›"}</em></a>`; }).join("")}</div>
     <p class="hint">通过一个部分：+5 小鱼干，还有机会掉零食；五个部分全部通过：豪华罐头一个。</p></div>`);
   app.append(box);
 }
 
 function trkiReward(sec, pct) {
-  const S = Pet.state, r = S.trki[sec.id] = S.trki[sec.id] || {};
+  const S = Pet.state, key = trkiKey(sec.id), r = S.trki[key] = S.trki[key] || {};
   r.best = Math.max(r.best || 0, pct); r.last = pct; r.passed = r.passed || pct >= 66; Pet.save();
   if (pct < 66) { if (S.settings.meow) meowFor("wrong"); return; }
-  const k = Pet.today() + "|trki|" + sec.id;
-  if (!S.once[k]) { S.once[k] = 1; Pet.bonus({ g: 40, f: 5, w: 2, text: `ТРКИ-2「${sec.zh}」通过 ${pct}%`, snackChance: 0.5 }); }
-  const all = TRKI.sections.every(s => S.trki[s.id] && S.trki[s.id].passed);
-  if (all && !S.once["trki-all"]) { S.once["trki-all"] = 1; S.inv.s4 = (S.inv.s4 || 0) + 1; Pet.save(); setTimeout(() => Pet.toast("<b>ТРКИ-2 五个部分全部通过！</b><br>奖励豪华罐头 ×1", "big"), 1500); }
+  const k = Pet.today() + "|trki|" + key;
+  if (!S.once[k]) { S.once[k] = 1; Pet.bonus({ g: 40, f: 5, w: 2, text: `${TRKI.exam}「${sec.zh}」通过 ${pct}%`, snackChance: 0.5 }); }
+  const all = TRKI.sections.every(s => S.trki[trkiKey(s.id)] && S.trki[trkiKey(s.id)].passed);
+  const allKey = TRKI_LV === "B2" ? "trki-all" : "trki-all-" + TRKI_LV;
+  if (all && !S.once[allKey]) { S.once[allKey] = 1; S.inv.s4 = (S.inv.s4 || 0) + 1; Pet.save(); setTimeout(() => Pet.toast(`<b>${TRKI.exam} 五个部分全部通过！</b><br>奖励豪华罐头 ×1`, "big"), 1500); }
 }
 
 /* 词汇语法 / 阅读 / 听力: multiple choice, submit at the end */
@@ -94,7 +100,7 @@ function trkiObjective(sec) {
     const pct = Math.round(right / qs.length * 100);
     box.querySelector("#submit").hidden = true;
     box.querySelector(".tres").innerHTML = `<section class="card result ${pct >= 66 ? "pass" : ""}"><h2>${right} / ${qs.length} · ${pct}%</h2><p>${pct >= 66 ? "通过！（ТРКИ 每部分 66% 及格）" : "还差一点，66% 及格。看看上面的解析再试一次吧。"}</p>
-      <div class="row2"><a class="btn" href="#/trki/${sec.id}" data-again>再做一遍</a><a class="btn ghost" href="#/trki">其他部分</a></div></section>`;
+      <div class="row2"><a class="btn" href="#/trki/${TRKI_LV}/${sec.id}" data-again>再做一遍</a><a class="btn ghost" href="#/trki/${TRKI_LV}">其他部分</a></div></section>`;
     box.querySelector("[data-again]").onclick = e => { e.preventDefault(); route(); };
     box.querySelector(".tres").scrollIntoView({ behavior: "smooth", block: "center" });
     trkiReward(sec, pct);

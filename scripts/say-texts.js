@@ -25,11 +25,13 @@ if (only === "all" || only === "base") {
     const g = R(`data/grammar_${lv}.json`);
     strings(g).forEach(s => { (s.match(CYR) || []).forEach(m => add(0, m)); if (/^[^一-鿿]*$/.test(s)) add(0, s); });
   }
-  const t = R("data/trki_b2.json");
-  t.sections.forEach(sec => (sec.texts || []).forEach(x => {
-    (x.lines || []).forEach(([who, l]) => add(who === "A" ? 0 : 1, l));
-    (x.replies || []).forEach(r => add(1, r));
-  }));
+  for (const lv of LV) {
+    const t = R(`data/trki_${lv.toLowerCase()}.json`);
+    t.sections.forEach(sec => {
+      (sec.texts || []).forEach(x => (x.lines || []).forEach(([who, l]) => add(who === "A" ? 0 : 1, l)));
+      (sec.tasks || []).forEach(x => (x.replies || []).forEach(r => add(1, r)));
+    });
+  }
 }
 if (only === "all" || only === "words") {
   for (const lv of LV) R(`data/words_${lv}.json`).forEach(r => add(0, r[0]));

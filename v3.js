@@ -109,15 +109,15 @@ route = function () {
     case "news": tab = "learn"; p2 != null ? pageArticle(p1, +p2) : pageNews3(LEVELS[p1] ? p1 : v.lastLevel); title = "新闻媒体"; break;
     case "course": tab = "learn"; pageCourse(LEVELS[p1] ? p1 : v.lastLevel); title = "课程"; break;
     case "reading": tab = "learn"; pageReading(LEVELS[p1] ? p1 : v.lastLevel); title = "泛读"; break;
-    case "quiz": tab = "learn"; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); break;
-    case "memo": tab = "learn"; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); break;
+    case "quiz": tab = "learn"; roam = false; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); break;
+    case "memo": tab = "learn"; roam = false; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); break;
     case "shadow": tab = "learn"; roam = false; pageShadow3(LEVELS[p1] ? p1 : v.lastLevel, +p2 || 0); title = "跟读练习"; break;
-    case "trki": tab = "learn"; pageTrki(p1); break;
+    case "trki": tab = "learn"; roam = false; pageTrki(p1, p2); break;
     case "exams": tab = "learn"; pageExams3(LEVELS[p1] ? p1 : v.lastLevel, p2); title = "考试"; break;
     case "library": tab = "learn"; pageLibrary3(p1); title = "我的书架"; break;
     case "read": tab = "learn"; pageReader(p1); roam = false; break;
-    case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); break;
-    case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); break;
+    case "write": tab = "learn"; roam = false; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); break;
+    case "exam": tab = "learn"; roam = false; pageExam(LEVELS[p1] ? p1 : v.lastLevel); break;
     case "pet": case "meow": tab = "meow"; pagePet3(); roam = false; title = "宠物"; break;
     case "nest": case "dress": tab = "meow"; pageNest(); roam = false; title = "小窝"; break;
     case "arrange": tab = "meow"; pageDress(); roam = false; break;
@@ -570,37 +570,38 @@ async function pageShadow3(lv, start = 0) {
 }
 
 /* ---------- 考试 ---------- */
+const TRKI_NAME = { A1: "ТЭУ", A2: "ТБУ", B1: "ТРКИ-1", B2: "ТРКИ-2", C1: "ТРКИ-3", C2: "ТРКИ-4" };
 async function pageExams3(lv, tab = "real") {
   const S = Pet.state; S.trki = S.trki || {};
-  const ex = S.exams[lv];
+  const ex = S.exams[lv], name = TRKI_NAME[lv];
   const box = h(`<div class="page">${head3("考试 · ТРКИ", `#/lv/${lv}`)}
     <nav class="pills">${ORDER.map(x => `<a href="#/exams/${x}/${tab}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav>
     <div class="seg" role="tablist">${[["real", "真题"], ["mock", "模拟"], ["wrong", "错题"]].map(([k, l]) => `<button role="tab" aria-selected="${k === tab}" data-t="${k}">${l}</button>`).join("")}</div>
-    <div class="exl"></div></div>`);
+    <div class="exl"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/exams/${lv}/${b.dataset.t}`);
+  const T = await getJSON(`data/trki_${lv.toLowerCase()}.json`).catch(() => null);
   const PI = ic3(I3.exam, "pi");
   const paper = (href, title, sub, badge, cls = "") => `<a class="paper" href="${href}">${PI}<span class="grow"><b>${title}</b><small>${sub}</small></span><span class="badge ${cls}">${badge}</span>${GO}</a>`;
-  const parts = [["lex", "词汇 · 语法", 25], ["read", "阅读", 50], ["listen", "听力", 35], ["write", "写作", 60], ["speak", "口语", 35]];
-  const done = parts.filter(([id]) => S.trki[id] && S.trki[id].passed).length;
+  const parts = T ? T.sections : [];
+  const rec = id => S.trki[lv === "B2" ? id : `${lv}:${id}`];
+  const done = parts.filter(p => rec(p.id) && rec(p.id).passed).length;
+  const total = parts.reduce((a, p) => a + (p.minutes || 0), 0);
   let html = "";
   if (tab === "real") {
-    html = lv === "B2"
-      ? paper("#/trki", "真题卷 01", "示范试卷 · ТРКИ-2 结构 · 来源：原创", done === 5 ? "已通过" : done ? `${done}/5` : "待练习", done === 5 ? "ok" : done ? "" : "gray")
-      : paper(`#/exams/B2/real`, "真题卷 01", "示范试卷 · ТРКИ-2（B2）", "去 B2", "gray");
-    html += `<p class="hint" style="margin:0 4px">官方真题有版权，拿到授权后会放在这里；现在先用按真题结构原创的示范卷。</p>
-      <div class="sec-t"><h2>真题卷 01</h2></div>
-      <div class="tiles"><a class="tile" href="#/trki">${tile3(I3.list, "g")}<span><b>分项练习</b><small>按题型练习</small></span></a>
-        <a class="tile" href="#/trki/lex">${tile3(I3.clock, "y")}<span><b>整套计时</b><small>${parts.reduce((a, p) => a + p[2], 0)} 分钟 · 示例</small></span></a></div>`;
+    html = (T ? paper(`#/trki/${lv}`, "真题卷 01", `示范试卷 · ${name} 结构 · 来源：原创`, done === parts.length ? "已通过" : done ? `${done}/${parts.length}` : "待练习", done === parts.length ? "ok" : done ? "" : "gray") : "") +
+      `<p class="hint" style="margin:0 4px">官方真题有版权，拿到授权后会放在这里；现在先用按 ${name} 真题结构原创的示范卷。</p>
+      <div class="sec-t"><h2>真题卷 01 · ${name}</h2></div>
+      <div class="tiles"><a class="tile" href="#/trki/${lv}">${tile3(I3.list, "g")}<span><b>分项练习</b><small>按题型练习</small></span></a>
+        <a class="tile" href="#/trki/${lv}/lex">${tile3(I3.clock, "y")}<span><b>整套计时</b><small>${total} 分钟 · 示例</small></span></a></div>`;
   } else if (tab === "mock") {
-    html = paper(`#/exam/${lv}`, `${lv} 词汇测验`, "本级单词 20 题 · 16 题通过", ex && ex.passed ? `${ex.best}/20` : "待练习", ex && ex.passed ? "ok" : "gray") +
-      paper(`#/quiz/${lv}`, "每日小测", "今天学过的词 + 生词本", "每天更新", "gray") +
-      paper(`#/write/${lv}`, `${lv} 写作练习`, "按题目写俄语短文", "练习", "gray") +
-      (lv === "B2" ? parts.map(([id, n, m]) => paper(`#/trki/${id}`, `ТРКИ-2 · ${n}`, `${m} 分钟`, S.trki[id] ? (S.trki[id].passed ? "已通过" : "未通过") : "待练习", S.trki[id] && S.trki[id].passed ? "ok" : "gray")).join("") : "");
+    html = parts.map(p => { const r = rec(p.id); return paper(`#/trki/${lv}/${p.id}`, `${name} · ${p.zh}`, `${p.minutes} 分钟 · <span lang="ru">${esc(p.name)}</span>`, r ? (r.passed ? `已通过 ${r.best}%` : `未通过 ${r.best}%`) : "待练习", r && r.passed ? "ok" : r ? "" : "gray"); }).join("") +
+      paper(`#/exam/${lv}`, `${lv} 词汇测验`, "本级单词 20 题 · 16 题通过", ex && ex.passed ? `${ex.best}/20` : "待练习", ex && ex.passed ? "ok" : "gray") +
+      paper(`#/quiz/${lv}`, "每日小测", "今天学过的词 + 生词本", "每天更新", "gray");
   } else {
     const n = Object.keys(S.wrongWords || {}).length;
     html = paper("#/memo/mine", "错词本", "答错的单词自动收进来，答对就移出", `${n} 个`, n ? "" : "ok") +
-      Object.entries(S.trki).filter(([, r]) => !r.passed).map(([id]) => paper(`#/trki/${id}`, `ТРКИ-2 · ${(parts.find(p => p[0] === id) || [, id])[1]}`, "上次未通过，再练一次", "重做")).join("");
+      parts.filter(p => rec(p.id) && !rec(p.id).passed).map(p => paper(`#/trki/${lv}/${p.id}`, `${name} · ${p.zh}`, `上次 ${rec(p.id).best}%，再练一次`, "重做")).join("");
   }
   box.querySelector(".exl").innerHTML = html;
 }
