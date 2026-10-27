@@ -40,7 +40,7 @@ def lin(r, g, b):  # sRGB 0-255 -> linear
     f = lambda c: (c / 255) / 12.92 if c / 255 <= 0.04045 else ((c / 255 + 0.055) / 1.055) ** 2.4
     return (f(r), f(g), f(b), 1)
 
-ORANGE, STRIPE, CREAM = lin(242, 156, 74), lin(214, 112, 40), lin(253, 248, 241)
+ORANGE, STRIPE, CREAM = lin(245, 162, 82), lin(214, 108, 38), lin(255, 250, 244)
 PINK, NOSE, AMBER, PUPIL = lin(246, 178, 172), lin(232, 132, 134), lin(232, 160, 52), lin(28, 20, 16)
 
 # ---------------------------------------------------------------- materials
@@ -70,7 +70,8 @@ def fur(name, axis="X", freq=5.0, top_only=False, white_below=None):
     L.new(sn.outputs[0], ramp.inputs[0])
     fac = ramp.outputs[0]
     if top_only:   # stripes only on the crown / back
-        mr = N.new("ShaderNodeMapRange"); mr.inputs["From Min"].default_value = 0.15; mr.inputs["From Max"].default_value = 0.55
+        mr = N.new("ShaderNodeMapRange"); lo_, hi_ = top_only if isinstance(top_only, tuple) else (-0.35, 0.15)
+        mr.inputs["From Min"].default_value = lo_; mr.inputs["From Max"].default_value = hi_
         L.new(sep.outputs["Z"], mr.inputs["Value"])
         mm = N.new("ShaderNodeMath"); mm.operation = "MULTIPLY"; L.new(ramp.outputs[0], mm.inputs[0]); L.new(mr.outputs[0], mm.inputs[1])
         fac = mm.outputs[0]
@@ -104,8 +105,8 @@ def eye_mat():
     return m
 
 M = {
-    "body": fur("fur_body", "X", 6.0, top_only=True, white_below=-0.25),
-    "head": fur("fur_head", "Y", 7.0, top_only=True),
+    "body": fur("fur_body", "X", 7.5, top_only=True, white_below=-0.35),
+    "head": fur("fur_head", "Y", 9.0, top_only=(0.45, 0.8)),
     "leg": fur("fur_leg", "Z", 5.0),
     "tail": fur("fur_tail", "Z", 5.0),
     "cream": principled("cream", CREAM)[0],
@@ -136,22 +137,22 @@ def capsule(name, a, b, r, mat, squash=1.0):
 
 def cone(name, base, tip, r, mat):
     base, tip = Vector(base), Vector(tip); d = tip - base
-    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=r, radius2=r * 0.12, depth=d.length, location=(base + tip) / 2)
+    bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=r, radius2=r * 0.22, depth=d.length, location=(base + tip) / 2)
     o = bpy.context.object; o.name = name; o.rotation_mode = "QUATERNION"; o.rotation_quaternion = Vector((0, 0, 1)).rotation_difference(d.normalized())
     bpy.ops.object.shade_smooth(); o.modifiers.new("sub", "SUBSURF").levels = 2
     o.data.materials.append(M[mat]); return o
 
 # key points (metres-ish; ground at z = 0, the cat faces +X)
-HIP_Z = 0.50
+HIP_Z = 0.42
 LEGS = {  # name: hip, paw rest, front?
-    "FL": (Vector((0.30, -0.15, HIP_Z)), Vector((0.33, -0.15, 0.055)), True),
-    "FR": (Vector((0.30, 0.15, HIP_Z)), Vector((0.33, 0.15, 0.055)), True),
-    "HL": (Vector((-0.30, -0.15, HIP_Z)), Vector((-0.30, -0.15, 0.055)), False),
-    "HR": (Vector((-0.30, 0.15, HIP_Z)), Vector((-0.30, 0.15, 0.055)), False),
+    "FL": (Vector((0.28, -0.16, HIP_Z)), Vector((0.31, -0.16, 0.065)), True),
+    "FR": (Vector((0.28, 0.16, HIP_Z)), Vector((0.31, 0.16, 0.065)), True),
+    "HL": (Vector((-0.28, -0.16, HIP_Z)), Vector((-0.28, -0.16, 0.065)), False),
+    "HR": (Vector((-0.28, 0.16, HIP_Z)), Vector((-0.28, 0.16, 0.065)), False),
 }
-L1, L2 = 0.24, 0.23
-HEAD_C = Vector((0.60, 0, 0.98))
-TAIL = [Vector((-0.50, 0, 0.62)), Vector((-0.70, 0, 0.82)), Vector((-0.74, 0, 1.08)), Vector((-0.66, 0, 1.30))]
+L1, L2 = 0.20, 0.19
+HEAD_C = Vector((0.56, 0, 0.90))
+TAIL = [Vector((-0.46, 0, 0.56)), Vector((-0.66, 0, 0.74)), Vector((-0.72, 0, 1.00)), Vector((-0.62, 0, 1.22))]
 
 def knee_rest(hip, paw, front):
     d = (paw - hip).length; a = (L1 ** 2 + d ** 2 - L2 ** 2) / (2 * L1 * d); o = math.acos(max(-1, min(1, a)))
@@ -171,7 +172,7 @@ def bone(n, h, t, parent=None, connect=False):
     if parent: b.parent = EB[parent]; b.use_connect = connect
     return b
 bone("root", (0, 0, 0), (0, 0, 0.2))
-bone("body", (-0.32, 0, 0.58), (0.36, 0, 0.62), "root")
+bone("body", (-0.32, 0, 0.50), (0.36, 0, 0.54), "root")
 bone("head", HEAD_C - Vector((0.05, 0, 0.18)), HEAD_C + Vector((0.0, 0, 0.12)), "body")
 for i in range(3): bone(f"tail{i}", TAIL[i], TAIL[i + 1], "body" if i == 0 else f"tail{i-1}", i > 0)
 for n, (hip, paw, front) in LEGS.items():
@@ -183,46 +184,47 @@ bpy.ops.object.mode_set(mode="OBJECT")
 parts = []  # (object, bone)
 def P(o, b): parts.append((o, b)); return o
 
-P(ellipsoid("Body", (0.0, 0, 0.60), (0.50, 0.30, 0.28), "body"), "body")
-P(ellipsoid("Chest", (0.32, 0, 0.58), (0.24, 0.25, 0.27), "cream"), "body")
-P(ellipsoid("Belly", (0.02, 0, 0.42), (0.38, 0.22, 0.12), "cream"), "body")
-P(ellipsoid("Haunch.L", (-0.28, -0.14, 0.54), (0.20, 0.13, 0.20), "body"), "body")
-P(ellipsoid("Haunch.R", (-0.28, 0.14, 0.54), (0.20, 0.13, 0.20), "body"), "body")
-P(ellipsoid("Shoulder.L", (0.28, -0.15, 0.60), (0.15, 0.11, 0.17), "body"), "body")
-P(ellipsoid("Shoulder.R", (0.28, 0.15, 0.60), (0.15, 0.11, 0.17), "body"), "body")
+P(ellipsoid("Body", (0.0, 0, 0.52), (0.50, 0.33, 0.28), "body"), "body")
+P(ellipsoid("Chest", (0.30, 0, 0.52), (0.24, 0.26, 0.28), "cream"), "body")
+P(ellipsoid("Belly", (0.02, 0, 0.34), (0.38, 0.24, 0.12), "cream"), "body")
+P(ellipsoid("Haunch.L", (-0.27, -0.15, 0.46), (0.22, 0.15, 0.22), "body"), "body")
+P(ellipsoid("Haunch.R", (-0.27, 0.15, 0.46), (0.22, 0.15, 0.22), "body"), "body")
+P(ellipsoid("Shoulder.L", (0.27, -0.16, 0.50), (0.16, 0.12, 0.18), "body"), "body")
+P(ellipsoid("Shoulder.R", (0.27, 0.16, 0.50), (0.16, 0.12, 0.18), "body"), "body")
 # head: big and round, cream muzzle and blaze
 H = HEAD_C
-P(ellipsoid("Head", H, (0.40, 0.41, 0.36), "head"), "head")
-P(ellipsoid("Cheek.L", H + Vector((0.16, -0.20, -0.12)), (0.20, 0.17, 0.15), "head"), "head")
-P(ellipsoid("Cheek.R", H + Vector((0.16, 0.20, -0.12)), (0.20, 0.17, 0.15), "head"), "head")
-P(ellipsoid("Muzzle", H + Vector((0.31, 0, -0.12)), (0.14, 0.20, 0.13), "cream"), "head")
-P(ellipsoid("Chin", H + Vector((0.24, 0, -0.22)), (0.13, 0.15, 0.09), "cream"), "head")
-P(ellipsoid("Blaze", H + Vector((0.30, 0, 0.06)), (0.10, 0.07, 0.22), "cream", Quaternion((0, 1, 0), math.radians(-28))), "head")
-P(ellipsoid("Nose", H + Vector((0.445, 0, -0.06)), (0.035, 0.05, 0.032), "nose"), "head")
-P(capsule("Mouth.L", H + Vector((0.44, 0, -0.10)), H + Vector((0.43, -0.05, -0.13)), 0.008, "dark"), "head")
-P(capsule("Mouth.R", H + Vector((0.44, 0, -0.10)), H + Vector((0.43, 0.05, -0.13)), 0.008, "dark"), "head")
+P(ellipsoid("Head", H, (0.40, 0.45, 0.39), "head"), "head")
+P(ellipsoid("Cheek.L", H + Vector((0.14, -0.22, -0.13)), (0.22, 0.19, 0.17), "head"), "head")
+P(ellipsoid("Cheek.R", H + Vector((0.14, 0.22, -0.13)), (0.22, 0.19, 0.17), "head"), "head")
+P(ellipsoid("Muzzle", H + Vector((0.30, 0, -0.14)), (0.16, 0.24, 0.15), "cream"), "head")
+P(ellipsoid("Chin", H + Vector((0.22, 0, -0.25)), (0.16, 0.20, 0.10), "cream"), "head")
+P(ellipsoid("Blaze", H + Vector((0.31, 0, 0.04)), (0.10, 0.075, 0.24), "cream", Quaternion((0, 1, 0), math.radians(-30))), "head")
+P(ellipsoid("Nose", H + Vector((0.455, 0, -0.07)), (0.035, 0.055, 0.034), "nose"), "head")
+P(capsule("Mouth.L", H + Vector((0.455, 0, -0.11)), H + Vector((0.44, -0.055, -0.145)), 0.008, "dark"), "head")
+P(capsule("Mouth.R", H + Vector((0.455, 0, -0.11)), H + Vector((0.44, 0.055, -0.145)), 0.008, "dark"), "head")
 for side, s in (("L", -1), ("R", 1)):
-    az = math.radians(34)
-    c = H + Vector((0.355 * math.cos(az), s * 0.33 * math.sin(az) * 1.15, 0.03))
-    q = Quaternion((0, 0, 1), s * az)
-    P(ellipsoid("Eye." + side, c, (0.035, 0.105, 0.125), "eye", q), "head")
-    P(ellipsoid("Glint." + side, c + q @ Vector((0.03, -0.035, 0.055)), (0.012, 0.030, 0.030), "hl", q, seg=16), "head")
-    P(ellipsoid("Glint2." + side, c + q @ Vector((0.03, 0.035, -0.04)), (0.008, 0.015, 0.015), "hl", q, seg=16), "head")
+    az, el = math.radians(27), math.radians(4)
+    n = Vector((math.cos(el) * math.cos(az), s * math.cos(el) * math.sin(az), math.sin(el)))
+    c = H + Vector((0.40 * n.x, 0.45 * n.y, 0.39 * n.z)) * 0.93
+    q = Quaternion((0, 0, 1), s * az * 1.15)
+    P(ellipsoid("Eye." + side, c, (0.05, 0.13, 0.15), "eye", q), "head")
+    P(ellipsoid("Glint." + side, c + q @ Vector((0.045, -s * 0.04, 0.065)), (0.012, 0.038, 0.038), "hl", q, seg=16), "head")
+    P(ellipsoid("Glint2." + side, c + q @ Vector((0.045, s * 0.045, -0.05)), (0.008, 0.018, 0.018), "hl", q, seg=16), "head")
     # ears: orange cone with a pink inner cone
-    eb_ = H + Vector((0.0, s * 0.22, 0.24)); et = H + Vector((0.02, s * 0.33, 0.56))
-    P(cone("Ear." + side, eb_, et, 0.16, "ear"), "head")
-    P(cone("EarIn." + side, eb_ + Vector((0.07, 0, 0.02)), et + Vector((0.04, 0, -0.06)), 0.10, "pink"), "head")
-    P(ellipsoid("Brow." + side, H + Vector((0.31, s * 0.11, 0.17)), (0.02, 0.025, 0.02), "dark", seg=16), "head")
+    eb_ = H + Vector((-0.02, s * 0.24, 0.24)); et = H + Vector((0.03, s * 0.38, 0.58))
+    P(cone("Ear." + side, eb_, et, 0.20, "ear"), "head")
+    P(cone("EarIn." + side, eb_ + Vector((0.09, -s * 0.01, 0.03)), et + Vector((0.05, -s * 0.015, -0.08)), 0.13, "pink"), "head")
+    P(ellipsoid("Brow." + side, H + Vector((0.33, s * 0.12, 0.20)), (0.02, 0.026, 0.02), "dark", seg=16), "head")
 # legs
 for n, (hip, paw, front) in LEGS.items():
     k = knee_rest(hip, paw, front)
-    P(capsule(n + "_thigh", hip, k, 0.10 if not front else 0.085, "leg"), n + "_up")
-    P(capsule(n + "_shin", k, paw + Vector((0, 0, 0.03)), 0.072, "cream" if front else "leg"), n + "_lo")
-    P(ellipsoid(n + "_paw", paw + Vector((0.035, 0, -0.005)), (0.10, 0.085, 0.06), "cream"), n + "_lo")
+    P(capsule(n + "_thigh", hip, k, 0.125 if not front else 0.105, "leg"), n + "_up")
+    P(capsule(n + "_shin", k, paw + Vector((0, 0, 0.03)), 0.09, "cream" if front else "leg"), n + "_lo")
+    P(ellipsoid(n + "_paw", paw + Vector((0.04, 0, -0.01)), (0.12, 0.10, 0.07), "cream"), n + "_lo")
 # tail
 for i in range(3):
-    P(capsule(f"Tail{i}", TAIL[i], TAIL[i + 1], 0.085 - i * 0.004, "tail"), f"tail{i}")
-P(ellipsoid("TailTip", TAIL[3] + Vector((0.01, 0, 0.03)), (0.10, 0.10, 0.11), "cream"), "tail2")
+    P(capsule(f"Tail{i}", TAIL[i], TAIL[i + 1], 0.11 - i * 0.006, "tail"), f"tail{i}")
+P(ellipsoid("TailTip", TAIL[3] + Vector((0.0, 0, 0.02)), (0.12, 0.12, 0.13), "cream"), "tail2")
 
 # bone-parent every part, keeping its rest placement
 bpy.context.view_layer.update()
@@ -282,7 +284,7 @@ def pose(t, clip):
         tail_sw = -10
     # body
     q_pitch = Quaternion((0, 1, 0), math.radians(-pitch))
-    Rb = rest("body"); pivot = Vector((0, 0, 0.6))
+    Rb = rest("body"); pivot = Vector((0, 0, 0.52))
     body_head = pivot + q_pitch @ (Rb.translation - pivot) + bob
     set_bone("body", body_head, q_pitch @ (Rb.to_3x3() @ Vector((0, 1, 0))))
     bm = arm.pose.bones["body"].matrix @ rest("body").inverted()      # body pose delta (armature space)
