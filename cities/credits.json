@@ -11,12 +11,6 @@
   "license": "CC BY-SA 4.0",
   "page": "https://commons.wikimedia.org/wiki/File:Winter_Palace-2025-09-msu---2707.jpg"
  },
- "baikal": {
-  "title": "File:Lake Baikal II (30211626121).jpg",
-  "author": "Ludger Heide",
-  "license": "CC BY-SA 2.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Lake_Baikal_II_(30211626121).jpg"
- },
  "kazan": {
   "title": "File:Kazan Kul Sharif Mosque 2024-07-13 1341.jpg",
   "author": "Mike1979 Russia",
@@ -28,12 +22,6 @@
   "author": "David Kernan",
   "license": "CC BY 4.0",
   "page": "https://commons.wikimedia.org/wiki/File:Tokyo_Tower,_Minato_City.jpg"
- },
- "kyoto": {
-  "title": "File:Four ladies wearing a yukata in front of the North Gate of Kiyomizu-dera temple Kyoto Japan.jpg",
-  "author": "Basile Morin",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Four_ladies_wearing_a_yukata_in_front_of_the_North_Gate_of_Kiyomizu-dera_temple_Kyoto_Japan.jpg"
  },
  "osaka": {
   "title": "File:Osaka Castle Outer Moat and Osaka Business Park, November 2016.jpg",
@@ -64,18 +52,6 @@
   "author": "Zairon",
   "license": "CC BY-SA 4.0",
   "page": "https://commons.wikimedia.org/wiki/File:Marseille_Basilique_Notre-Dame-de-la-Garde_Vue_sur_le_Vieux-Port_2.jpg"
- },
- "beijing": {
-  "title": "File:Sunset of the Forbidden City 2006.JPG",
-  "author": "User:kallgan",
-  "license": "CC BY-SA 3.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Sunset_of_the_Forbidden_City_2006.JPG"
- },
- "harbin": {
-  "title": "File:Saint Sophia Cathedral, Harbin 10.jpg",
-  "author": "闫恩铭 / Enming Yan",
-  "license": "CC BY-SA 4.0",
-  "page": "https://commons.wikimedia.org/wiki/File:Saint_Sophia_Cathedral,_Harbin_10.jpg"
  },
  "chengdu": {
   "title": "File:Chengdu Sichuan China Panda-breeding-and-research-center-02.jpg",
