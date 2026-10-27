@@ -19,7 +19,7 @@ const { chromium } = require("playwright");
   p.on("console", m => { if (/cloud|error/i.test(m.text())) logs.push(m.text().slice(0, 200)); });
   p.on("pageerror", e => logs.push("pageerror " + e.message.slice(0, 200)));
   await p.addInitScript(() => {
-    localStorage.setItem("mm_pet_v1", JSON.stringify({ profile: { nick: "冒烟测试" + (process.env.ORIGIN ? "-" + process.env.ORIGIN.split(":")[0] : ""), created: Date.now() }, cat: { breed: "orange", name: "测试猫" }, growth: 10, lastStudy: Date.now(), lastTick: Date.now() }));
+    localStorage.setItem("mm_pet_v1", JSON.stringify({ profile: { nick: "冒烟测试", created: Date.now() }, cat: { breed: "orange", name: "测试猫" }, growth: 10, lastStudy: Date.now(), lastTick: Date.now() }));
     localStorage.setItem("introDay", JSON.stringify(new Date().toDateString()));
   });
   await p.goto("http://localhost:8080/index.html#/account", { waitUntil: "domcontentloaded", timeout: 60000 });
