@@ -15,6 +15,14 @@ const Cloud = (() => {
   const listeners = new Set();
   const emit = () => listeners.forEach(fn => { try { fn(); } catch (_) {} });
   const enabled = () => !!CFG.env;
+  /* turn browser network errors ("Load failed", "Failed to fetch"…) into something a player understands */
+  const BLOCKED_HOST = /github\.io$/.test(location.hostname);     // not on CloudBase's allowed-origin list
+  function nice(e) {
+    const m = String(e && e.message || e || "");
+    if (/load failed|failed to fetch|network|unexpected end of json|NetworkError|403/i.test(m))
+      return new Error(BLOCKED_HOST ? "网页版暂时不能登录，请在 App 里登录（或先点「游客开始」）" : "网络连接失败，请检查网络后再试");
+    return e instanceof Error ? e : new Error(m);
+  }
 
   function loadSDK() {
     if (window.cloudbase) return Promise.resolve();
@@ -31,7 +39,7 @@ const Cloud = (() => {
       if (!s || !s.data || !s.data.session) await auth.signInAnonymously();
       await refreshUser();
       return true;
-    })().catch(e => { readyP = null; lastErr = "连不上云端"; console.warn("cloud", e); emit(); return false; });
+    })().catch(e => { readyP = null; lastErr = BLOCKED_HOST ? "网页版暂时连不上云端，请用 App" : "连不上云端"; console.warn("cloud", e); emit(); return false; });
     return readyP;
   }
   async function refreshUser() {
@@ -39,8 +47,8 @@ const Cloud = (() => {
     user = r && r.data && r.data.user || null; emit(); return user;
   }
   async function call(action, data = {}) {
-    if (!(await ready())) throw new Error(lastErr || "云服务未开启");
-    const r = await app.callFunction({ name: "api", data: { action, data } });
+    if (!(await ready())) throw nice(lastErr || "云服务未开启");
+    let r; try { r = await app.callFunction({ name: "api", data: { action, data } }); } catch (e) { throw nice(e); }
     const res = r && r.result || {};
     if (!res.ok) { const e = new Error(res.msg || "请求失败"); e.code = res.code; throw e; }
     return res.data;
@@ -127,7 +135,10 @@ const Cloud = (() => {
 
   /* ---------- login ---------- */
   async function sendCode(kind, target) {
-    await ready();
+    try { return await sendCode0(kind, target); } catch (e) { throw nice(e); }
+  }
+  async function sendCode0(kind, target) {
+    if (!(await ready())) throw nice(lastErr);
     const arg = kind === "phone" ? { phone: target } : { email: target };
     let r = await auth.signInWithOtp(arg);
     if (r.error && kind === "phone" && !/^\+/.test(target)) r = await auth.signInWithOtp({ phone: "+86 " + target });   // some SDK versions want the country code
@@ -135,7 +146,7 @@ const Cloud = (() => {
     return r.data;          // has .verifyOtp({ token })
   }
   async function verifyCode(pending, code) {
-    const r = await pending.verifyOtp({ token: code });
+    let r; try { r = await pending.verifyOtp({ token: code }); } catch (e) { throw nice(e); }
     if (r.error) throw new Error(r.error.message || "验证码不对");
     await refreshUser(); await pull({ afterLogin: true }); claimGifts(); return user;
   }

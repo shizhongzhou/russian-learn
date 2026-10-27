@@ -1,0 +1,20 @@
+name: Upload web to CloudBase
+# Pushes the web app zip to a short-lived pre-signed CloudBase upload URL (given as a manual input).
+on:
+  workflow_dispatch:
+    inputs:
+      url: { description: "pre-signed upload URL", required: true }
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Zip and upload
+        env: { URL: "${{ github.event.inputs.url }}" }
+        run: |
+          echo "::add-mask::$URL"
+          mkdir -p z/dist && cp index.html *.js style.css manifest.webmanifest z/dist/ && cp -R data icons img vendor z/dist/ && rm -f z/dist/sw.js
+          echo '{"name":"maomao","version":"1.0.0"}' > z/package.json
+          (cd z && zip -qr ../web.zip .)
+          code=$(curl -sS -o resp.txt -w "%{http_code}" -X PUT -H "Content-Type: application/zip" --data-binary @web.zip "$URL")
+          echo "::notice::upload HTTP $code $(head -c 200 resp.txt)"; [ "$code" = 200 ]
