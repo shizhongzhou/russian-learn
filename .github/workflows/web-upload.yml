@@ -13,7 +13,7 @@ jobs:
         env: { URL: "${{ github.event.inputs.url }}" }
         run: |
           echo "::add-mask::$URL"
-          mkdir -p z/dist && cp index.html *.js style.css manifest.webmanifest z/dist/ && cp -R data icons img vendor z/dist/ && rm -f z/dist/sw.js
+          mkdir -p z/dist && cp index.html *.js *.css manifest.webmanifest z/dist/ && cp -R data icons img vendor z/dist/ && rm -f z/dist/sw.js
           echo '{"name":"maomao","version":"1.0.0"}' > z/package.json
           (cd z && zip -qr ../web.zip .)
           code=$(curl -sS -o resp.txt -w "%{http_code}" -X PUT -H "Content-Type: application/zip" --data-binary @web.zip "$URL")
