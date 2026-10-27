@@ -17,4 +17,4 @@ jobs:
           echo '{"name":"maomao","version":"1.0.0"}' > z/package.json
           (cd z && zip -qr ../web.zip .)
           code=$(curl -sS -o resp.txt -w "%{http_code}" -X PUT -H "Content-Type: application/zip" --data-binary @web.zip "$URL")
-          echo "::notice::upload HTTP $code $(head -c 200 resp.txt)"; [ "$code" = 200 ]
+          echo "::notice::upload HTTP $code size $(du -h web.zip | cut -f1) $(tr -d "\n" < resp.txt | grep -o "<Code>[^<]*</Code>\|<Message>[^<]*</Message>" | tr "\n" " ")"; [ "$code" = 200 ]
