@@ -110,7 +110,7 @@ route = function () {
     case "course": tab = "learn"; pageCourse(LEVELS[p1] ? p1 : v.lastLevel); title = "课程"; break;
     case "reading": tab = "learn"; pageReading(LEVELS[p1] ? p1 : v.lastLevel); title = "泛读"; break;
     case "quiz": tab = "learn"; roam = false; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); break;
-    case "memo": tab = "learn"; roam = false; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); break;
+    case "memo": tab = "learn"; roam = false; pageMemo3(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); break;
     case "shadow": tab = "learn"; roam = false; pageShadow3(LEVELS[p1] ? p1 : v.lastLevel, +p2 || 0); title = "跟读练习"; break;
     case "trki": tab = "learn"; roam = false; pageTrki(p1, p2); break;
     case "exams": tab = "learn"; pageExams3(LEVELS[p1] ? p1 : v.lastLevel, p2); title = "考试"; break;
