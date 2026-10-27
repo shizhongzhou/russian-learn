@@ -16,6 +16,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: 20 }
+      - name: Diagnose SDK sources
+        run: |
+          for u in https://static.cloudbase.net/cloudbase-js-sdk/3.0.1/cloudbase.full.js https://static.cloudbase.net/cloudbase-js-sdk/latest/cloudbase.full.js https://static.cloudbase.net/cloudbase-js-sdk/2.9.0/cloudbase.full.js https://imgcache.qq.com/qcloud/cloudbase-js-sdk/3.0.1/cloudbase.full.js; do
+            echo "::notice::$(curl -s -o /dev/null -w '%{http_code} %{size_download}' -L "$u") $u"; done
+          mkdir -p /tmp/sdk && cd /tmp/sdk && npm view @cloudbase/js-sdk version dist-tags --json 2>/dev/null | tr -d '\n' | head -c 300 | sed 's/^/::notice::npm /'; echo
+          npm i @cloudbase/js-sdk >/dev/null 2>&1; echo "::notice::files $(cd node_modules/@cloudbase/js-sdk && ls -R | grep -iE 'umd|full|\.min\.js|cdn' | head -20 | tr '\n' ' ')"
+          echo "::notice::pkg $(node -e "const p=require('/tmp/sdk/node_modules/@cloudbase/js-sdk/package.json');console.log(p.version,p.main,p.module,p.browser&&JSON.stringify(p.browser).slice(0,100))")"
       - name: Install browser
         run: |
           npm i --no-save playwright@1.48.2 2>&1 | tail -3
