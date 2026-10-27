@@ -1,0 +1,23 @@
+name: Fetch classics (Wikisource)
+on:
+  workflow_dispatch:
+    inputs:
+      only: { description: "comma-separated ids (empty = all)", required: false, default: "" }
+      target: { description: "probe or main", required: false, default: "probe" }
+permissions: { contents: write }
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install beautifulsoup4
+      - run: python3 scripts/classics_fetch.py scripts/classics_list.json data/books "${{ inputs.only }}"
+      - name: publish
+        run: |
+          git config user.name bot; git config user.email bot@users.noreply.github.com
+          if [ "${{ inputs.target }}" = main ]; then
+            git add data/books && git commit -qm "Classics: update texts from Wikisource" && git pull -q --rebase && git push
+          else
+            cp -R data/books /tmp/books && git checkout --orphan probe && git rm -rfq . && cp -R /tmp/books books && git add books && git commit -qm probe && git push -f origin probe
+          fi
