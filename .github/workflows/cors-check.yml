@@ -10,9 +10,12 @@ jobs:
     steps:
       - run: |
           U=https://maomao-eyu-d9g3u5l5rd2092a1a.api.tcloudbasegateway.com/auth/v1/verification
-          for O in capacitor://localhost https://localhost http://localhost https://shizhongzhou.github.io; do
+          for O in capacitor://localhost https://shizhongzhou.github.io https://maomao-maomao-eyu-d9g3u5l5rd2092a1a.webapps.tcloudbase.com https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com; do
             H=$(curl -s -o /dev/null -D - -X OPTIONS "$U" -H "Origin: $O" -H "Access-Control-Request-Method: POST" -H "Access-Control-Request-Headers: content-type,authorization,x-device-id,x-request-id,x-sdk-version" | tr -d '\r' | grep -i -E "^HTTP|access-control-allow-(origin|headers)" | tr '\n' ' ')
             echo "::notice::PREFLIGHT $O => $H"
             P=$(curl -s -D - -X POST "$U" -H "Origin: $O" -H "content-type: application/json" -d '{"email":"maomao-smoke-test@example.com","target":"ANY"}' | tr -d '\r' | grep -i -E "^HTTP|access-control-allow-origin|^\{" | tr '\n' ' ' | cut -c1-300)
             echo "::notice::POST $O => $P"
+          done
+          for S in https://maomao-maomao-eyu-d9g3u5l5rd2092a1a.webapps.tcloudbase.com/ https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com/; do
+            echo "::notice::SITE $S => $(curl -s -o /dev/null -w '%{http_code} %{size_download}' $S)"
           done
