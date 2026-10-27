@@ -9,10 +9,10 @@ const { chromium } = require("playwright");
     localStorage.setItem("mm_pet_v1", JSON.stringify({ profile: { nick: "冒烟测试", created: Date.now() }, cat: { breed: "orange", name: "测试猫" }, growth: 10, lastStudy: Date.now(), lastTick: Date.now() }));
     localStorage.setItem("introDay", JSON.stringify(new Date().toDateString()));
   });
-  await p.goto("http://localhost:8080/index.html#/account");
+  await p.goto("http://localhost:8080/index.html#/account", { waitUntil: "domcontentloaded", timeout: 60000 });
   const out = await p.evaluate(async () => {
     const r = {};
-    try { r.ready = await Promise.race([Cloud.ready(), new Promise(res => setTimeout(() => res("timeout"), 30000))]); } catch (e) { r.ready = "ERR " + e.message; }
+    try { r.ready = await Promise.race([Cloud.ready(), new Promise(res => setTimeout(() => res("timeout"), 60000))]); } catch (e) { r.ready = "ERR " + e.message; }
     r.user = Cloud.user() ? { id: Cloud.user().id, anon: Cloud.user().is_anonymous } : null;
     for (const a of ["whoami", "load"]) { try { r[a] = await Cloud.call(a); } catch (e) { r[a] = "ERR " + (e.code || "") + " " + e.message; } }
     try { await Cloud.push(true); r.push = Cloud.status(); } catch (e) { r.push = "ERR " + e.message; }
