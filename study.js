@@ -49,7 +49,7 @@ async function pageMemo(src) {
   function card() {
     if (!queue.length) { mb.innerHTML = `<section class="card result"><h2>这一组都背会啦！</h2><p>本次背会 ${session} 个词。</p><a class="btn" href="#/quiz/${lv0}">去做今天的测验</a></section>`; return; }
     const t = queue[0];
-    mb.innerHTML = `<p class="hint">${src === "mine" ? `生词本 ${Object.keys(S.wrongWords || {}).length} 个 · 答对就移出生词本` : `已背会 ${fmt(doneN + session)} / ${fmt(pool.length)}`} · 本次 ${session} 个 · 背会一个得 1 猫粮</p>
+    mb.innerHTML = `<p class="hint">${src === "mine" ? `生词本 ${Object.keys(S.wrongWords || {}).length} 个 · 答对就移出生词本` : `已背会 ${fmt(doneN + session)} / ${fmt(pool.length)}`} · 本次 ${session} 个 · 背会一个得 1 小鱼干</p>
       <section class="card flash"><small>${t.lv} #${t.i + 1} · ${POS[t.r[2]] || ""}${t.r[3] ? " · " + esc(t.r[3]) : ""}</small>
         <button class="qword ru" lang="ru" aria-label="朗读 ${esc(t.r[0])}">${esc(t.r[0])} ${svgI(SPK, "fill")}</button>
         <div class="flash-back" hidden><p class="qzh">${esc(t.r[1])}</p></div></section>
@@ -77,7 +77,7 @@ async function pageMemo(src) {
       let got = false;
       if (ok) { got = Pet.master(t.lv, t.i); Pet.unmiss(t.lv, t.i); session++; queue.shift(); if (S.settings.meow) meowFor("correct"); Pet.cheer("背下来啦！"); }
       else { b.classList.add("wrong"); Pet.wrong(); Pet.missed(t.lv, t.i); queue.push(queue.shift()); }
-      mb.querySelector(".qfb").innerHTML = `<div class="fb ${ok ? "ok" : "no"}"><b>${ok ? (got ? "背下来了！+1 猫粮" : "复习成功！已移出生词本") : "还没记牢，已收进生词本"}</b><span class="ru" lang="ru">${esc(t.r[0])}</span> = ${esc(t.r[1])}</div><button class="btn big" id="nx">下一个</button>`;
+      mb.querySelector(".qfb").innerHTML = `<div class="fb ${ok ? "ok" : "no"}"><b>${ok ? (got ? "背下来了！+1 小鱼干" : "复习成功！已移出生词本") : "还没记牢，已收进生词本"}</b><span class="ru" lang="ru">${esc(t.r[0])}</span> = ${esc(t.r[1])}</div><button class="btn big" id="nx">下一个</button>`;
       const nx = mb.querySelector("#nx"); nx.onclick = card; nx.focus();
     });
   }
@@ -98,7 +98,7 @@ async function pageShadow(lv) {
   const sb = box.querySelector(".sbody");
   let slow = true;
   function list() {
-    sb.innerHTML = `<section class="card note"><p><b>怎么练：</b>先听原音（默认慢速），再按麦克风跟着读。系统会识别你的发音打分：<b>60 分 +1 猫粮，75 分 +2，90 分 +3</b>，读得好还可能掉落小零食。每句每天按最高分发一次奖励。</p></section>
+    sb.innerHTML = `<section class="card note"><p><b>怎么练：</b>先听原音（默认慢速），再按麦克风跟着读。系统会识别你的发音打分：<b>60 分 +1 小鱼干，75 分 +2，90 分 +3</b>，读得好还可能掉落小零食。每句每天按最高分发一次奖励。</p></section>
       <div class="mats">${mats.map((m, j) => `<button class="card mat" data-m="${j}"><small>${m.kind} · ${m.lines.length} 句</small><b lang="ru">${esc(m.title)}</b><span>${esc(m.zh || "")}</span></button>`).join("")}</div>`;
     sb.querySelectorAll("[data-m]").forEach(b => b.onclick = () => run(mats[+b.dataset.m]));
   }
@@ -129,7 +129,7 @@ async function pageShadow(lv) {
       const v = Pet.view();
       sb.innerHTML = `<section class="card result"><div class="res-cat">${catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: avg >= 75 ? "cheer" : "happy", size: 140 })}</div>
         <h2>${got.length ? `跟读了 ${got.length} 句 · 平均 ${avg} 分` : "这篇还没有跟读"}</h2>
-        <p class="hint">${avg >= 90 ? "发音太棒了！" : avg >= 75 ? "很不错，继续保持" : got.length ? "多听几遍原音再读，分数会更高" : "按麦克风跟读才能拿到猫粮哦"}</p>
+        <p class="hint">${avg >= 90 ? "发音太棒了！" : avg >= 75 ? "很不错，继续保持" : got.length ? "多听几遍原音再读，分数会更高" : "按麦克风跟读才能拿到小鱼干哦"}</p>
         <div class="row2"><button class="btn" id="again">再练一遍</button><button class="btn ghost" id="other">换一篇</button></div></section>`;
       if (got.length >= 3 && avg >= 75) {
         const kk = Pet.today() + "|shadowall|" + lv + m.title;
@@ -164,7 +164,7 @@ function pageWrite(lv) {
     const doneToday = S.once[Pet.today() + "|write:" + lv + ":" + ti];
     const mine = S.writings.filter(w => w.lv === lv).slice(-3).reverse();
     wb.innerHTML = `<div class="seg" role="tablist" aria-label="题目">${T.list.map((_, i) => `<button role="tab" aria-selected="${i === ti}" data-i="${i}">题目 ${i + 1}</button>`).join("")}</div>
-      <section class="card"><h2>${esc(T.list[ti])}</h2><p class="hint">用俄语写，至少 ${T.min} 个俄语单词。交作文得 3 猫粮 + 1 小鱼干（每个题目每天一次）。</p>
+      <section class="card"><h2>${esc(T.list[ti])}</h2><p class="hint">用俄语写，至少 ${T.min} 个俄语单词。交作文得 3 小鱼干 + 1 鸡肉干（每个题目每天一次）。</p>
       <label class="sr" for="wt">作文</label><textarea id="wt" lang="ru" rows="10" placeholder="Пиши́те здесь…"></textarea>
       <div class="row"><span class="wc" aria-live="polite"></span><button class="btn" id="submit">${doneToday ? "再次保存" : "交作文"}</button></div></section>
       ${mine.length ? `<h2 class="sec">我写过的</h2>` + mine.map(w => `<details class="card"><summary>${new Date(w.t).toLocaleDateString("zh-CN")} · ${w.n} 个词 · ${esc(w.task.slice(0, 16))}…</summary><p lang="ru" class="ru">${esc(w.text)}</p></details>`).join("") : ""}`;
@@ -191,7 +191,7 @@ async function pageExam(lv) {
   app.append(box);
   const qb = box.querySelector(".qbody"), bar = box.querySelector(".bar i"), S = Pet.state, ex = S.exams[lv];
   qb.innerHTML = `<section class="card result"><div class="res-cat">${catSVG({ breed: S.cat.breed, stage: Pet.view().shownStage, mood: "happy", size: 140 })}</div>
-    <h2>${lv} 模拟考试 · ТРКИ</h2><p>20 道题：看词选意思、看中文选俄语、听音选词。答对 16 题通过，奖励 100 成长值、10 猫粮、5 水和 1 个豪华罐头（每天一次）。</p>
+    <h2>${lv} 模拟考试 · ТРКИ</h2><p>20 道题：看词选意思、看中文选俄语、听音选词。答对 16 题通过，奖励 100 成长值、10 小鱼干、5 水和 1 个豪华罐头（每天一次）。</p>
     ${ex ? `<p class="hint">最好成绩 ${ex.best} / 20${ex.passed ? " · 已通过" : ""}</p>` : ""}<button class="btn big" id="start">开始考试</button></section>`;
   qb.querySelector("#start").onclick = async () => {
     const rows = await getJSON(`data/words_${lv}.json`);

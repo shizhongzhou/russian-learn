@@ -2,10 +2,10 @@
 /* ========== 猫猫俄语通 — feeding scene: the cat walks over and eats what you gave it ========== */
 const FOOD_ART = {
   // drawn around (0,0) = centre of the dish on the floor
-  kibble: { name: "猫粮", dish: "#D9534F", rim: "#B8433F", food: i => `<g class="bits">${[[-16, -8], [-6, -11], [5, -9], [15, -7], [-10, -3], [0, -4], [10, -2], [-2, -15], [8, -14]].map(([x, y], k) => `<ellipse class="bit" style="--d:${k * 0.12}s" cx="${x}" cy="${y}" rx="4.6" ry="3.8" fill="${["#C9874A", "#B87A40", "#D59658"][k % 3]}"/>`).join("")}</g>`, drop: true, sound: "kibble" },
+  kibble: { name: "小鱼干", dish: "#D9534F", rim: "#B8433F", food: i => `<g class="bits">${[[-16, -8], [-6, -11], [5, -9], [15, -7], [-10, -3], [0, -4], [10, -2], [-2, -15], [8, -14]].map(([x, y], k) => `<ellipse class="bit" style="--d:${k * 0.12}s" cx="${x}" cy="${y}" rx="4.6" ry="3.8" fill="${["#C9874A", "#B87A40", "#D59658"][k % 3]}"/>`).join("")}</g>`, drop: true, sound: "kibble" },
   water:  { name: "水", dish: "#5C93C9", rim: "#4A7BB0", food: () => `<ellipse cx="0" cy="-6" rx="22" ry="5" fill="#9FD0F0"/><ellipse class="ripple" cx="0" cy="-6" rx="8" ry="2" fill="none" stroke="#fff" stroke-width="1.5"/>`, sound: "lap" },
-  s1: { name: "小鱼干", dish: "#EEE6D8", rim: "#CFC3AE", food: () => [[-12, -8, -10], [6, -10, 8], [-2, -16, -4]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-12 0 Q-2 -6 8 0 Q-2 6 -12 0 Z" fill="#C9A06A"/><path d="M8 0 l7 -5 v10 Z" fill="#B88A50"/><circle cx="-8" cy="-1" r="1.3" fill="#3B2E22"/><path d="M-4 -3 v6 M0 -3 v6" stroke="#A7834F" stroke-width="1"/></g>`).join("") },
-  s2: { name: "猫条", dish: "#F7D9E2", rim: "#E6B5C4", food: () => `<path d="M-14 -6 Q0 -16 14 -6 Q0 -2 -14 -6 Z" fill="#E9A07A"/><g class="tube"><rect x="18" y="-58" width="16" height="48" rx="3" fill="#F07C9A" transform="rotate(30 26 -34)"/><rect x="18" y="-58" width="16" height="12" rx="3" fill="#fff" opacity=".7" transform="rotate(30 26 -34)"/></g>` },
+  s1: { name: "鸡肉干", dish: "#EEE6D8", rim: "#CFC3AE", food: () => [[-12, -8, -10], [6, -10, 8], [-2, -16, -4]].map(([x, y, r]) => `<g transform="translate(${x} ${y}) rotate(${r})"><path d="M-12 0 Q-2 -6 8 0 Q-2 6 -12 0 Z" fill="#C9A06A"/><path d="M8 0 l7 -5 v10 Z" fill="#B88A50"/><circle cx="-8" cy="-1" r="1.3" fill="#3B2E22"/><path d="M-4 -3 v6 M0 -3 v6" stroke="#A7834F" stroke-width="1"/></g>`).join("") },
+  s2: { name: "肉泥条", dish: "#F7D9E2", rim: "#E6B5C4", food: () => `<path d="M-14 -6 Q0 -16 14 -6 Q0 -2 -14 -6 Z" fill="#E9A07A"/><g class="tube"><rect x="18" y="-58" width="16" height="48" rx="3" fill="#F07C9A" transform="rotate(30 26 -34)"/><rect x="18" y="-58" width="16" height="12" rx="3" fill="#fff" opacity=".7" transform="rotate(30 26 -34)"/></g>` },
   s3: { name: "冻干", dish: "#E8E2F2", rim: "#C9BEDF", food: () => [[-14, -7], [-3, -9], [8, -7], [-8, -15], [4, -16], [14, -12]].map(([x, y], k) => `<rect class="bit" style="--d:${k * 0.15}s" x="${x - 5}" y="${y - 5}" width="10" height="9" rx="2" fill="${k % 2 ? "#E8C9A0" : "#D9B07A"}"/>`).join("") },
   s4: { name: "豪华罐头", dish: "#F2EEE8", rim: "#D6CEC2", food: () => `<path d="M-18 -6 Q-10 -18 0 -14 Q10 -20 18 -6 Q0 -2 -18 -6 Z" fill="#E59A8A"/><path d="M-8 -10 q4 -3 8 0 M4 -12 q3 -2 6 0" stroke="#C9776A" stroke-width="1.5" fill="none"/>
       <g class="can" transform="translate(44 -6)"><rect x="-14" y="-30" width="28" height="30" rx="4" fill="#D9534F"/><rect x="-14" y="-24" width="28" height="12" fill="#F6E7D3"/><path d="M-7 -18 q6 -5 12 0 q-6 5 -12 0 Z M5 -18 l4 -3 v6 Z" fill="#5C93C9"/><ellipse cx="0" cy="-30" rx="14" ry="4" fill="#C9C9CF"/><path d="M-12 -31 Q-20 -46 -6 -50" fill="none" stroke="#B9B9C0" stroke-width="3"/><ellipse cx="0" cy="-30" rx="11" ry="2.6" fill="#E59A8A"/></g>` },
@@ -60,16 +60,16 @@ if (typeof Cloud !== "undefined") Cloud.start();
    The full story plays on the first open of the day; later opens just show the logo for a moment. Tap to skip. ========== */
 (function intro() {
   const S = Pet.state;
-  const breed = (S.profile && has3D(S.cat.breed)) ? S.cat.breed : "orange";
-  const name = S.profile ? S.cat.name : "小橘";
+  const breed = (S.profile && PETS[S.cat.breed]) ? S.cat.breed : "orange";
+  const name = S.profile ? S.cat.name : "小伙伴";
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const day = new Date().toDateString(), full = !reduce && store.get("introDay", "") !== day;
   store.set("introDay", day);
   const el = document.createElement("div");
   el.className = "intro v2intro";
   el.setAttribute("aria-hidden", "true");
-  el.innerHTML = `<div class="v2i-logo"><span><img src="${CAT3D[breed]}" alt=""></span></div>
-    <div class="v2i-title"><b>猫猫俄语通</b><small>和${esc(name)}一起，轻松学俄语。</small></div>
+  el.innerHTML = `<div class="v2i-logo"><span><img src="${petSrc(breed, 2)}" alt=""></span></div>
+    <div class="v2i-title"><b>宠物俄语通</b><small>和${esc(name)}一起，轻松学俄语。</small></div>
     <div class="v2i-stage"><div class="v2i-floor"></div>
       <img class="v2i-ball" src="img/item/ball.webp" alt="">
       <div class="v2i-cat"><img data-p="walk" src="img/pose/walk.webp" alt=""><img data-p="crouch" src="img/pose/crouch.webp" alt=""><img data-p="pounce" src="img/pose/pounce.webp" alt=""><img data-p="paw" src="img/pose/ball.webp" alt=""></div>
@@ -120,10 +120,10 @@ const REMIND = {
     // [hours after the last study, title, body]
     return [
       [20, `${name}在等你 🐾`, `今天还没学俄语哦，${name}趴在门口等你回来。`],
-      [44, `${name}饿了`, `${name}的碗空了，肚子咕咕叫……学几道题给它赚点猫粮吧。`],
+      [44, `${name}饿了`, `${name}的碗空了，肚子咕咕叫……学几道题给它赚点小鱼干吧。`],
       [72, `${name}瘦了一圈`, `已经三天没学习，${name}瘦了、也不开心了。回来摸摸它？`],
       [130, `${name}好像不舒服`, `${name}没精神、有点发烧。再不回来它就要生病了！`],
-      [170, `${name}生病了`, `${name}生病了，需要你带它去宠物医院。回来学习就能赚到买药的猫粮。`],
+      [170, `${name}生病了`, `${name}生病了，需要你带它去宠物医院。回来学习就能赚到买药的小鱼干。`],
     ];
   },
   at(h) {   // never ring at night: move into 9:00–21:30

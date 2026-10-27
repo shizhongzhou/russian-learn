@@ -1,15 +1,15 @@
 {
   "appId": "io.github.shizhongzhou.maomao",
-  "appName": "猫猫俄语通",
+  "appName": "宠物俄语通",
   "webDir": "www",
-  "backgroundColor": "#F6F1E9",
+  "backgroundColor": "#F6F7F3",
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#F6F1E9",
+    "backgroundColor": "#F6F7F3",
     "allowsLinkPreview": false
   },
   "android": {
-    "backgroundColor": "#F6F1E9",
+    "backgroundColor": "#F6F7F3",
     "adjustMarginsForEdgeToEdge": "force",
     "allowMixedContent": false
   },

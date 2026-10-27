@@ -4,7 +4,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=..
 rm -rf www && mkdir -p www
-cp "$ROOT"/index.html "$ROOT"/*.js "$ROOT"/style.css "$ROOT"/manifest.webmanifest www/
+cp "$ROOT"/index.html "$ROOT"/*.js "$ROOT"/*.css "$ROOT"/manifest.webmanifest www/
 cp -R "$ROOT"/data "$ROOT"/icons "$ROOT"/img www/
 [ -d "$ROOT"/vendor ] && cp -R "$ROOT"/vendor www/
 rm -f www/sw.js   # service workers don't run inside the app's web view

@@ -35,7 +35,7 @@ const fmtSize = n => n > 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.round
 function pageLibrary() {
   const box = h(`<div class="page library"><header class="subhead"><a class="iconbtn" href="#/learn" aria-label="返回学习">${svgI(ICON.back, "stroke")}</a><h1 class="display small grow">我的书架</h1>
     <label class="btn small">导入 PDF<input type="file" accept="application/pdf,.pdf" multiple hidden id="pick"></label></header>
-    <section class="card note"><p>把你自己的俄语教材、考试题导入进来阅读。书只保存在<b>这台设备</b>上，不会上传到网上。读书时选中俄语可以朗读、查词；每读 5 页，猫咪得 1 猫粮。</p></section>
+    <section class="card note"><p>把你自己的俄语教材、考试题导入进来阅读。书只保存在<b>这台设备</b>上，不会上传到网上。读书时选中俄语可以朗读、查词；每读 5 页，猫咪得 1 小鱼干。</p></section>
     <div class="books"></div><div class="drop hint">也可以把 PDF 文件拖到这里</div></div>`);
   app.append(box);
   const list = box.querySelector(".books");

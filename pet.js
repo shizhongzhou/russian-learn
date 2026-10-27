@@ -152,9 +152,9 @@ const Pet = (() => {
     save();
     if (r.snack) S.inv[r.snack] = (S.inv[r.snack] || 0) + 1;
     save();
-    const bits = [`+${r.g} 成长值`]; if (r.f) bits.push(`+${r.f} 猫粮`); if (r.w) bits.push(`+${r.w} 水`); if (r.snack) bits.push(`+1 ${SNACK_NAMES[r.snack]}`);
+    const bits = [`+${r.g} 成长值`]; if (r.f) bits.push(`+${r.f} 小鱼干`); if (r.w) bits.push(`+${r.w} 水`); if (r.snack) bits.push(`+1 ${SNACK_NAMES[r.snack]}`);
     toast(`${r.text} · ${bits.join(" · ")}`, kind === "correct" || kind === "quiz" ? "good" : "");
-    cheer(kind === "correct" || kind === "quiz" ? pick(["Мяу～！答对啦", "Молоде́ц! 真棒", "喵！再来一题", "答对了，奖励我一颗猫粮"]) : pick(["喵～学完啦", "Отли́чно! 太好了", "又进步了一点"]));
+    cheer(kind === "correct" || kind === "quiz" ? pick(["Мяу～！答对啦", "Молоде́ц! 真棒", "喵！再来一题", "答对了，奖励我一颗小鱼干"]) : pick(["喵～学完啦", "Отли́чно! 太好了", "又进步了一点"]));
     if (after > before) grantStage(before, after);
   }
   /* flexible reward: food/water/growth amounts, optional random snack */
@@ -167,10 +167,10 @@ const Pet = (() => {
     let snack = null;
     if (Math.random() < snackChance) { snack = pick(["s1", "s1", "s2", "s2", "s3"]); S.inv[snack] = (S.inv[snack] || 0) + 1; }
     save();
-    const bits = []; if (g) bits.push(`+${g} 成长值`); if (f) bits.push(`+${f} 猫粮`); if (w) bits.push(`+${w} 水`); if (snack) bits.push(`🎁 意外获得 ${SNACK_NAMES[snack]}`);
+    const bits = []; if (g) bits.push(`+${g} 成长值`); if (f) bits.push(`+${f} 小鱼干`); if (w) bits.push(`+${w} 水`); if (snack) bits.push(`🎁 意外获得 ${SNACK_NAMES[snack]}`);
     toast(`${text} · ${bits.join(" · ")}`, snack ? "big" : "good");
     if (meow && S.settings.meow) meowFor("correct");
-    cheer(snack ? "哇，有零食！" : pick(["Молоде́ц!", "喵～好棒", "又赚到猫粮啦"]));
+    cheer(snack ? "哇，有零食！" : pick(["Молоде́ц!", "喵～好棒", "又赚到小鱼干啦"]));
     const after = stageOf(S.growth); if (after > before) grantStage(before, after);
     return { g, f, w, snack };
   }
@@ -226,7 +226,7 @@ const Pet = (() => {
     S.food -= food; S.water -= water; return true;
   }
   function feed() {
-    if (!spend(1, 0)) return toast("猫粮不够了，去答几道题吧", "warn"), false;
+    if (!spend(1, 0)) return toast("小鱼干不够了，去答几道题吧", "warn"), false;
     S.full = clamp(S.full + 8); S.happy = clamp(S.happy + 1); save(); return true;
   }
   function giveWater() {
@@ -236,7 +236,7 @@ const Pet = (() => {
   function pet() { S.happy = clamp(S.happy + 3); save(); }
   function buy(item) {
     if (S.owned[item.id] && item.kind !== "snack" && item.kind !== "med") return false;
-    if (!spend(item.food || 0, item.water || 0)) { toast("猫粮或水不够，先去学习赚一些吧", "warn"); return false; }
+    if (!spend(item.food || 0, item.water || 0)) { toast("小鱼干或水不够，先去学习赚一些吧", "warn"); return false; }
     if (item.apply) item.apply(S); else S.owned[item.id] = 1;
     save(); return true;
   }
@@ -244,7 +244,7 @@ const Pet = (() => {
   /* ---------- the roaming cat ---------- */
   let walking = null, roam, roamTimer, bubbleTimer, roamEnabled = true, here = { x: 20, y: 60 };
   const pick = a => a[Math.floor(Math.random() * a.length)];
-  const SNACK_NAMES = { s1: "小鱼干", s2: "猫条", s3: "冻干", s4: "豪华罐头" };
+  const SNACK_NAMES = { s1: "鸡肉干", s2: "肉泥条", s3: "冻干", s4: "豪华罐头" };
   function ensureRoam() {
     if (roam) return roam;
     roam = document.createElement("button");
@@ -268,13 +268,14 @@ const Pet = (() => {
   }
   function setMood(m, ms) { moodOverride = m; drawRoam(); clearTimeout(moodTimer); moodTimer = setTimeout(() => { moodOverride = null; drawRoam(); }, ms); }
   function talk(text, ms = 2600) {
+    if (typeof Roam !== "undefined") return Roam.say(text, ms);
     if (!roam || roam.hidden) return;
     const b = roam.querySelector(".roam-bubble");
     roam.classList.toggle("rside", roam.getBoundingClientRect().left > innerWidth / 2);
     b.textContent = text; b.hidden = false;
     clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => { b.hidden = true; }, ms);
   }
-  function cheer(text) { if (!roam || roam.hidden) return; setMood("cheer", 1600); roam.classList.remove("hop"); void roam.offsetWidth; roam.classList.add("hop"); if (text) talk(text); }
+  function cheer(text) { if (typeof Roam !== "undefined") return Roam.cheer(text); if (!roam || roam.hidden) return; setMood("cheer", 1600); roam.classList.remove("hop"); void roam.offsetWidth; roam.classList.add("hop"); if (text) talk(text); }
   function wander() {
     if (!roam || roam.hidden || walking) return;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

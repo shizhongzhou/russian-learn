@@ -79,6 +79,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view ios-latest >/dev/null 2>&1 || gh release create ios-latest --title "猫猫俄语通 iOS 安装包" --notes "自动构建的未签名 iOS 安装包（.ipa）。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。" --prerelease
+          gh release view ios-latest >/dev/null 2>&1 || gh release create ios-latest --title "宠物俄语通 iOS 安装包" --notes "自动构建的未签名 iOS 安装包（.ipa）。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。" --prerelease
           gh release upload ios-latest MaoMaoRussian.ipa MaoMao-Xcode.zip --clobber
           gh release edit ios-latest --notes "自动构建的未签名 iOS 安装包（.ipa），构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}。用 Sideloadly / AltStore 等工具配合自己的 Apple ID 签名后安装。"

@@ -29,7 +29,7 @@ async function pageTrki(part) {
     <div class="trki-secs">${T.sections.map(s => { const r = S.trki[s.id]; const n = s.items ? s.items.length : s.texts ? s.texts.reduce((a, t) => a + t.items.length, 0) : s.tasks.length;
       return `<a class="card trki-sec ${r && r.passed ? "pass" : ""}" href="#/trki/${s.id}"><div><small>${s.minutes} 分钟 · ${s.items || s.texts ? n + " 题" : n + " 个任务"}</small><b lang="ru">${esc(s.name)}</b><span>${esc(s.zh)}</span></div>
         <em>${r ? (r.passed ? "✓ 已通过" : "未通过") + (r.best != null ? ` · 最好 ${r.best}%` : "") : "开始 ›"}</em></a>`; }).join("")}</div>
-    <p class="hint">通过一个部分：+5 猫粮，还有机会掉零食；五个部分全部通过：豪华罐头一个。</p></div>`);
+    <p class="hint">通过一个部分：+5 小鱼干，还有机会掉零食；五个部分全部通过：豪华罐头一个。</p></div>`);
   app.append(box);
 }
 

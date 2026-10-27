@@ -37,7 +37,7 @@ cat > $RES/drawable/ic_stat_cat.xml <<'XML'
 </vector>
 XML
 # app name
-sed -i -E 's#<string name="app_name">[^<]*</string>#<string name="app_name">猫猫俄语通</string>#; s#<string name="title_activity_main">[^<]*</string>#<string name="title_activity_main">猫猫俄语通</string>#' $RES/values/strings.xml
+sed -i -E 's#<string name="app_name">[^<]*</string>#<string name="app_name">宠物俄语通</string>#; s#<string name="title_activity_main">[^<]*</string>#<string name="title_activity_main">宠物俄语通</string>#' $RES/values/strings.xml
 # permissions + package visibility for speech recognition and text-to-speech
 python3 - "$MAN" <<'PY'
 import sys,re

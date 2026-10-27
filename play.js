@@ -6,11 +6,11 @@ const PLAY = { catchChance: 0.08, maxPerDay: 3 };
 function pagePlay() {
   const v = Pet.view(), orange = v.cat.breed === "orange";
   const img = orange ? { idle: "img/pose/hero.webp", crouch: "img/pose/crouch.webp", pounce: "img/pose/pounce.webp" }
-    : { idle: CAT3D[v.cat.breed] || CAT3D.orange, crouch: CAT3D[v.cat.breed] || CAT3D.orange, pounce: CAT3D[v.cat.breed] || CAT3D.orange };
+    : { idle: petSrc(v.cat.breed, v.shownStage), crouch: petSrc(v.cat.breed, v.shownStage), pounce: petSrc(v.cat.breed, v.shownStage) };
   const key = Pet.today() + "|wandcatch";
   const box = h(`<div class="page play">
     <header class="subhead"><a class="iconbtn" href="#/home" aria-label="返回主页">${svgI(ICON.back, "stroke")}</a>
-      <div class="grow"><b>逗猫棒</b><small>拖动羽毛，或摇一摇手机</small></div><span class="pl-count"></span></header>
+      <div class="grow"><b>逗${isDog(v.cat.breed) ? "狗" : "猫"}时间</b><small>拖动羽毛，或摇一摇手机</small></div><span class="pl-count"></span></header>
     <section class="pl-field" aria-label="和${esc(v.cat.name)}玩逗猫棒">
       <svg class="pl-string" aria-hidden="true"><line class="stick"/><line class="str"/></svg>
       <span class="pl-feather" role="slider" tabindex="0" aria-label="羽毛，拖动它"><img src="img/item/feather.webp" alt=""></span>

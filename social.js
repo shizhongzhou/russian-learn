@@ -133,7 +133,7 @@ function pageFriendCat(uid) {
         <div class="bigcat">${catSVG({ breed: p.breed, stage: p.stage, mood: sick ? "sick" : hungry ? "hungry" : "happy", size: 200 })}</div>
         <div class="cname">${esc(p.catName)}</div><div class="hint">${esc(p.nick)} 的猫 · Lv.${p.level} · 连续学习 ${p.streak} 天 · 本周答对 ${p.weekCorrect} 题</div></section>
       <section class="card"><h2>送它点零食</h2><p class="hint">对方下次打开 App 就会收到。今天还能送 <b id="left">${r.giftsLeft}</b> 次。</p>
-        <div class="row2"><button class="btn" data-g="s1">送小鱼干</button><button class="btn ghost" data-g="s2">送猫条</button></div></section>`;
+        <div class="row2"><button class="btn" data-g="s1">送鸡肉干</button><button class="btn ghost" data-g="s2">送肉泥条</button></div></section>`;
     body.querySelectorAll("[data-g]").forEach(b => b.onclick = async () => {
       try { const x = await Cloud.call("sendGift", { to: p.uid, kind: b.dataset.g }); body.querySelector("#left").textContent = x.left; Pet.toast(`已送给 ${esc(p.catName)}，它会很开心的`, "good"); if (Pet.state.settings.meow) meowFor("correct"); }
       catch (e) { Pet.toast(e.message, "warn"); }

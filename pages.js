@@ -28,7 +28,7 @@ function chrome(active) {
   applyTheme(v.profile ? v.scene : "living");
   const bar = document.getElementById("appbar");
   bar.querySelector(".brand-mark").innerHTML = catSVG({ breed: v.cat.breed, stage: 2, mood: "happy", size: 34, label: "" });
-  bar.querySelector(".res").innerHTML = v.profile ? `<a class="chip" href="#/shop" aria-label="猫粮 ${v.food}，去小卖部">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}，去小卖部">${WATER_I}${fmt(v.water)}</a>` : "";
+  bar.querySelector(".res").innerHTML = v.profile ? `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}，去小卖部">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}，去小卖部">${WATER_I}${fmt(v.water)}</a>` : "";
   const tabs = document.getElementById("tabbar");
   tabs.hidden = !v.profile;
   tabs.querySelectorAll("a").forEach(a => a.toggleAttribute("aria-current", a.dataset.tab === active));
@@ -37,7 +37,7 @@ function chrome(active) {
 Pet.onChange(() => {
   const v = Pet.view();
   const res = document.querySelector("#appbar .res");
-  if (res && v.profile) res.innerHTML = `<a class="chip" href="#/shop" aria-label="猫粮 ${v.food}">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${WATER_I}${fmt(v.water)}</a>`;
+  if (res && v.profile) res.innerHTML = `<a class="chip" href="#/shop" aria-label="小鱼干 ${v.food}">${FOOD_I}${fmt(v.food)}</a><a class="chip" href="#/shop" aria-label="水 ${v.water}">${WATER_I}${fmt(v.water)}</a>`;
   Pet.drawRoam();
 });
 
@@ -58,11 +58,11 @@ function route() {
     case "learn": tab = "learn"; pageLearn(); roamLines = LEARN_LINES; break;
     case "quiz": tab = "learn"; pageQuiz(LEVELS[p1] ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
     case "memo": tab = "learn"; pageMemo(LEVELS[p1] || p1 === "mine" || /^t-\w+$/.test(p1 || "") ? p1 : v.lastLevel); roamLines = LEARN_LINES; break;
-    case "shadow": tab = "learn"; pageShadow(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["我在听你读哦", "Повтори́! 跟我读", "读得越像，猫粮越多"]; break;
+    case "shadow": tab = "learn"; pageShadow(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["我在听你读哦", "Повтори́! 跟我读", "读得越像，小鱼干越多"]; break;
     case "trki": tab = "learn"; pageTrki(p1); roamLines = ["考试加油！", "Уда́чи! 祝你好运", "我相信你"]; break;
-    case "library": tab = "learn"; pageLibrary(); roamLines = ["今天读哪本书？", "读 5 页就有猫粮哦"]; break;
+    case "library": tab = "learn"; pageLibrary(); roamLines = ["今天读哪本书？", "读 5 页就有小鱼干哦"]; break;
     case "read": tab = "learn"; pageReader(p1); roam = false; break;
-    case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["慢慢写，我等你～", "写完有小鱼干吃！", "Пиши́! 写吧"]; break;
+    case "write": tab = "learn"; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["慢慢写，我等你～", "写完有鸡肉干吃！", "Пиши́! 写吧"]; break;
     case "exam": tab = "learn"; pageExam(LEVELS[p1] ? p1 : v.lastLevel); roamLines = ["考试加油！", "我相信你", "Уда́чи! 祝你好运"]; break;
     case "meow": tab = "meow"; pageMeow(); roam = false; break;
     case "play": tab = "home"; pagePlay(); roam = false; break;
@@ -83,8 +83,8 @@ function route() {
   window.scrollTo(0, 0);
   app.focus({ preventScroll: true });
 }
-window.addEventListener("hashchange", route);
-const LEARN_LINES = ["加油！我在旁边陪你", "Ты молоде́ц! 你真棒", "答对题我就有猫粮吃啦", "累了就摸摸我", "再学一会儿好不好～"];
+window.addEventListener("hashchange", () => route());
+const LEARN_LINES = ["加油！我在旁边陪你", "Ты молоде́ц! 你真棒", "答对题我就有小鱼干吃啦", "累了就摸摸我", "再学一会儿好不好～"];
 
 /* ---------- welcome / register ---------- */
 function pageWelcome() {
@@ -131,7 +131,7 @@ function pageWelcome() {
         S.lastStudy = Date.now(); S.lastTick = Date.now();
         Pet.save();
         location.hash = "#/home";
-        setTimeout(() => Pet.toast(`<b>${esc(S.cat.name)} 来到你家啦！</b><br>答对题就能给它赚猫粮`, "big"), 400);
+        setTimeout(() => Pet.toast(`<b>${esc(S.cat.name)} 来到你家啦！</b><br>答对题就能给它赚小鱼干`, "big"), 400);
       };
     }
   }
@@ -278,8 +278,8 @@ function pageHome() {
     <section class="hm-plan">
       <div class="row"><h2>今日安排</h2><span>${v.daily.done ? "今日目标已完成" : `再答对 ${v.goal - v.daily.correct} 题拿奖励`}</span></div>
       ${[
-        [`#/quiz/${lv}`, "每日小测", `${lv} · 答对 1 题 2 猫粮`, "M12 3a9 9 0 1 0 .01 0M8.5 12.5l2.5 2.5 5-5.5"],
-        [`#/memo/${lv}`, "单词复习", "巩固核心词汇 · 每个 +1 猫粮", "M4 5.5h6a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4zM20 5.5h-6a2 2 0 0 0-2 2V20a2 2 0 0 1 2-2h6z"],
+        [`#/quiz/${lv}`, "每日小测", `${lv} · 答对 1 题 2 小鱼干`, "M12 3a9 9 0 1 0 .01 0M8.5 12.5l2.5 2.5 5-5.5"],
+        [`#/memo/${lv}`, "单词复习", "巩固核心词汇 · 每个 +1 小鱼干", "M4 5.5h6a2 2 0 0 1 2 2V20a2 2 0 0 0-2-2H4zM20 5.5h-6a2 2 0 0 0-2 2V20a2 2 0 0 1 2-2h6z"],
         [`#/${lv}/listening`, "听力练习", `${lv} 短对话 · 先听后答`, "M4 14v-2a8 8 0 0 1 16 0v2M4 14h3v6H4zM17 14h3v6h-3z"],
         [`#/shadow/${lv}`, "复读跟读", "听一句 · 跟着读 · 打分", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3"],
       ].map(([href, t, sub, ic]) => `<a class="hm-row" href="${href}"><span class="hm-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="${ic}"/></svg></span><span class="grow"><b>${t}</b><small>${sub}</small></span><svg class="hm-go" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>`).join("")}
@@ -306,14 +306,14 @@ function pageLearn() {
     const topics = Object.keys(Pet.state.topics).filter(k => k.startsWith(lv + ":")).length;
     const mastered = Pet.state.masteredCount[lv] || 0, ex = Pet.state.exams[lv];
     const M = [
-      ["#memo", "背单词", "等级词库 · 主题词典 · 生词本", `已背会 ${fmt(mastered)} / ${fmt(total)} · 1 词 1 猫粮`, "M12 3 l2.6 5.6 6 .7 -4.5 4.1 1.2 6 -5.3 -3 -5.3 3 1.2 -6 -4.5 -4.1 6 -.7 z"],
+      ["#memo", "背单词", "等级词库 · 主题词典 · 生词本", `已背会 ${fmt(mastered)} / ${fmt(total)} · 1 词 1 小鱼干`, "M12 3 l2.6 5.6 6 .7 -4.5 4.1 1.2 6 -5.3 -3 -5.3 3 1.2 -6 -4.5 -4.1 6 -.7 z"],
       ["words", "单词", `${fmt(total)} 词 · 点击发音`, `已听 ${fmt(heard)} 个`, "M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z M8 9h6 M8 13h4"],
       ["grammar", "语法", "思维导图 + 详解", `已学 ${topics} 个专题`, "M12 3 a2.5 2.5 0 1 0 .01 0 M5 16 a2.5 2.5 0 1 0 .01 0 M19 16 a2.5 2.5 0 1 0 .01 0 M12 7.5v4 M12 11.5 6.5 16 M12 11.5 17.5 16"],
       ["dialogues", "对话", "双声朗读 · 逐句翻译", "听完一段得 2 水", "M4 5h10v7H8l-4 3z M14 9h6v7l-3-2h-6v-2"],
-      ["listening", "听力", "先听后答", "答对得猫粮", "M4 14v-2a8 8 0 0 1 16 0v2 M3 14h4v6H3z M17 14h4v6h-4z"],
+      ["listening", "听力", "先听后答", "答对得小鱼干", "M4 14v-2a8 8 0 0 1 16 0v2 M3 14h4v6H3z M17 14h4v6h-4z"],
       ["news", "新闻 · 阅读", "听、读、跟读", "读完一篇有奖励", "M3 4h18v16H3z M7 8h10 M7 12h10 M7 16h6"],
-      ["#shadow", "复读跟读", "听一句 · 跟着读 · 打分", "分越高猫粮越多，还可能掉零食", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3"],
-      ["#write", "写作", "按题目写俄语短文", "写完得猫粮 + 小鱼干", "M4 20 L8 19 L19 8 L16 5 L5 16 Z M14 7 L17 10"],
+      ["#shadow", "复读跟读", "听一句 · 跟着读 · 打分", "分越高小鱼干越多，还可能掉零食", "M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M5 11a7 7 0 0 0 14 0 M12 18v3"],
+      ["#write", "写作", "按题目写俄语短文", "写完得小鱼干 + 鸡肉干", "M4 20 L8 19 L19 8 L16 5 L5 16 Z M14 7 L17 10"],
       ["#trki", "ТРКИ-2 模拟", "阅读·写作·语法·听力·口语", Pet.state.trki ? `已通过 ${Object.values(Pet.state.trki).filter(x => x.passed).length} / 5 部分` : "全真题型，66% 及格", "M4 4h16v16H4z M8 9h8 M8 13h8 M8 17h5"],
       ["#library", "我的书架", "导入自己的 PDF 教材", "选中俄语可朗读、查词", "M5 4h4v16H5z M10 4h4v16h-4z M15 5l4 1-3 14-4-1z"],
       ["#exam", "词汇测验", "本级单词 20 题，16 题通过", ex && ex.passed ? `已通过 · 最好 ${ex.best}/20` : "通过得豪华罐头", "M6 3h12v18l-6-4-6 4z"],
@@ -321,7 +321,7 @@ function pageLearn() {
     body.innerHTML = `<section class="card lvcard"><div class="row"><div><span class="lv-big">${lv}</span> <b>${LEVELS[lv].title}</b></div><span>${Math.round(heard / total * 100)}%</span></div>
       <div class="bar"><i style="width:${Math.min(100, heard / total * 100)}%"></i></div><p>${LEVELS[lv].desc}</p></section>
       <div class="modules">${M.map(m => `<a class="mod" href="${m[0][0] === "#" ? `#/${m[0].slice(1)}/${lv}` : `#/${lv}/${m[0]}`}">${svgI(m[4], "stroke")}<b>${m[1]}</b><small>${m[2]}</small><em>${m[3]}</em></a>`).join("")}
-      <a class="mod dark" href="#/quiz/${lv}">${svgI("M12 3 a9 9 0 1 0 .01 0 M8.5 12.5l2.5 2.5 5-5.5", "stroke")}<b>每日小测</b><small>考今天学过的词 + 生词本 · 1 题 2 猫粮</small><em>今日已答对 ${Pet.state.daily.correct} 题</em></a></div>`;
+      <a class="mod dark" href="#/quiz/${lv}">${svgI("M12 3 a9 9 0 1 0 .01 0 M8.5 12.5l2.5 2.5 5-5.5", "stroke")}<b>每日小测</b><small>考今天学过的词 + 生词本 · 1 题 2 小鱼干</small><em>今日已答对 ${Pet.state.daily.correct} 题</em></a></div>`;
     if (lv === "A1") {
       const alpha = h(`<section class="card"><h2>俄语字母表</h2><p class="hint">点一个字母，听它的名称和例词。</p><div class="alphabet"></div></section>`);
       const grid = alpha.querySelector(".alphabet");
@@ -391,7 +391,7 @@ async function pageQuiz(lv) {
   function end() {
     const v = Pet.view();
     qb.innerHTML = `<section class="card result"><div class="res-cat">${catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: right >= 7 ? "cheer" : "happy", size: 150 })}</div>
-      <h2>答对 ${right} / ${N} 题</h2><p>${esc(v.cat.name)}得到了 ${right * 2} 颗猫粮，成长值 +${right * 12}${right >= 8 ? "，另有满分奖励！" : ""}</p>
+      <h2>答对 ${right} / ${N} 题</h2><p>${esc(v.cat.name)}得到了 ${right * 2} 颗小鱼干，成长值 +${right * 12}${right >= 8 ? "，另有满分奖励！" : ""}</p>
       <p class="hint">今日已答对 ${v.daily.correct} / ${v.goal} 题</p>
       <div class="row2"><a class="btn" href="#/quiz/${lv}" onclick="setTimeout(route,0)">再来 10 题</a><a class="btn ghost" href="#/meow">去喂${esc(v.cat.name)}</a></div></section>`;
     if (right >= 8) {
@@ -426,13 +426,13 @@ function pageMeow() {
       <section class="card stats">${barRow("饱食", v.full, "#E9A15E")}${barRow("水分", v.drink, "#5C93C9")}${barRow("健康", v.health, v.health < 40 ? "#C2412F" : "#1F7A72")}${barRow("心情", v.happy, "#6A7FC1")}</section>
       <a class="card hm-room" href="#/dress"><b>${esc(v.cat.name)}的小窝</b><small>布置猫窝、猫爬架和场景</small></a>
       <div class="actions">
-        <button class="act dark" id="feed">喂饭<small>猫粮 ${fmt(v.food)}</small></button>
+        <button class="act dark" id="feed">喂饭<small>小鱼干 ${fmt(v.food)}</small></button>
         <button class="act blue" id="water">喂水<small>水 ${fmt(v.water)}</small></button>
         <button class="act" id="pet">摸摸</button>
         <a class="act" href="#/shop">小卖部</a>
       </div>
       ${Object.entries(v.inv).filter(([, n]) => n > 0).length ? `<section class="card inv"><h2>背包里的零食</h2><div class="invs">${Object.entries(v.inv).filter(([, n]) => n > 0).map(([id, n]) => `<button data-snack="${id}">${Pet.SNACK_NAMES[id]} ×${n}<small>喂给它</small></button>`).join("")}</div></section>` : ""}
-      <p class="hint">学习赚猫粮和水；写作、考试还能得到零食。1 天不学会饿、2 天会渴，3 天开始变瘦，7 天会生病，要买药看医生。${v.streak ? `已连续学习 ${v.streak} 天。` : ""}</p>`;
+      <p class="hint">学习赚小鱼干和水；写作、考试还能得到零食。1 天不学会饿、2 天会渴，3 天开始变瘦，7 天会生病，要买药看医生。${v.streak ? `已连续学习 ${v.streak} 天。` : ""}</p>`;
     const flash = (m2, ms = 1400) => { mood = m2; draw(); setTimeout(() => { mood = null; draw(); }, ms); };
     box.querySelector("#feed").onclick = () => { if (Pet.feed()) { feedScene("kibble", draw); Pet.toast("饱食 +8"); } };
     box.querySelector("#water").onclick = () => { if (Pet.giveWater()) { feedScene("water", draw); Pet.toast("水分 +10"); } };
@@ -448,8 +448,8 @@ function pageMeow() {
 /* ---------- shop ---------- */
 const SHOP = {
   snack: [
-    { id: "s1", kind: "snack", name: "小鱼干", effect: "饱食 +10 · 心情 +5", food: 8, water: 0, color: "#E9A15E", apply: s => { s.full = Math.min(100, s.full + 10); s.happy = Math.min(100, s.happy + 5); } },
-    { id: "s2", kind: "snack", name: "猫条", effect: "心情 +15 · 饱食 +5", food: 15, water: 2, color: "#F07C9A", apply: s => { s.happy = Math.min(100, s.happy + 15); s.full = Math.min(100, s.full + 5); } },
+    { id: "s1", kind: "snack", name: "鸡肉干", effect: "饱食 +10 · 心情 +5", food: 8, water: 0, color: "#E9A15E", apply: s => { s.full = Math.min(100, s.full + 10); s.happy = Math.min(100, s.happy + 5); } },
+    { id: "s2", kind: "snack", name: "肉泥条", effect: "心情 +15 · 饱食 +5", food: 15, water: 2, color: "#F07C9A", apply: s => { s.happy = Math.min(100, s.happy + 15); s.full = Math.min(100, s.full + 5); } },
     { id: "s3", kind: "snack", name: "冻干", effect: "饱食 +20 · 成长值 +20", food: 25, water: 0, color: "#C9874A", apply: s => { s.full = Math.min(100, s.full + 20); s.growth += 20; } },
     { id: "s4", kind: "snack", name: "豪华罐头", effect: "饱食、水分、心情全满", food: 40, water: 5, color: "#D9534F", apply: s => { s.full = 100; s.drink = 100; s.happy = 100; } },
   ],
@@ -483,15 +483,15 @@ function itemState(it, v) {
   if (owned && !it.kind) return { btn: "已拥有", note: "已拥有，去装扮小窝里摆放", active: false };
   if (it.sickOnly && !v.sick) return { btn: "不需要", note: `${v.cat.name}很健康`, active: false };
   if (it.sickOnly && v.treated) return { btn: "已用药", note: "已经吃过药，接下来坚持学习康复", active: false };
-  const price = `${it.food || 0} 猫粮${it.water ? ` + ${it.water} 水` : ""}`;
+  const price = `${it.food || 0} 小鱼干${it.water ? ` + ${it.water} 水` : ""}`;
   const ok = v.food >= (it.food || 0) && v.water >= (it.water || 0);
   return { btn: ok ? "兑换" : "不够", note: price, active: ok };
 }
 function pageShop(tab) {
   let cur = SHOP[tab] ? tab : "snack";
   const box = h(`<div class="page shop"><header class="subhead"><a class="iconbtn" href="#/meow" aria-label="返回喵喵">${svgI(ICON.back, "stroke")}</a><h1 class="display small grow">喵喵小卖部</h1></header>
-    <section class="res2"><div class="food">${FOOD_I}<div><small>猫粮</small><b class="f"></b></div></div><div class="water">${WATER_I}<div><small>水</small><b class="w"></b></div></div></section>
-    <p class="hint">答对 1 题得 1 猫粮；听完一段对话、听力或新闻得 2 水。</p>
+    <section class="res2"><div class="food">${FOOD_I}<div><small>小鱼干</small><b class="f"></b></div></div><div class="water">${WATER_I}<div><small>水</small><b class="w"></b></div></div></section>
+    <p class="hint">答对 1 题得 1 小鱼干；听完一段对话、听力或新闻得 2 水。</p>
     <div class="seg" role="tablist" aria-label="商品分类"></div><div class="items"></div></div>`);
   app.append(box);
   function draw() {
@@ -575,12 +575,12 @@ function pageVet() {
   app.append(box);
   function draw() {
     const v = Pet.view();
-    const head = `<header class="subhead"><a class="iconbtn" href="#/meow" aria-label="返回喵喵">${svgI(ICON.back, "stroke")}</a><h1 class="display small grow">喵喵宠物医院</h1><span class="hint">猫粮 ${fmt(v.food)} · 水 ${fmt(v.water)}</span></header>`;
+    const head = `<header class="subhead"><a class="iconbtn" href="#/meow" aria-label="返回喵喵">${svgI(ICON.back, "stroke")}</a><h1 class="display small grow">喵喵宠物医院</h1><span class="hint">小鱼干 ${fmt(v.food)} · 水 ${fmt(v.water)}</span></header>`;
     const pat = `<section class="card patient">${catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: v.sick && !v.treated ? "sick" : "happy", size: 120 })}<div><b>${esc(v.cat.name)}</b><p>${!v.sick ? "很健康，不用看医生。保持每天学习就好～" : v.treated ? "已经退烧啦！接下来要好好吃饭、按时学习。" : `诊断：感冒发烧<br>原因：${v.idle >= 7 ? `${Math.floor(v.idle)} 天没学习，` : ""}饿瘦了、抵抗力下降`}</p></div></section>`;
     let mid = "";
     if (v.sick && !v.treated) {
-      mid = `<h2>选择治疗方式</h2>${SHOP.med.filter(m => m.sickOnly).map(m => { const ok = v.food >= m.food && v.water >= m.water; return `<div class="item ${ok ? "" : "dim"}"><div class="grow"><b>${m.name}</b><small>${m.effect}</small><em>${m.food} 猫粮 + ${m.water} 水</em></div><button data-m="${m.id}" ${ok ? "" : "disabled"}>${ok ? "付款" : "不够"}</button></div>`; }).join("")}
-        <a class="alert warn" href="#/quiz/${v.lastLevel}"><b>猫粮不够？</b><span>先学 10 题能赚 10 猫粮，听一段听力得 2 水 →</span></a>`;
+      mid = `<h2>选择治疗方式</h2>${SHOP.med.filter(m => m.sickOnly).map(m => { const ok = v.food >= m.food && v.water >= m.water; return `<div class="item ${ok ? "" : "dim"}"><div class="grow"><b>${m.name}</b><small>${m.effect}</small><em>${m.food} 小鱼干 + ${m.water} 水</em></div><button data-m="${m.id}" ${ok ? "" : "disabled"}>${ok ? "付款" : "不够"}</button></div>`; }).join("")}
+        <a class="alert warn" href="#/quiz/${v.lastLevel}"><b>小鱼干不够？</b><span>先学 10 题能赚 10 小鱼干，听一段听力得 2 水 →</span></a>`;
     }
     const days = [0, 1, 2].map(i => `<div class="${i < v.recoverDays.length ? "done" : ""}"><b>第 ${i + 1} 天</b><small>${i < v.recoverDays.length ? "完成" : "待完成"}</small></div>`).join("");
     const plan = v.sick ? `<section class="card"><h2>康复计划：连续学习 3 天</h2><div class="days">${days}</div><p class="hint">${v.treated ? "每天答对 10 题算打卡。" : "先用药，再开始康复打卡。"}完全康复后会重新戴上配饰。</p>

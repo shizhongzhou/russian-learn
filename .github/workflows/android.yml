@@ -77,6 +77,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --title "猫猫俄语通 安卓安装包" --notes "安卓 APK" --prerelease
+          gh release view android-latest >/dev/null 2>&1 || gh release create android-latest --title "宠物俄语通 安卓安装包" --notes "安卓 APK" --prerelease
           gh release upload android-latest MaoMaoRussian.apk --clobber
-          gh release edit android-latest --notes "猫猫俄语通 安卓安装包（构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}）。在手机上下载 MaoMaoRussian.apk，点开安装；第一次需要允许“安装未知来源应用”。"
+          gh release edit android-latest --notes "宠物俄语通 安卓安装包（构建 #${{ github.run_number }}，提交 ${GITHUB_SHA::7}）。在手机上下载 MaoMaoRussian.apk，点开安装；第一次需要允许“安装未知来源应用”。"

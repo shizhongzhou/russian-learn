@@ -378,7 +378,7 @@ function shadowLine(btn, li, ru, key, onScore) {
   const showScore = alts => {
     const best = alts.map(a => [a, scoreSpeech(ru, a)]).sort((a, b) => b[1] - a[1])[0] || ["", 0];
     const sc = best[1];
-    fb.innerHTML = `识别到：<span lang="ru">${esc(best[0] || "（没听清）")}</span> · <b class="score s${sc >= 90 ? 3 : sc >= 75 ? 2 : sc >= 60 ? 1 : 0}">${sc} 分</b> ${sc >= 90 ? "完美！+3 猫粮" : sc >= 75 ? "很棒！+2 猫粮" : sc >= 60 ? "不错 +1 猫粮，冲 90 分拿更多" : "再试一次？60 分以上有猫粮"}`;
+    fb.innerHTML = `识别到：<span lang="ru">${esc(best[0] || "（没听清）")}</span> · <b class="score s${sc >= 90 ? 3 : sc >= 75 ? 2 : sc >= 60 ? 1 : 0}">${sc} 分</b> ${sc >= 90 ? "完美！+3 小鱼干" : sc >= 75 ? "很棒！+2 小鱼干" : sc >= 60 ? "不错 +1 小鱼干，冲 90 分拿更多" : "再试一次？60 分以上有小鱼干"}`;
     if (sc >= 60) good(sc); else { Pet.talk("慢一点，再读一遍～"); if (onScore) onScore(sc); if (Pet.state.settings.meow) meowFor("wrong"); }
   };
   if (NSR) {
