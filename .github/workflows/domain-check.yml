@@ -1,0 +1,23 @@
+name: Domain availability check
+on:
+  workflow_dispatch:
+    inputs:
+      domains: { description: "space-separated", required: true }
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - shell: bash
+        run: |
+          out=""
+          for d in ${{ inputs.domains }}; do
+            tld=${d##*.}
+            case $tld in
+              com|net) u="https://rdap.verisign.com/$tld/v1/domain/$d" ;;
+              *) u="https://rdap.org/domain/$d" ;;
+            esac
+            c=$(curl -s -L -o /dev/null -w "%{http_code}" "$u")
+            if [ "$tld" = cn ]; then w=$(whois -h whois.cnnic.cn "$d" 2>/dev/null | head -3 | tr '\n' ' '); case "$w" in *"No matching record"*) c=404;; *"Domain Name"*) c=200;; esac; fi
+            out="$out $d=$c;"
+          done
+          echo "::notice::$out"
