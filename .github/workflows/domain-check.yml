@@ -7,6 +7,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt-get install -y -qq whois >/dev/null
       - shell: bash
         run: |
           out=""
