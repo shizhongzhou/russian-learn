@@ -38,7 +38,7 @@ const LOGO = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="11" cy="9"
 const FISH_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><path fill="#F29A4A" d="M3 12c3-5 9-6 13-3l4-3v12l-4-3c-4 3-10 2-13-3z"/><circle cx="8" cy="11" r="1.2" fill="#fff"/></svg>`;
 const DROP_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4E9BE8" d="M12 3 Q18 11 18 15 A6 6 0 0 1 6 15 Q6 11 12 3 Z"/></svg>`;
 const PAW_I = `<svg class="res-i" viewBox="0 0 24 24" aria-hidden="true"><g fill="#F29A4A"><ellipse cx="12" cy="15.5" rx="4.6" ry="3.8"/><circle cx="6" cy="10" r="2"/><circle cx="10" cy="6.5" r="2"/><circle cx="14" cy="6.5" r="2"/><circle cx="18" cy="10" r="2"/></g></svg>`;
-const SHOW_DOGS = false;          // dogs are drawn and ready; switched on later
+const SHOW_DOGS = true;          // dogs are drawn and ready; switched on later
 const pickOne = a => a[Math.floor(Math.random() * a.length)];
 const petName = () => Pet.state.cat.name || "小家伙";
 const meowSafe = k => { if (Pet.state.settings.meow && !Pet.state.settings.mute) meowFor(k); };
@@ -95,7 +95,7 @@ route = function () {
   app.innerHTML = "";
   app.className = "";
   let tab = "home", roam = true, tool = false, title = "";
-  const NOBAR = ["grammar", "alphabet", "news", "library", "exams", "trip", "photo", "selfie", "album", "activity", "settings", "dict", "play", "records", "favs", "partner", "course", "reading", "quiz", "memo", "write", "exam", "trki", "read", "vet", "arrange", "rank", "friend", "admin", "desk", "messages", "shadow", "book"];
+  const NOBAR = ["grammar", "alphabet", "news", "library", "exams", "trip", "photo", "selfie", "album", "activity", "settings", "dict", "play", "records", "favs", "partner", "course", "reading", "quiz", "memo", "write", "exam", "trki", "read", "vet", "arrange", "rank", "friend", "admin", "desk", "messages", "shadow", "book", "resource-audio"];
   const [p0, p1, p2] = parts;
   if (LEVELS[p0]) {
     tab = "learn"; renderLevel3(p0, p1 || "words", p2); title = p0;
@@ -114,8 +114,9 @@ route = function () {
     case "shadow": tab = "learn"; roam = false; pageShadow3(LEVELS[p1] ? p1 : v.lastLevel, +p2 || 0); title = "跟读练习"; break;
     case "trki": tab = "learn"; roam = false; pageTrki(p1, p2); break;
     case "exams": tab = "learn"; pageExams3(LEVELS[p1] ? p1 : v.lastLevel, p2); title = "考试"; break;
-    case "library": tab = "learn"; pageLibrary3(p1); title = "我的书架"; break;
-    case "read": tab = "learn"; pageReader(p1); roam = false; break;
+    case "library": tab = "learn"; pageLibrary3(p1, p2); title = "我的书架"; break;
+    case "resource-audio": tab = "learn"; pageResourceAudio(p1); roam = false; break;
+    case "read": tab = "learn"; pageReader(p1); roam = true; break;
     case "book": tab = "learn"; roam = false; parts[2] != null ? pageClassicRead(p1, +parts[2] || 0) : pageClassicBook(p1); break;
     case "write": tab = "learn"; roam = false; pageWrite(LEVELS[p1] ? p1 : v.lastLevel); break;
     case "exam": tab = "learn"; roam = false; pageExam(LEVELS[p1] ? p1 : v.lastLevel); break;
@@ -149,7 +150,7 @@ route = function () {
   const BAR = ["home", "learn", "ladder", "lv", "shadow", "pet", "meow", "nest", "dress", "shop", "travel", "friends", "messages", "account", ""];
   document.body.classList.toggle("nobar", !BAR.includes(p0 || "home") || !!LEVELS[p0]);
   chrome3(tab, { tool, bar: !(NOBAR.includes(p0) || LEVELS[p0]) });
-  Roam.set(roam && tab !== "");
+  Roam.set(tab !== "" && !["play","shadow","pet","meow","photo","selfie","welcome"].includes(p0));
   window.scrollTo(0, 0);
   app.focus({ preventScroll: true });
 };
@@ -159,122 +160,6 @@ Pet.setRoam = () => {};       // the v2 roaming cat is replaced by Roam (below)
    Walks, runs and jumps anywhere on the screen (above the tab bar), sits, lies down, looks around.
    Tap it to pet it; drag it and drop it somewhere. 小橘 uses the motion clips cut from video,
    other pets hop/bob with a still picture. */
-const Roam = (() => {
-  let el, img, bub, on = false, x = 40, y = 0, dir = 1, raf = 0, plan = null, idleT = 0, bubT = 0, drag = null, pageCtl = null;
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const H = () => { const st = Pet.view().shownStage; return Math.round(78 * petK(st)); };
-  const bounds = () => {
-    const tb = document.getElementById("tabbar"), top = 70, bottom = (tb && !tb.hidden ? tb.getBoundingClientRect().top : innerHeight) - 4;
-    return { x0: 4, x1: Math.max(60, Math.min(innerWidth, document.documentElement.clientWidth || innerWidth) - el.offsetWidth - 4), y0: Math.max(top + H(), bottom - Math.max(160, innerHeight * 0.42)), y1: bottom };
-  };
-  function ensure() {
-    if (el) return;
-    el = document.createElement("button");
-    el.type = "button"; el.className = "roam2";
-    el.innerHTML = `<span class="rb" hidden></span><span class="rp"><img alt="" draggable="false"></span>`;
-    img = el.querySelector("img"); bub = el.querySelector(".rb");
-    document.body.append(el);
-    el.addEventListener("pointerdown", e => {
-      drag = { sx: e.clientX, sy: e.clientY, ox: x, oy: y, moved: false, id: e.pointerId };
-      el.setPointerCapture(e.pointerId);
-    });
-    el.addEventListener("pointermove", e => {
-      if (!drag) return;
-      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-      if (!drag.moved && Math.hypot(dx, dy) < 8) return;
-      if (!drag.moved) { drag.moved = true; plan = null; pose("look"); el.classList.remove("hopping", "bob"); say(pickOne(["放我下来～", "飞起来啦！", "喵？"])); }
-      x = drag.ox + dx; y = drag.oy + dy; place();
-    });
-    const up = () => {
-      if (!drag) return;
-      const moved = drag.moved; drag = null;
-      if (moved) { const b = bounds(); const ty = Math.min(b.y1, Math.max(b.y0, y)); fall(ty); return; }
-      // a tap: pet it
-      meowSafe("pet"); Pet.pet(); logEvent("pet", `摸了摸${petName()}，它很开心`);
-      say(pickOne(isDog(Pet.state.cat.breed) ? ["汪！", "再摸摸～", "尾巴摇起来"] : ["喵～", "呼噜呼噜", "再摸摸我", "Мур-мур"]));
-      hop(26);
-    };
-    el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
-    addEventListener("resize", () => { if (on) { const b = bounds(); x = Math.min(x, b.x1); y = Math.min(Math.max(y, b.y0), b.y1); place(); } });
-  }
-  function place() { el.style.transform = `translate(${Math.round(x)}px, ${Math.round(y - el.offsetHeight)}px)`; el.classList.toggle("left", dir < 0 !== clipDir < 0); }
-  let clipDir = 1, curPose = "";
-  function pose(p) {
-    const v = Pet.view(), key = Pet.state.cat.breed;
-    const src = animSrc(key, p, v.shownStage);
-    clipDir = src ? ((ANIM_OK[src.split("/").pop().replace(".webp", "")] || {}).dir || 1) : 1;
-    const want = src || petSrc(key, v.shownStage);
-    if (img.getAttribute("src") !== want) img.src = want;
-    el.style.setProperty("--h", H() + "px");
-    curPose = p; el.classList.toggle("anim", !!src);
-    el.classList.toggle("hopping", !src && (p === "run" || p === "walk"));
-    el.classList.toggle("bob", false);
-    place();
-  }
-  function say(t, ms = 2400) { if (!el || !t) return; bub.textContent = t; bub.hidden = false; clearTimeout(bubT); bubT = setTimeout(() => bub.hidden = true, ms); }
-  /* movement: a plan is {tx, ty, speed, jump} animated with rAF */
-  function go(tx, ty, kind) {
-    const dist = Math.hypot(tx - x, ty - y); if (dist < 6) return idle();
-    dir = tx < x ? -1 : 1;
-    const jump = kind === "jump" || Math.abs(ty - y) > 60;
-    const speed = kind === "run" ? 230 : jump ? 260 : 70;      // px / s
-    plan = { fx: x, fy: y, tx, ty, t0: performance.now(), dur: Math.max(380, dist / speed * 1000), jump, arc: jump ? Math.min(140, 50 + Math.abs(ty - y) * 0.6) : 0 };
-    pose(jump ? "run" : kind === "run" ? "run" : "walk");
-    if (!raf) raf = requestAnimationFrame(step);
-  }
-  function step(now) {
-    raf = 0;
-    if (!plan || drag) return;
-    const p = Math.min(1, (now - plan.t0) / plan.dur);
-    const e = plan.jump ? p : p;
-    x = plan.fx + (plan.tx - plan.fx) * e;
-    y = plan.fy + (plan.ty - plan.fy) * e - (plan.jump ? Math.sin(Math.PI * p) * plan.arc : 0);
-    place();
-    if (p < 1) { raf = requestAnimationFrame(step); return; }
-    const jumped = plan.jump; plan = null;
-    if (jumped) { el.classList.remove("land"); void el.offsetWidth; el.classList.add("land"); }
-    idle();
-  }
-  function fall(ty) { plan = { fx: x, fy: y, tx: x, ty, t0: performance.now(), dur: 320, jump: false, arc: 0 }; pose("look"); if (!raf) raf = requestAnimationFrame(step); }
-  function hop(h = 30) { if (plan) return; plan = { fx: x, fy: y, tx: x, ty: y, t0: performance.now(), dur: 420, jump: true, arc: h }; if (!raf) raf = requestAnimationFrame(step); }
-  function idle() {
-    const v = Pet.view();
-    const p = v.sick ? "lie" : pickOne(["sit", "sit", "look", "lie", "sit"]);
-    pose(p);
-    if (Math.random() < 0.25) say(pickOne(lines()));
-  }
-  let custom = null;
-  const lines = () => custom || ["我在这儿陪你～", "Приве́т!", "学累了就摸摸我", "今天也一起学俄语吧", "答对题我就有小鱼干吃", "Ты молоде́ц!"];
-  function tick() {
-    if (!on || drag || plan || document.hidden) return;
-    const v = Pet.view(); if (v.sick) return;
-    const r = Math.random();
-    if (r < 0.3 || reduce) { idle(); return; }
-    const b = bounds();
-    const tx = b.x0 + Math.random() * (b.x1 - b.x0);
-    const ty = Math.random() < 0.55 ? b.y1 : b.y0 + Math.random() * (b.y1 - b.y0);
-    go(tx, ty, r < 0.55 ? "walk" : r < 0.82 ? "run" : "jump");
-  }
-  setInterval(tick, 4200);
-  return {
-    set(want) {
-      const S = Pet.state;
-      on = want && S.profile && S.settings.roam !== false;
-      ensure(); el.hidden = !on;
-      if (!on) { plan = null; return; }
-      custom = null;
-      const b = bounds();
-      if (!y) { x = b.x0 + 20; y = b.y1; }
-      y = Math.min(Math.max(y, b.y0), b.y1);
-      pose("sit");
-    },
-    say, hop, lines(l) { custom = l; },
-    cheer(t) { if (on) { hop(34); if (t) say(t); } },
-    stopPage() { if (pageCtl) { pageCtl(); pageCtl = null; } },
-    onLeave(fn) { pageCtl = fn; },
-  };
-})();
-
 /* ---------- 主页 ---------- */
 function petPic(size, opts = {}) { const v = Pet.view(); return petImg(v.cat.breed, { stage: v.shownStage, size, ...opts }); }
 function pageHome3() {
@@ -287,7 +172,7 @@ function pageHome3() {
   const box = h(`<div class="page h3">
     <section class="hhero">
       <div class="txt"><h1>${zh}</h1><p lang="ru">${ru}</p></div>
-      <a class="art" href="#/pet" aria-label="去看${esc(petName())}">${sparks()}${petPic(150)}<img class="yarn" src="img/item/ball.webp" alt=""></a>
+      <button class="art pet-play-target" type="button" aria-label="让宠物来玩球">${sparks()}<img class="yarn" src="img/item/ball.webp" alt="毛线球"></button>
       <span class="status"><i></i>${esc(doing)} · 刚刚更新</span>
     </section>
     ${v.sick ? `<a class="alert danger" href="#/vet"><b>${esc(petName())}生病了</b><span>${v.treated ? `康复中 ${v.recoverDays.length}/3 天` : "带它去宠物医院 →"}</span></a>` : ""}
@@ -306,6 +191,7 @@ function pageHome3() {
       <button class="btn big lime" id="addF">${ic3(I3.plus)} 添加好友</button></section>
   </div>`);
   app.append(box);
+  box.querySelector(".pet-play-target").onclick = () => Roam.playAt(box.querySelector(".hhero"));
   box.querySelector("#addF").onclick = () => addFriendSheet(() => route());
   const fl = box.querySelector(".fl");
   if (!Cloud.enabled()) { fl.innerHTML = `<p class="hint">联网后可以加好友</p>`; return; }
@@ -324,14 +210,14 @@ function pageLearn3() {
   const v = Pet.view();
   const T = (href, d, tone, b, s) => `<a class="tile" href="${href}">${tile3(d, tone)}<span><b>${b}</b><small>${s}</small></span></a>`;
   const box = h(`<div class="page">
-    <section class="hhero sm"><div class="txt"><h1>学习</h1><p>系统学习，稳步进阶</p></div><span class="art">${sparks()}${petPic(118)}</span></section>
-    <a class="banner" href="#/ladder"><span><b>俄语阶梯 · A1–C2</b><small>从零基础到精通，系统课程</small></span><span class="pet">${petPic(80, { stage: 1 })}<span class="bk" aria-hidden="true">📚</span></span>${GO}</a>
+    <section class="hhero sm"><div class="txt"><h1>学习</h1><p>系统学习，稳步进阶</p></div><span class="art">${sparks()}</span></section>
+    <a class="banner" href="#/ladder"><span><b>俄语阶梯 · A1–C2</b><small>从零基础到精通，系统课程</small></span><span class="pet"><span class="bk" aria-hidden="true">📚</span></span>${GO}</a>
     <div class="tiles">
       ${T("#/alphabet", "M4 19L9 5h1l5 14M6 14h7M15 12h4a2 2 0 0 1 0 4h-4v-8h3.5a2 2 0 0 1 0 4", "", "字母表", "掌握俄文字母")}
       ${T("#/news", I3.news, "b", "新闻媒体", "读新闻学表达")}
       ${T("#/library", I3.shelf, "g", "书架", "管理学习资料")}
       ${T(`#/memo/${v.lastLevel}`, I3.cards, "g", "背单词", "科学记忆单词")}
-      ${T(`#/course/${v.lastLevel}`, I3.play, "g", "课程", "系统视频课程")}
+      ${T(`#/course/${v.lastLevel}`, I3.play, "g", "课程", "A1–C2 等级")}
       ${T(`#/reading/${v.lastLevel}`, I3.read, "b", "泛读", "阅读拓展提升")}
     </div>
   </div>`);
@@ -344,7 +230,7 @@ function lvProgress(lv) { const S = Pet.state, n = LV_UNITS(lv), heard = S.heard
 function pageLadder() {
   const v = Pet.view();
   const box = h(`<div class="page">
-    <section class="hhero sm"><div class="txt"><a class="back0" href="#/learn" aria-label="返回">${ic3(I3.back)}</a><h1>俄语阶梯</h1><p>从 A1 到 C2，循序渐进</p></div><span class="art">${sparks()}${petPic(118)}</span></section>
+    <section class="hhero sm"><div class="txt"><a class="back0" href="#/learn" aria-label="返回">${ic3(I3.back)}</a><h1>俄语阶梯</h1><p>从 A1 到 C2，循序渐进</p></div><span class="art">${sparks()}</span></section>
     <nav class="ladder3">${ORDER.map(lv => { const p = lvProgress(lv); return `<a href="#/lv/${lv}" class="${lv === v.lastLevel ? "cur" : ""}"><span class="lv">${lv}</span><b>${LV_NAME[lv]}</b>
       <span><div class="pc">${fmt(p.heard)} / ${fmt(p.n)}</div><div class="bar"><i style="width:${p.pct}%"></i></div></span>${GO}</a>`; }).join("")}</nav>
   </div>`);
@@ -356,8 +242,9 @@ function pageLevel3(lv) {
   const p = lvProgress(lv);
   const T = (href, d, tone, b, s, wide) => `<a class="tile${wide ? " wide" : ""}" href="${href}">${tile3(d, tone)}<span><b>${b}</b><small>${s}</small></span>${GO}</a>`;
   const box = h(`<div class="page">
-    <section class="hhero sm"><div class="txt"><a class="back0" href="#/ladder" aria-label="返回">${ic3(I3.back)}</a><h1 class="mid">${lv} ${LV_NAME[lv]}</h1><p>${LV_SUB[lv]}</p></div><span class="art">${sparks()}${petPic(104)}</span></section>
+    <section class="hhero sm"><div class="txt"><a class="back0" href="#/ladder" aria-label="返回">${ic3(I3.back)}</a><h1 class="mid">${lv} ${LV_NAME[lv]}</h1><p>${LV_SUB[lv]}</p></div><span class="art">${sparks()}</span></section>
     <div class="lvprog"><span>学习进度</span><div class="bar"><i style="width:${p.pct}%"></i></div><b>${fmt(p.heard)} / ${fmt(p.n)}</b></div>
+    <a class="card resource-entry" href="#/library/resources/${lv}"><span class="grow"><b>${lv} 学习资料</b><small>${STUDY_RESOURCES.filter(b => b.levels.includes(lv)).length} 份教材与音频 · 点击查看</small></span>${GO}</a>
     <div class="tiles">
       ${T(`#/${lv}/words`, I3.words, "g", "单词", "词汇积累")}
       ${T(`#/grammar/${lv}`, I3.gram, "b", "语法", "掌握语法规则")}
@@ -448,14 +335,10 @@ async function pageArticle(lv, i) {
   box.querySelector(".art").append(block);
   Pet.state.lastPlace = { lv, tab: "news", name: "新闻 · " + n.titleZh }; Pet.save();
 }
-/* 课程 = 情景对话 + 听力 for one level */
-async function pageCourse(lv) {
-  const box = h(`<div class="page">${head3("课程", "#/learn")}<p class="v3sub">情景对话课 · 两种声音分角色朗读</p>
-    <nav class="pills">${ORDER.map(x => `<a href="#/course/${x}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav><div class="rows"></div></div>`);
-  app.append(box);
-  const d = await getJSON(`data/content_${lv}.json`);
-  box.querySelector(".rows").innerHTML = d.dialogues.map((x, i) => `<a href="#/${lv}/dialogues">${tile3(I3.chat, ["g", "b", "o", "v"][i % 4])}<span class="grow"><b lang="ru">${esc(x.title)}</b><small>${esc(x.titleZh)} · ${x.lines.length} 句</small></span>${GO}</a>`).join("") +
-    d.listening.map(x => `<a href="#/${lv}/listening">${tile3(I3.ear, "v")}<span class="grow"><b lang="ru">${esc(x.title)}</b><small>听力 · ${esc(x.titleZh)}</small></span>${GO}</a>`).join("");
+/* Empty course shells retain only the level navigation. */
+function pageCourse(lv) {
+  app.append(h(`<div class="page">${head3("课程", "#/learn")}
+    <nav class="pills" aria-label="课程等级">${ORDER.map(x => `<a href="#/course/${x}" ${x === lv ? 'aria-current="page"' : ""}>${x}</a>`).join("")}</nav></div>`));
 }
 /* 泛读 = news + listening texts as reading */
 async function pageReading(lv) {
@@ -508,7 +391,7 @@ async function pageShadow3(lv, start = 0) {
   let rec = null, stream = null, chunks = [], ac = null, raf = 0, sr = null, heard = [], running = false, t0 = 0, holding = false;
   const micT = box.querySelector("#micT"), micS = box.querySelector("#micS");
   async function begin(e) {
-    e.preventDefault(); if (holding) return; holding = true;
+    e.preventDefault(); if (holding) return; if(e.pointerId!=null)mic.setPointerCapture(e.pointerId); holding = true;
     stopAll(); mic.classList.add("rec"); micT.textContent = "正在听…"; micS.textContent = "说完松开"; setPose("charge"); running = false; heard = []; t0 = Date.now();
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -521,7 +404,12 @@ async function pageShadow3(lv, start = 0) {
         if (!running && rms > 9) { running = true; setPose("run"); micT.textContent = "跑起来啦！继续说"; }
         raf = requestAnimationFrame(loop); };
       loop();
-    } catch { micS.textContent = "没有麦克风权限，请在设置里允许"; }
+    } catch {
+      holding=false;mic.classList.remove("rec");setPose("sit");micT.textContent="按住跟读";
+      micS.textContent="没有麦克风权限，请在设置里允许";
+      if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;try{ac&&ac.close();}catch{}ac=null;
+      return;
+    }
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition, NSR = capPlugin("SpeechRecognition");
     try {
       if (NSR) { await NSR.requestPermissions(); NSR.addListener("partialResults", d => { if (d && d.matches) { heard = d.matches; if (!running) { running = true; setPose("run"); } } }); NSR.start({ language: "ru-RU", maxResults: 5, partialResults: true, popup: false }).then(r => { if (r && r.matches) heard = r.matches; }).catch(() => {}); sr = { stop: () => NSR.stop() }; }
@@ -610,11 +498,12 @@ async function pageExams3(lv, tab = "real") {
 /* ---------- 书架 ---------- */
 const COVER_BG = ["#F9E3C8", "#D9EBD2", "#F5E9D6", "#E4E7F7", "#FBE0E3", "#DDEFF3"];
 const COVER_EM = ["⛪", "🌳", "📝", "📘", "🎻", "🪆"];
-function pageLibrary3(tab = "classics") {
+function pageLibrary3(tab = "resources", level) {
+  if (tab === "resources") return pageResources(level);
   const S = Pet.state; S.bookFav = S.bookFav || {};
   if (!["shelf", "fav"].includes(tab)) tab = "classics";
   const box = h(`<div class="page">${head3("我的书架", "#/learn", `<label class="btn small ghost imp">${ic3(I3.plus)}导入 PDF<input type="file" accept="application/pdf,.pdf" multiple hidden id="pick"></label>`)}
-    <div class="utabs three" role="tablist"><button role="tab" aria-selected="${tab === "classics"}" data-t="classics">经典名著</button><button role="tab" aria-selected="${tab === "shelf"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
+    <a class="btn ghost" href="#/library/resources">学习资料 · 按等级查看</a><div class="utabs three" role="tablist"><button role="tab" aria-selected="${tab === "classics"}" data-t="classics">经典名著</button><button role="tab" aria-selected="${tab === "shelf"}" data-t="shelf">我的书架</button><button role="tab" aria-selected="${tab === "fav"}" data-t="fav">收藏</button></div>
     <div class="books"></div></div>`);
   app.append(box);
   if (tab === "classics") { box.querySelector(".books").className = "classics"; box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/library/${b.dataset.t}`); box.querySelector("#pick").onchange = e => { location.hash = "#/library/shelf"; }; drawClassics(box.querySelector(".classics")); return; }
@@ -1142,6 +1031,7 @@ async function translate3(text, from) {
 /* ---------- welcome: choose a cat or a dog ---------- */
 function pageWelcome3() {
   const S = Pet.state;
+  let previewStage = 1;
   let step = 1, nick = S.profile ? S.profile.nick : "", breed = PETS[S.cat.breed] ? S.cat.breed : "orange", kind = petOf(breed).kind, name = S.profile ? (S.cat.name || "") : "", sex = S.cat.sex || "m";
   const box = h(`<section class="welcome page"></section>`);
   app.append(box);
@@ -1150,7 +1040,7 @@ function pageWelcome3() {
       const logged = Cloud.enabled() && Cloud.user() && !Cloud.user().is_anonymous;
       box.innerHTML = `<div style="text-align:center;margin-top:10px">${petImg("orange", { stage: 1, size: 150 })}${petImg("british", { stage: 1, size: 136 })}</div>
         <h1 class="display" style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:40px">${LOGO}</span>宠物俄语通</h1>
-        <p class="hint" style="font-size:15px">学俄语，养一只小猫。你学得越多，它吃得越饱、长得越大；不学习它会饿、会生病。</p>
+        <p class="hint" style="font-size:15px">学俄语，养一只猫或狗。你学得越多，它吃得越饱、长得越大；不学习它会饿、会生病。</p>
         ${Cloud.enabled() ? logged ? `<p class="badge ok">已登录：${esc(Cloud.label().text)}</p>` : `<button class="btn big" id="login">手机号 / 邮箱登录</button><p class="hint">已有账号？登录后自动取回你的宠物和学习进度。</p><div class="wl-or"><span>或者先体验一下</span></div>` : ""}
         <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周" value="${esc(nick)}"></label>
         <button class="btn big ${Cloud.enabled() && !logged ? "ghost" : "lime"}" id="go">${Cloud.enabled() && !logged ? "游客开始" : "下一步"}</button>`;
@@ -1160,14 +1050,15 @@ function pageWelcome3() {
       box.querySelector("#go").onclick = () => { nick = inp.value.trim() || "同学"; step = 2; draw(); };
       inp.onkeydown = e => { if (e.key === "Enter") box.querySelector("#go").click(); };
     } else {
-      box.innerHTML = `<p class="hint">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的猫</h1>
-        <section class="card" style="text-align:center"><div style="min-height:150px;display:flex;align-items:flex-end;justify-content:center">${petImg(breed, { stage: 1, size: 160 })}</div>
-          <b style="font-size:18px">${esc(name) || "（还没起名字）"}</b><p class="hint" style="margin:2px 0 0">${PETS[breed].name} · ${PETS[breed].desc}</p></section>
+      box.innerHTML = `<p class="hint">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的宠物</h1>
+        <section class="card" style="text-align:center"><div style="min-height:150px;display:flex;align-items:flex-end;justify-content:center">${petImg(breed, { stage: previewStage, size: previewStage === 1 ? 118 : 160 })}</div>
+          <div class="pills growth-preview">${[1,2,3].map(n=>`<button data-preview="${n}" aria-pressed="${previewStage===n}">${["","幼年","少年","成年"][n]}</button>`).join("")}</div><b style="font-size:18px">${esc(name) || "（还没起名字）"}</b><p class="hint" style="margin:2px 0 0">${PETS[breed].name} · ${PETS[breed].desc}</p></section>
         <section class="card">${petPicker(breed, null, kind)}</section>
         <section class="card"><label class="field"><span>给它起个名字</span><input id="cname" maxlength="10" value="${esc(name)}" placeholder="输入它的名字"></label>
           <div class="pills" style="margin-top:8px"><button data-sex="m" aria-pressed="${sex === "m"}">♂ 男孩</button><button data-sex="f" aria-pressed="${sex === "f"}">♀ 女孩</button></div></section>
         <p class="hint">每只宠物都从幼年开始，学得越多会长成少年、成年。</p>
         <button class="btn big lime" id="done">就选它，开始学习</button><button class="btn ghost" id="back">上一步</button>`;
+      box.querySelectorAll("[data-preview]").forEach(b => b.onclick=()=>{previewStage=+b.dataset.preview;draw();});
       box.querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { kind = b.dataset.kind; breed = PET_KEYS[kind][0]; draw(); });
       box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { breed = b.dataset.b; draw(); });
       box.querySelectorAll("[data-sex]").forEach(b => b.onclick = () => { sex = b.dataset.sex; draw(); });

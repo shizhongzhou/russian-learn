@@ -46,18 +46,28 @@ const isDog = key => petOf(key).kind === "dog";
 /* app growth stages 1–4 → art stages 1–3 (幼年 / 少年 / 成年) */
 const artStage = st => (st | 0) <= 1 ? 1 : (st | 0) === 2 ? 2 : 3;
 const ART_STAGE_NAMES = ["", "幼年", "少年", "成年"];
-const petSrc = (key, st) => `img/pets/${PETS[key] ? key : "orange"}_${artStage(st)}.webp`;
+const petFallbackSrc = (key,st) => `img/pets/${PETS[key] ? key : "orange"}_${artStage(st)}.webp`;
+const petSrc = (key, st) => `img/pets/exact/${PETS[key] ? key : "orange"}_${artStage(st)}.png`;
 const petK = st => [0, 0.72, 0.86, 1, 1.06][Math.max(1, Math.min(4, st | 0 || 1))];
 /* orange cat motion clips (animated WebP with transparency); s = kitten clip, a = adult clip */
+const ORANGE_FRAME_HEIGHT = {"treat": 160.77, "whip_small": 152.04, "wand": 101.82, "side_walk": 139.42, "kitten_charge": 116.89, "can": 139.42, "adult_walk": 154.22, "whip_adult": 127.27, "eat_big": 136.59, "whip_front": 144.21, "kitten_sit": 104.92, "kitten_run": 106.67, "cuddle": 176.84, "sleep": 187.71, "adult_sit": 213.33, "ball": 192.0, "side_look": 139.89, "kitten_walk": 131.25, "kitten_lie": 104.92, "adult_lie": 203.17, "eat": 101.82};
 const ORANGE_ANIM = {
-  walk: { s: "kitten_walk", a: "adult_walk" },
-  run: { s: "kitten_run", a: "kitten_run" },
-  charge: { s: "kitten_charge", a: "kitten_charge" },
-  sit: { s: "kitten_sit", a: "kitten_sit" },
+  walk: { s: "kitten_walk", a: "side_walk" },
+  run: { s: "kitten_run", a: "adult_walk" },
+  charge: { s: "kitten_charge", a: "adult_lie" },
+  sit: { s: "kitten_sit", a: "adult_sit" },
   lie: { s: "kitten_lie", a: "adult_lie" },
   look: { s: "side_look", a: "side_look" },
+  sleep: { s: "sleep", a: "sleep" },
+  ball: { s: "ball", a: "ball" },
+  toy: { s: "wand", a: "wand" },
+  eat: { s: "eat", a: "eat_big" },
+  can: { s: "can", a: "can" },
+  treat: { s: "treat", a: "treat" },
+  cuddle: { s: "cuddle", a: "cuddle" },
+  whip: { s: "whip_small", a: "whip_adult" },
 };
-let ANIM_OK = {};               // filled from img/anim/orange/index.json (clips that exist)
+let ANIM_OK = typeof ORANGE_MOTION === "undefined" ? {} : ORANGE_MOTION;               // filled from img/anim/orange/index.json (clips that exist)
 fetch("img/anim/orange/index.json").then(r => r.ok ? r.json() : {}).then(j => { ANIM_OK = j || {}; }).catch(() => {});
 function animSrc(key, pose, st) {
   if (key !== "orange") return null;
@@ -67,8 +77,10 @@ function animSrc(key, pose, st) {
 }
 /* one pet picture: <span class="pet3d"><img></span>; size = height in px of a grown pet */
 function petImg(key, { stage = 2, size = 120, pose = "", cls = "", label = "", flip = false } = {}) {
-  const src = (pose && animSrc(key, pose, stage)) || petSrc(key, stage);
+  const motion = pose && animSrc(key,pose,stage);
+  const src = motion || petSrc(key,stage);
+  const frameHeight = motion ? ORANGE_FRAME_HEIGHT[motion.split("/").pop().replace(".webp", "")] || 100 : 100;
   const k = petK(stage);
-  return `<span class="pet3d ${cls}${isDog(key) ? " dog" : ""}" style="--s:${Math.round(size)}px;--k:${k}"${label ? ` role="img" aria-label="${esc(label)}"` : ""}>` +
-    `<img src="${src}" alt="" draggable="false" decoding="async"${flip ? ' class="flip"' : ""}></span>`;
+  return `<span class="pet3d ${motion ? "motion-picture " : ""}${cls}${isDog(key) ? " dog" : ""}" style="--s:${Math.round(size)}px;--k:${k};--sprite-height:${frameHeight}%"${label ? ` role="img" aria-label="${esc(label)}"` : ""}>` +
+    `<img src="${src}" onerror="this.onerror=null;this.src='${petFallbackSrc(key,stage)}'" alt="" draggable="false" decoding="async"${flip ? ' class="flip"' : ""}></span>`;
 }

@@ -3,6 +3,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT=..
+python3 "$ROOT/scripts/import-app-assets.py"
 rm -rf www && mkdir -p www
 cp "$ROOT"/index.html "$ROOT"/*.js "$ROOT"/*.css "$ROOT"/manifest.webmanifest www/
 cp -R "$ROOT"/data "$ROOT"/icons "$ROOT"/img www/

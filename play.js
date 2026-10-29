@@ -5,15 +5,18 @@
 const PLAY = { catchChance: 0.08, maxPerDay: 3 };
 function pagePlay() {
   const v = Pet.view(), orange = v.cat.breed === "orange";
-  const img = orange ? { idle: "img/pose/hero.webp", crouch: "img/pose/crouch.webp", pounce: "img/pose/pounce.webp" }
-    : { idle: petSrc(v.cat.breed, v.shownStage), crouch: petSrc(v.cat.breed, v.shownStage), pounce: petSrc(v.cat.breed, v.shownStage) };
+  const img = {
+    idle: animSrc(v.cat.breed,"sit",v.shownStage) || petSrc(v.cat.breed,v.shownStage),
+    crouch: animSrc(v.cat.breed,"charge",v.shownStage) || petSrc(v.cat.breed,v.shownStage),
+    pounce: animSrc(v.cat.breed,"toy",v.shownStage) || petSrc(v.cat.breed,v.shownStage)
+  };
   const key = Pet.today() + "|wandcatch";
   const box = h(`<div class="page play play3">
     <header class="ptop"><a class="pawbtn" href="#/home" aria-label="返回主页">${ic3(I3.paw)}</a><h1>逗${isDog(v.cat.breed) ? "狗" : "猫"}时间</h1><span class="pl-count"></span></header>
     <section class="pl-field" aria-label="和${esc(v.cat.name)}玩逗猫棒">
       <svg class="pl-string" aria-hidden="true"><line class="stick"/><line class="str"/></svg><span class="holder" aria-hidden="true"></span>
       <span class="pl-feather" role="slider" tabindex="0" aria-label="羽毛，拖动它"><img src="img/item/feather.webp" alt=""></span>
-      <div class="pl-cat"><img data-p="idle" src="${img.idle}" alt=""><img data-p="crouch" src="${img.crouch}" alt="" class="${orange ? "flip" : ""}"><img data-p="pounce" src="${img.pounce}" alt=""></div>
+      <div class="pl-cat"><img data-p="idle" src="${img.idle}" alt=""><img data-p="crouch" src="${img.crouch}" alt="" class=""><img data-p="pounce" src="${img.pounce}" alt=""></div>
       <div class="pl-floor"></div>
       <p class="pl-say" aria-live="polite"></p>
     </section>
@@ -74,8 +77,8 @@ function pagePlay() {
       x = from.x + (to.x - from.x) * e2; y = to.y * Math.sin(Math.PI * u);
       if (u >= 1) { cx = to.x; x = cx; y = 0; mode = "land"; mt = 0; land(); }
     } else if (mode === "land" && mt > 0.5) { mode = "idle"; cooldown = 0.8 + Math.random() * 1.2; }
-    show(mode === "crouch" ? "crouch" : mode === "pounce" ? "pounce" : "idle");
-    const flip = mode === "pounce" ? (to.x < from.x ? -1 : 1) : (orange ? -face : 1);
+    show(mode === "crouch" ? "crouch" : mode === "pounce" || mode === "land" ? "pounce" : "idle");
+    const flip = mode === "pounce" ? (to.x < from.x ? -1 : 1) : (orange ? face : 1);
     cat.style.transform = `translate(${(x - 70).toFixed(1)}px, ${(-y).toFixed(1)}px) rotate(${rot.toFixed(2)}deg) scaleX(${orange ? flip : 1})`;
     raf = requestAnimationFrame(frame);
   }

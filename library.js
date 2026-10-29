@@ -1,13 +1,16 @@
 "use strict";
 /* ========== 猫猫俄语通 — 我的书架: read your own PDF books on this device ========== */
-const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+let PDFJS = "vendor/pdfjs/";
 let _pdfjs;
 function loadPdfJs() {
   if (_pdfjs) return _pdfjs;
   _pdfjs = new Promise((res, rej) => {
     const s = document.createElement("script"); s.src = PDFJS + "pdf.min.js";
     s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + "pdf.worker.min.js"; res(window.pdfjsLib); };
-    s.onerror = () => { _pdfjs = null; rej(new Error("pdf.js")); };
+    s.onerror = () => {
+      if(PDFJS === "vendor/pdfjs/") { PDFJS="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/"; s.src=PDFJS+"pdf.min.js"; }
+      else {_pdfjs=null;rej(new Error("pdf.js"));}
+    };
     document.head.append(s);
   });
   return _pdfjs;
@@ -90,8 +93,8 @@ async function lookup(word) {
 }
 
 async function pageReader(id) {
-  const meta = bookMeta().find(b => b.id === id);
-  const box = h(`<div class="page reader"><header class="subhead"><a class="iconbtn" href="#/library" aria-label="返回书架">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>我的书架</small><b class="rd-title">${esc(meta ? meta.name : "")}</b></div><span class="hint rd-pg"></span></header>
+  const meta = resourceMeta(id) || bookMeta().find(b => b.id === id);
+  const box = h(`<div class="page reader"><header class="subhead"><a class="iconbtn" href="${meta && meta.url ? '#/library/resources' : '#/library/shelf'}" aria-label="返回书架">${svgI(ICON.back, "stroke")}</a><div class="grow"><small>我的书架</small><b class="rd-title">${esc(meta ? meta.name : "")}</b></div><span class="hint rd-pg"></span></header>
     <div class="rd-view"><div class="rd-page"><canvas></canvas><div class="textLayer"></div></div><p class="empty rd-msg">打开中…</p></div>
     <div class="rd-sel" hidden><span class="rd-word" lang="ru"></span><span class="rd-zh"></span><button class="btn small" data-say>朗读</button></div>
     <nav class="rd-bar"><button class="iconbtn" data-prev aria-label="上一页">${svgI("M15 5l-7 7 7 7", "stroke")}</button>
@@ -104,17 +107,25 @@ async function pageReader(id) {
   let pdf, lib;
   try {
     lib = await loadPdfJs();
-    const rec = await BookDB.get(id);
-    if (!rec) { msg.textContent = "这本书的文件找不到了（可能是清除了浏览器数据），请重新导入。"; return; }
-    pdf = await lib.getDocument({ data: new Uint8Array(await rec.blob.arrayBuffer()) }).promise;
-  } catch (e) { msg.textContent = "打不开这本书：需要联网加载阅读器，或者文件已损坏。"; return; }
+    let source;
+    if (meta.url) source = { url: meta.url, disableAutoFetch: true, disableStream: true, rangeChunkSize: 262144 };
+    else {
+      const rec = await BookDB.get(id);
+      if (!rec) { msg.textContent = "这本书的文件找不到了，请重新导入。"; return; }
+      source = { data: new Uint8Array(await rec.blob.arrayBuffer()) };
+    }
+    pdf = await lib.getDocument({ ...source, cMapUrl: PDFJS + "cmaps/", cMapPacked: true, standardFontDataUrl: PDFJS + "standard_fonts/" }).promise;
+  } catch (e) { msg.textContent = "打不开这本书，请检查文件是否完整。"; return; }
   msg.remove();
   const S = Pet.state; S.readPages = S.readPages || {};
   const canvas = box.querySelector("canvas"), tl = box.querySelector(".textLayer"), pageEl = box.querySelector(".rd-page"), view = box.querySelector(".rd-view");
   const inp = box.querySelector(".rd-goto input"), of = box.querySelector(".rd-of"), pg = box.querySelector(".rd-pg");
   let n = Math.min(meta.last || 1, pdf.numPages), zoom = store.get("rd_zoom", 1), task, readT;
   of.textContent = `/ ${pdf.numPages}`; inp.max = pdf.numPages;
-  const saveMeta = () => setBookMeta(bookMeta().map(b => b.id === id ? { ...b, last: n, pages: pdf.numPages } : b));
+  const saveMeta = () => {
+    if (meta.url) store.set("resourceProgress", { ...store.get("resourceProgress", {}), [id]: { last: n, pages: pdf.numPages } });
+    else setBookMeta(bookMeta().map(b => b.id === id ? { ...b, last: n, pages: pdf.numPages } : b));
+  };
   async function render() {
     inp.value = n; pg.textContent = `${n} / ${pdf.numPages}`; saveMeta();
     const page = await pdf.getPage(n);
@@ -161,5 +172,11 @@ async function pageReader(id) {
     if (!/\s/.test(t)) { const r = await lookup(t); sz.textContent = r ? `${r.guess ? "可能是 " : ""}${r.w.replace(/́/g, "́")}（${r.lv}）：${r.zh}` : "词库里没有这个词"; }
   }, 250); };
   document.addEventListener("selectionchange", onSel);
+  const cleanup = new MutationObserver(() => {
+    if (document.body.contains(box)) return;
+    clearTimeout(readT); clearTimeout(selT); document.removeEventListener("selectionchange", onSel); document.removeEventListener("keydown", key);
+    if (task) task.cancel(); pdf.destroy(); cleanup.disconnect();
+  });
+  cleanup.observe(app, { childList: true });
   render();
 }
