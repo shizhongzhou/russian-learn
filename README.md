@@ -1,11 +1,11 @@
 # 猫猫俄语通
 
-学俄语，养一只猫。面向中文学习者的免费俄语学习 App（可添加到手机桌面）：<https://shizhongzhou.github.io/russian-learn/>
+学俄语，养一只猫。面向中文学习者的免费俄语学习 App（可添加到手机桌面）：<https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com/>
 
 ## 2026-10-31 更新包（r10）
 
 - [安卓 APK](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMaoRussian-20261031-preview.apk)
-- [Xcode 工程包](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Xcode-20261031.zip)
+- [Xcode 工程包（GitHub 自动构建）](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Xcode.zip)
 - [教材、高清宠物与模型资源包](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Resources-20261031.zip)
 - [本轮更新与验证范围](UPDATE-20261031.md)
 
@@ -17,7 +17,7 @@
 python3 scripts/import-app-assets.py
 ```
 
-脚本读取 `app-assets.json`，下载本轮 Release 资源包并校验压缩包、文件大小和逐文件 SHA-256，再还原模型、声音、教材及相关图片。`native/scripts/prepare-web.sh` 和网页发布流程也会执行还原；只检出源码不能保证资源齐全。APK 已通过签名校验，但未进行本轮真机安装；Xcode 工程包已检查内容，未进行本轮原生编译或真机运行。下载资产及云端发布是否就绪，以实际 Release 和部署结果为准。
+脚本读取 `app-assets.json`，下载本轮 Release 资源包并校验压缩包、文件大小和逐文件 SHA-256，再还原模型、声音、教材及相关图片。`native/scripts/prepare-web.sh` 和网页发布流程也会执行还原；只检出源码不能保证资源齐全。APK 已通过签名校验，但未进行本轮真机安装；本地完整 Xcode 工程包已检查内容，GitHub 下载链接使用同一应用源码提交的自动构建产物，未在本机进行本轮原生编译或真机运行。下载资产及云端发布是否就绪，以实际 Release 和部署结果为准。
 
 ## 内容
 
