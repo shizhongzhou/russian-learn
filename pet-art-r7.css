@@ -1,0 +1,11 @@
+/* An actual image in a fixed box: the same geometry on profile cards,
+   every friend's avatar, selectors, and the pet stage. */
+.pet3d.pet-hd{display:inline-flex!important;position:relative!important;align-items:center!important;justify-content:center!important;overflow:visible;vertical-align:bottom;line-height:0;flex-shrink:0;min-width:0!important;margin:0!important;filter:none!important}
+.pet3d.pet-hd>img{display:block!important;position:static!important;inset:auto!important;float:none!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:50% 50%!important;transform:none!important;translate:none!important;margin:0!important;filter:none!important;animation:none!important;transition:none!important}
+.pet3d.pet-hd>img.flip{transform:scaleX(-1)!important}
+.av,.ava,.avatar{display:flex!important;align-items:center!important;justify-content:center!important;position:relative!important;isolation:isolate}
+.av .pet3d.pet-hd,.ava .pet3d.pet-hd,.avatar .pet3d.pet-hd{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;margin:0!important;padding:4px!important;box-sizing:border-box;align-self:center;justify-self:center}
+.acc3 .ava .pet3d.pet-hd,.fr .av .pet3d.pet-hd,.friends2 .av .pet3d.pet-hd{margin-top:0!important}
+.breeds .pet3d.pet-hd{width:64px!important;height:64px!important;max-width:100%!important;margin:0 auto!important}
+.animal-v3 img{object-fit:contain!important;object-position:50% 100%!important;max-width:none;filter:none!important}
+.av>img,.ava>img,.avatar>img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 50%;margin:0;align-self:center}

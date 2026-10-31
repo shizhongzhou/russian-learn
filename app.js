@@ -29,7 +29,7 @@ const store = {
 /* ---------- speech ---------- */
 /* inside the iOS / Android app: native plugins + fresh content from the website */
 const IS_NATIVE = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
-const SITE = "https://shizhongzhou.github.io/russian-learn/";
+const SITE = "https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com/";
 function capPlugin(name) {
   if (!IS_NATIVE) return null;
   const C = window.Capacitor;
@@ -42,7 +42,7 @@ let rate = store.get("rate", 1);
 let playToken = 0;
 let nativeRu = true;          // false when the phone has no Russian voice → use the cloud voice
 
-/* pre-recorded voice: every word / sentence of the course recorded with Piper (CC0 voices) and hosted on
+/* Shared synthetic audio catalog: course words and sentences generated with Piper (CC0 voices) and hosted on
    CloudBase's CDN in China (scripts/say-texts.js + .github/workflows/audio.yml). Used when the phone / browser
    has no Russian voice of its own — most Chinese Android browsers and phones without a Russian TTS pack. */
 const AUDIO_BASE = "https://maomao-eyu-d9g3u5l5rd2092a1a-1517834973.tcloudbaseapp.com/audio/";
@@ -79,18 +79,29 @@ const norm = t => t.replace(/\s+/g, " ").trim();
 function audioURL(text, voice) { const k = sha1hex(voice + "|" + norm(text)).slice(0, 16); return AUDIO_BASE + k.slice(0, 2) + "/" + k + ".mp3"; }
 function cloudSpeak(text, voice, r) {
   return new Promise(resolve => {
-    const fin = ok => { player.onended = player.onerror = null; playerDone = null; if (!ok && voice === 1) return cloudSpeak(text, 0, r).then(resolve); if (ok === false) voiceProblem("这个词形还没有录音（用有俄语语音的浏览器或 App 可以朗读）"); resolve(); };
-    playerDone = () => fin(true);
-    player.onended = () => fin(true);
-    player.onerror = () => fin(false);
-    player.src = audioURL(text, voice); player.playbackRate = r; player.defaultPlaybackRate = r;
-    const p = player.play();
-    if (p && p.catch) p.catch(e => { if (e && e.name === "NotAllowedError") { voiceProblem("点一下屏幕再播放（浏览器需要先允许声音）"); fin(true); } });
+    let settled=false, timeout;
+    const finish=(ok,cancelled=false)=>{
+      if(settled)return;settled=true;clearTimeout(timeout);
+      player.onended=player.onerror=null;playerDone=null;
+      if(cancelled)return resolve();
+      if(!ok && voice===1)return cloudSpeak(text,0,r).then(resolve);
+      if(!ok)voiceProblem("这段音频暂时无法播放，请联网后重试；不会切换手机系统声音。");
+      resolve();
+    };
+    playerDone=()=>finish(true,true);player.onended=()=>finish(true);player.onerror=()=>finish(false);
+    player.src=audioURL(text,voice);player.playbackRate=r;player.defaultPlaybackRate=r;
+    player.preservesPitch=true;player.webkitPreservesPitch=true;
+    timeout=setTimeout(()=>{player.pause();finish(false);},20000);
+    const promise=player.play();
+    if(promise&&promise.catch)promise.catch(e=>{
+      if(e&&e.name==="NotAllowedError"){voiceProblem("请先点击播放按钮，允许声音播放。");finish(true);}
+      else finish(false);
+    });
   });
 }
 let probT = 0;
 function voiceProblem(msg) { if (Date.now() - probT > 4000 && window.Pet && Pet.toast) { probT = Date.now(); Pet.toast(msg, "warn"); } }
-const useCloud = () => TTS ? !nativeRu : !(synth && ruVoices.length);
+const useCloud = () => true; // One shared recording catalog on iOS, Android and web.
 
 function loadVoices() {
   if (!synth) return;
@@ -121,22 +132,10 @@ else if (!CLOUD_TTS) {
 const clean = s => s.replace(/́/g, "").replace(/[«»—]/g, " ");
 
 function speak(text, { voice = 0, rate: r = rate } = {}) {
-  const t = clean(text);
-  if (useCloud()) return cloudSpeak(t, voice, r);
-  if (TTS) return TTS.speak({ text: t, lang: "ru-RU", rate: r, pitch: voice === 1 ? 0.75 : 1, volume: 1, category: "playback" })
-    .catch(() => { if (CLOUD_TTS) { nativeRu = false; return cloudSpeak(t, voice, r); } });
-  return new Promise(resolve => {
-    if (!synth) return resolve();
-    const u = new SpeechSynthesisUtterance(t);
-    u.lang = "ru-RU";
-    u.rate = r;
-    if (ruVoices.length) u.voice = ruVoices[voice % ruVoices.length];
-    // with one voice only, shift pitch so two speakers sound different
-    if (voice === 1 && ruVoices.length < 2) u.pitch = 0.7;
-    u.onend = () => resolve();
-    u.onerror = e => { if (CLOUD_TTS && e.error !== "interrupted" && e.error !== "canceled") { ruVoices = []; cloudSpeak(t, voice, r).then(resolve); } else resolve(); };
-    synth.speak(u);
-  });
+  // Shared Android recording catalog is the sole source. A missing recording
+  // reports an error rather than silently changing to the phone's own voice.
+  const token=typeof PetAudio!=="undefined"?PetAudio.speechStart():null;
+  return cloudSpeak(clean(text),voice,Math.max(.5,Math.min(2,r))).finally(()=>{if(token!==null)PetAudio.speechEnd(token);});
 }
 /* fetch the next sentences of a sequence while the current one plays */
 const pre = [];

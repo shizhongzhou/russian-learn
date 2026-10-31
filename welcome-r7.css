@@ -1,0 +1,14 @@
+.welcome.page{width:min(460px,100%);margin:0 auto;padding:34px 22px 44px;box-sizing:border-box}
+.welcome-pets{display:flex;align-items:flex-end;justify-content:center;gap:12px;min-height:166px;margin:20px 0 28px}
+.welcome-pets .pet3d{width:144px!important;height:144px!important}
+.welcome .welcome-title{display:flex;align-items:center;justify-content:center;gap:11px;font-size:31px;line-height:1.4;white-space:normal;letter-spacing:0;margin:12px 0 20px}
+.welcome-title>span{display:inline-flex;align-items:center;justify-content:center;flex:0 0 36px}
+.welcome .hint{line-height:1.8;text-align:center}
+.welcome-auth-actions{display:grid;gap:12px;margin:28px 0 16px}
+.welcome-auth-actions .btn{width:100%;min-height:52px;margin:0;font-size:16px;border-radius:17px;box-sizing:border-box}
+.welcome-auth-actions .btn.ghost{background:#fff;border:1px solid #bdcba8;color:#26351d}
+.welcome-account-note{font-size:12px!important;color:#66715d}
+.welcome .field{margin:24px 0 18px}
+.welcome .card{border-radius:22px}
+.welcome .pills button{min-height:44px}
+@media(max-width:360px){.welcome.page{padding:22px 16px 36px}.welcome .welcome-title{font-size:27px}.welcome-pets{gap:0}.welcome-pets .pet3d{width:128px!important;height:128px!important}}

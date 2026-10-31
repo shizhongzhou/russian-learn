@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["cloud/**", "*.js", "*.css", "index.html", "img/**", "data/**"]
+    paths: ["cloud/**", "*.js", "*.css", "index.html", "img/**", "data/**", "models/**", "audio/**", "app-assets.json", "scripts/import-app-assets.py"]
 concurrency: { group: cloudbase, cancel-in-progress: false }
 jobs:
   deploy:
@@ -39,7 +39,15 @@ jobs:
       - name: Deploy website to CloudBase static hosting
         if: steps.gate.outputs.go == '1'
         run: |
-          mkdir site && cp index.html *.js *.css manifest.webmanifest site/ && cp -R data icons img site/ && cp -R vendor site/ 2>/dev/null || true
+          if [ -f scripts/import-app-assets.py ] && [ -f app-assets.json ]; then
+            python3 scripts/import-app-assets.py
+          fi
+          mkdir site
+          cp index.html *.js *.css manifest.webmanifest site/
+          cp -R data icons img site/
+          for directory in vendor models audio; do
+            if [ -d "$directory" ]; then cp -R "$directory" site/; fi
+          done
           tcb hosting deploy site / -e "$TCB_ENV_ID" 2>&1 | tail -5
       - name: Smoke test (guest login + cloud function)
         if: steps.gate.outputs.go == '1'

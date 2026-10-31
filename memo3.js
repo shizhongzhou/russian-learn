@@ -51,11 +51,13 @@ async function pageMemo3(src) {
   src = src || S.memoSrc || S.lastLevel; S.memoSrc = src; Pet.save();
   let mode = store.get("memoMode", "card"), dir = store.get("memoDir", "zh");   // zh: see Chinese, recall Russian
   const box = h(`<div class="page memo3"><div class="m3head"></div><div class="m3week"></div>
-    <div class="m3modes"><div class="seg" role="tablist">${[["card", "卡片"], ["fall", "掉落"], ["cloud", "词云"]].map(([k, l]) => `<button role="tab" data-m="${k}" aria-selected="${k === mode}">${l}</button>`).join("")}</div>
+    <div class="m3modes"><div class="seg" role="tablist">${[["card", "卡片"], ["fall", "掉落"], ["cloud", "贴纸"]].map(([k, l]) => `<button role="tab" data-m="${k}" aria-selected="${k === mode}">${l}</button>`).join("")}</div>
       <button class="aa" id="aa" aria-label="切换提示方向">${dir === "zh" ? "中→俄" : "俄→中"}</button></div>
     <div class="m3stage"><p class="empty3">加载词库…</p></div>
     <div class="m3foot"><button class="m3voice" id="say" aria-label="朗读">${ic3("M6 9v6M10 6v12M14 8v8M18 10v4")}</button><span class="m3tip"></span><a class="m3search" href="#/dict/word" aria-label="查词">${ic3(I3.search)}</a></div></div>`);
   app.append(box);
+  const dispose = () => { if (cleanup) { cleanup(); cleanup = null; } document.querySelectorAll(".sheet3.recall").forEach(n => n.remove()); removeEventListener("hashchange", dispose); };
+  addEventListener("hashchange", dispose, {once:true});
   const stage = box.querySelector(".m3stage"), tip = box.querySelector(".m3tip");
   let T, words = [], cleanup = null;
   const prompt = x => dir === "zh" ? zhShort(x.r[1]) : plain(x.r[0]);
@@ -74,7 +76,7 @@ async function pageMemo3(src) {
   }
   function settings() {
     const sh = h(`<div class="sheet3" role="dialog" aria-modal="true" aria-label="背单词设置"><div class="in" style="position:relative"><h2>背单词设置</h2><button class="x" aria-label="关闭">✕</button>
-      <b>词库</b><div class="pills wrap">${ORDER.map(x => `<button data-s="${x}" aria-pressed="${x === src}">${x}</button>`).join("")}${Object.entries(DICTS || {}).map(([k, d]) => `<button data-s="t-${k}" aria-pressed="${"t-" + k === src}">${esc(d.name)}</button>`).join("")}<button data-s="mine" aria-pressed="${src === "mine"}">生词本 ${Object.keys(S.wrongWords || {}).length}</button></div>
+      <b>词库</b><div class="pills wrap">${ORDER.map(x => `<button data-s="${x}" aria-pressed="${x === src}">${x}</button>`).join("")}${Object.entries(DICTS || {}).map(([k, d]) => `<button data-s="t-${k}" aria-pressed="${"t-" + k === src}">${esc(d.name)}</button>`).join("")}<button data-s="mine" aria-pressed="${src === "mine"}">单词本 ${Object.keys(S.wrongWords || {}).length+(S.fav||[]).length}</button></div>
       <b>每天新词</b><div class="pills">${[10, 20, 30, 50].map(n => `<button data-n="${n}" aria-pressed="${(S.memoNew || 20) === n}">${n} 个</button>`).join("")}</div>
       <p class="hint">背会一个新词 +1 小鱼干；复习答对也有奖励。答错的词会进入生词本，很快再出现。</p></div></div>`);
     document.body.append(sh);
@@ -89,33 +91,51 @@ async function pageMemo3(src) {
   DICTS = DICTS || await getJSON("data/dicts.json").catch(() => ({}));
   T = await memoToday(src);
   words = [...T.review.map(x => ({ x, isNew: false })), ...T.fresh.map(x => ({ x, isNew: true }))];
+  if (!box.isConnected) return;
   head();
   function draw() {
     if (cleanup) { cleanup(); cleanup = null; }
     stage.innerHTML = ""; stage.className = "m3stage v-" + mode;
     const left = words.filter(w => !w.done);
-    if (!T.pool.length) { stage.innerHTML = `<div class="m3done"><b>${src === "mine" ? "生词本是空的" : "这个词库还没有词"}</b><p class="hint">答错的词会自动收进生词本。</p><a class="btn lime" href="#/memo/${S.lastLevel}">去背 ${S.lastLevel} 词库</a></div>`; return; }
+    if (!T.pool.length) { stage.innerHTML = `<div class="m3done"><b>${src === "mine" ? "单词本是空的" : "这个词库还没有词"}</b><p class="hint">查词时加入的词和练习中答错的词都会在这里。</p><a class="btn lime" href="#/memo/${S.lastLevel}">去背 ${S.lastLevel} 词库</a></div>`; return; }
     if (!left.length) { stage.innerHTML = `<div class="m3done">${petPic(140)}<b>今天的单词都完成啦！</b><p class="hint">明天会有新的单词和需要复习的词。也可以在右上角设置里多加一些新词。</p><a class="btn lime" href="#/quiz/${S.lastLevel}">去做每日小测</a></div>`; return; }
-    tip.textContent = mode === "fall" ? "摇一摇手机，或者倾斜让单词滑动，点一个单词回答" : mode === "cloud" ? "点一个单词开始回忆" : "左右滑动换一张，点卡片开始回忆";
+    tip.textContent = mode === "fall" ? "" : mode === "cloud" ? "拖动单词整理贴纸，轻点开始回忆" : "左右滑动换一张，点卡片开始回忆";
     cleanup = (mode === "fall" ? viewFall : mode === "cloud" ? viewCloud : viewCards)(stage, left);
   }
   /* ---- views ---- */
-  const COLORS = ["#8FB4F0", "#9ED9AE", "#F07B6E", "#F5D36A", "#B9A7F2", "#F4A6C3"];
+  const COLORS = ["#A8C5F1", "#B7DEC9", "#F2ABA1", "#F4DC89", "#C9BCEF", "#EDBFCD"];
   function viewCards(el, left) {
-    let i = 0;
+    let i = 0, busy = false, disposed = false;
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const render = () => {
       const show = [0, 1, 2].map(k => left[(i + k) % left.length]).filter((w, k, a) => a.indexOf(w) === k);
       el.innerHTML = `<div class="stack">${show.slice().reverse().map((w, k) => { const depth = show.length - 1 - k; return `<button class="mcard d${depth}" style="--c:${COLORS[(left.indexOf(w) + (w.isNew ? 2 : 0)) % COLORS.length]}" ${depth ? 'tabindex="-1" aria-hidden="true"' : ""}>
-        <small>${w.isNew ? "新词" : "主动回忆"}</small><span class="${dir === "ru" ? "ru" : ""}" lang="${dir === "ru" ? "ru" : "zh"}">${esc(prompt(w.x))}</span><em>点击卡片开始回忆</em></button>`; }).join("")}</div>
+        <small>${w.isNew ? "新词" : "主动回忆"}</small><span class="${dir === "ru" ? "ru" : ""}" lang="${dir === "ru" ? "ru" : "zh"}">${esc(prompt(w.x))}</span><em>点击回忆 · 左右滑动换词</em></button>`; }).join("")}</div>
         <p class="hint" style="text-align:center">${i % left.length + 1} / ${left.length}</p>`;
       const top = el.querySelector(".mcard.d0");
       let sx = null, dx = 0;
-      top.onpointerdown = e => { sx = e.clientX; dx = 0; top.setPointerCapture(e.pointerId); };
+      const next = async direction => {
+        if (busy || disposed) return;
+        busy = true;
+        const motion = top.animate([
+          {transform: top.style.transform || "translateX(0) rotate(0)", opacity:1},
+          {transform:`translate(${direction * (el.clientWidth + 80)}px, 35px) rotate(${direction * 22}deg)`, opacity:0}
+        ], {duration:reduce ? 0 : 300,easing:"cubic-bezier(.3,.0,.5,1)",fill:"forwards"});
+        await motion.finished.catch(()=>{});
+        if (disposed || !el.isConnected) return;
+        i = (i + (direction < 0 ? 1 : left.length - 1)) % left.length;
+        busy = false; render();
+      };
+      top.onclick = () => { if (!busy && Math.abs(dx) < 8) recall(show[0], () => { draw(); head(); }); };
+      top.onkeydown = e => { if (e.key === "ArrowLeft" || e.key === "ArrowRight") { e.preventDefault(); next(e.key === "ArrowLeft" ? -1 : 1); } };
+      top.onpointerdown = e => { if (busy) return; sx = e.clientX; dx = 0; top.classList.add("dragging"); top.setPointerCapture(e.pointerId); };
       top.onpointermove = e => { if (sx == null) return; dx = e.clientX - sx; top.style.transform = `translateX(${dx}px) rotate(${dx / 18}deg)`; };
-      top.onpointerup = () => { if (sx == null) return; const d = dx; sx = null; top.style.transform = "";
-        if (Math.abs(d) > 70) { i = (i + 1) % left.length; render(); } else if (Math.abs(d) < 8) recall(show[0], () => { draw(); head(); }); };
+      top.onpointerup = () => { if (sx == null) return; sx = null; top.classList.remove("dragging");
+        if (Math.abs(dx) > 65) next(dx < 0 ? -1 : 1); else top.style.transform = ""; };
+      top.onpointercancel = () => { sx = null; dx = 0; top.classList.remove("dragging"); top.style.transform = ""; };
     };
     render();
+    return () => { disposed = true; };
   }
   function viewCloud(el, left) {
     el.innerHTML = `<div class="cloud"></div>`;
@@ -130,25 +150,44 @@ async function pageMemo3(src) {
         if (x >= 0 && y >= 0 && x + bw <= W && y + bh <= H && !placed.some(p => x < p.x + p.w && x + bw > p.x && y < p.y + p.h && y + bh > p.y)) break; a += 0.5; r += 1.6; }
       placed.push({ x, y, w: bw, h: bh });
       b.style.left = x + "px"; b.style.top = y + "px"; b.style.transform = `rotate(${(Math.random() - .5) * 10}deg)`;
-      b.onclick = () => recall(w, ok => { if (ok) b.classList.add("pop"); setTimeout(() => { draw(); head(); }, ok ? 450 : 0); });
+      let pointer = null, moved = false;
+      b.style.touchAction = "none";
+      b.onpointerdown = e => {
+        pointer = {id:e.pointerId,x:e.clientX,y:e.clientY,left:parseFloat(b.style.left),top:parseFloat(b.style.top)};
+        moved = false; b.setPointerCapture(e.pointerId); b.style.zIndex = "2";
+      };
+      b.onpointermove = e => {
+        if (!pointer || pointer.id !== e.pointerId) return;
+        const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;
+        if (Math.hypot(dx,dy)>6) moved=true;
+        if (!moved) return;
+        b.style.left=Math.max(0,Math.min(c.clientWidth-b.offsetWidth,pointer.left+dx))+"px";
+        b.style.top=Math.max(0,Math.min(c.clientHeight-b.offsetHeight,pointer.top+dy))+"px";
+      };
+      b.onpointerup = () => { pointer=null; b.style.zIndex=""; };
+      b.onpointercancel = () => { pointer=null; moved=true; b.style.zIndex=""; };
+      b.onclick = () => {
+        if (moved) { moved=false; return; }
+        recall(w, ok => { if (ok) b.classList.add("pop"); setTimeout(() => { if (!el.isConnected) return; draw(); head(); }, ok ? 450 : 0); });
+      };
     });
   }
   function viewFall(el, left) {
-    el.innerHTML = `<div class="fall"></div><button class="shakebtn" id="shake">${ic3("M8 3h8v18H8zM11 18h2M4 9c-1 2-1 4 0 6M20 9c1 2 1 4 0 6")} 摇一摇</button>`;
+    el.innerHTML = `<div class="fall"></div>`;
     const f = el.querySelector(".fall");
     let stop = false, engine, M, bodies = [], raf;
     const W = () => f.clientWidth, Hh = () => f.clientHeight;
     loadMatter().then(Matter => {
-      if (stop) return;
+      if (stop || !el.isConnected) return;
       M = Matter; engine = M.Engine.create(); engine.gravity.y = 1;
       const wall = (x, y, w, hh) => M.Bodies.rectangle(x, y, w, hh, { isStatic: true });
-      M.Composite.add(engine.world, [wall(W() / 2, Hh() + 25, W() * 2, 50), wall(-25, Hh() / 2, 50, Hh() * 3), wall(W() + 25, Hh() / 2, 50, Hh() * 3)]);
+      M.Composite.add(engine.world, [wall(W() / 2, Hh() + 25, W() * 2, 50), wall(W() / 2, -25, W() * 2, 50), wall(-25, Hh() / 2, 50, Hh() * 3), wall(W() + 25, Hh() / 2, 50, Hh() * 3)]);
       left.slice(0, 32).forEach((w, n) => setTimeout(() => {
         if (stop) return;
         const s = 13 + Math.round(Math.random() * 12);
         const node = h(`<button class="fw ${dir === "ru" ? "ru" : ""}" style="font-size:${s}px">${esc(prompt(w.x))}</button>`); f.append(node);
         const bw = node.offsetWidth, bh = node.offsetHeight;
-        const body = M.Bodies.rectangle(20 + Math.random() * (W() - 40), -40 - Math.random() * 60, bw, bh, { restitution: 0.25, friction: 0.4, angle: (Math.random() - .5) * 0.8, chamfer: { radius: 4 } });
+        const body = M.Bodies.rectangle(20 + Math.random() * (W() - 40), bh / 2 + 8 + Math.random() * 20, bw, bh, { restitution: 0.32, friction: 0.35, frictionAir: 0.025, angle: (Math.random() - .5) * 0.8, chamfer: { radius: 4 } });
         body.node = node; body.w = w; bodies.push(body); M.Composite.add(engine.world, body);
         let down = null;
         node.onpointerdown = e => { down = [e.clientX, e.clientY]; };
@@ -157,24 +196,92 @@ async function pageMemo3(src) {
             node.classList.add("pop"); setTimeout(() => { M.Composite.remove(engine.world, body); node.remove(); bodies = bodies.filter(b => b !== body); head(); if (!words.some(x => !x.done)) draw(); }, 420); }); };
       }, n * 140));
       let last = performance.now();
-      const loop = now => { if (stop) return; M.Engine.update(engine, Math.min(32, now - last)); last = now;
+      const loop = now => { if (stop || !el.isConnected) return; M.Engine.update(engine, Math.min(32, now - last)); last = now;
         for (const b of bodies) b.node.style.transform = `translate(${b.position.x - b.node.offsetWidth / 2}px, ${b.position.y - b.node.offsetHeight / 2}px) rotate(${b.angle}rad)`;
         raf = requestAnimationFrame(loop); };
       raf = requestAnimationFrame(loop);
-    }).catch(() => { f.innerHTML = `<p class="empty3">物理引擎加载失败，先用「词云」模式吧</p>`; });
-    /* tilt → gravity follows the phone; shake → the words jump */
-    const onOrient = e => { if (!engine || e.gamma == null) return; engine.gravity.x = Math.max(-1, Math.min(1, e.gamma / 45)); engine.gravity.y = Math.max(0.2, Math.min(1, (e.beta || 45) / 60)); };
-    let lastShake = 0;
-    const shake = (k = 1) => { if (!M) return; meowSafe && Math.random() < .3 && meowSafe("pet"); bodies.forEach(b => M.Body.setVelocity(b, { x: (Math.random() - .5) * 14 * k, y: -(6 + Math.random() * 10) * k })); };
-    const onMotion = e => { const a = e.accelerationIncludingGravity || e.acceleration; if (!a) return; const m = Math.abs(a.x || 0) + Math.abs(a.y || 0) + Math.abs(a.z || 0); if (m > 28 && Date.now() - lastShake > 600) { lastShake = Date.now(); shake(1); } };
-    const enable = async () => {
-      try { if (window.DeviceMotionEvent && DeviceMotionEvent.requestPermission) await DeviceMotionEvent.requestPermission(); } catch (_) {}
-      try { if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) await DeviceOrientationEvent.requestPermission(); } catch (_) {}
-      addEventListener("devicemotion", onMotion); addEventListener("deviceorientation", onOrient);
+    }).catch(() => { f.innerHTML = `<p class="empty3">物理引擎加载失败，先用「贴纸」模式吧</p>`; });
+    /* Motion stays active after the pile settles; impulses follow the hand. */
+    let listening = false, requesting = false, lastImpulse = 0, lastSample = 0;
+    let gravity = null;
+    const clamp = (v, n) => Math.max(-n, Math.min(n, v));
+    const screenVector = (x, y) => {
+      const angle = ((screen.orientation && screen.orientation.angle) || window.orientation || 0) * Math.PI / 180;
+      return {x:x * Math.cos(angle) + y * Math.sin(angle), y:-x * Math.sin(angle) + y * Math.cos(angle)};
     };
-    el.querySelector("#shake").onclick = async () => { await enable(); shake(1.2); };
-    if (!(window.DeviceMotionEvent && DeviceMotionEvent.requestPermission)) enable();   // Android / desktop: no permission prompt
-    return () => { stop = true; cancelAnimationFrame(raf); removeEventListener("devicemotion", onMotion); removeEventListener("deviceorientation", onOrient); };
+    const kick = (x, y, strength = 1) => {
+      if (!M || !engine || stop) return;
+      bodies.forEach(b => {
+        M.Sleeping.set(b, false);
+        M.Body.setVelocity(b, {
+          x:clamp(b.velocity.x + x * strength + (Math.random()-.5)*4*strength, 23),
+          y:clamp(b.velocity.y + y * strength - Math.random()*3*strength, 23)
+        });
+        M.Body.setAngularVelocity(b, clamp(b.angularVelocity + (Math.random()-.5)*.24*strength, .4));
+      });
+    };
+    const onOrient = e => {
+      if (!engine || e.gamma == null || e.beta == null) return;
+      const beta=e.beta*Math.PI/180, gamma=e.gamma*Math.PI/180;
+      const v=screenVector(Math.sin(gamma)*Math.cos(beta), Math.sin(beta));
+      engine.gravity.x = v.x * 1.35;
+      engine.gravity.y = v.y * 1.35;
+    };
+    const onMotion = e => {
+      if (!engine || stop || document.hidden) return;
+      const now=performance.now();
+      if (now-lastSample < 25) return;
+      lastSample=now;
+      const raw=e.accelerationIncludingGravity, linear=e.acceleration;
+      if (!raw && !linear) return;
+      let ax=0, ay=0;
+      if (linear && Number.isFinite(linear.x) && Number.isFinite(linear.y)) {
+        ax=linear.x; ay=linear.y;
+      } else if (raw && Number.isFinite(raw.x) && Number.isFinite(raw.y)) {
+        if (!gravity) gravity={x:raw.x,y:raw.y};
+        ax=raw.x-gravity.x; ay=raw.y-gravity.y;
+        gravity.x+=.16*(raw.x-gravity.x); gravity.y+=.16*(raw.y-gravity.y);
+      }
+      const v=screenVector(ax,-ay), magnitude=Math.hypot(v.x,v.y);
+      if (magnitude > 1.4 && now-lastImpulse > 65) {
+        lastImpulse=now;
+        // Inertia moves words against the phone's acceleration.
+        kick(clamp(-v.x*.65,12),clamp(-v.y*.65,12),Math.min(1.6,magnitude/9));
+      }
+    };
+    const onPointer = e => {
+      if (!engine || e.pointerType !== "mouse") return;
+      const r=f.getBoundingClientRect(); engine.gravity.x=((e.clientX-r.left)/r.width-.5)*1.6;
+    };
+    f.addEventListener("pointermove",onPointer);
+    const enable = async () => {
+      if (listening || requesting || stop) return;
+      requesting=true;
+      // Both requests begin within the same user gesture (required by iOS).
+      const permission = Type => {
+        try { return Type && typeof Type.requestPermission === "function" ? Promise.resolve(Type.requestPermission()).catch(()=>"denied") : Promise.resolve("granted"); }
+        catch (_) { return Promise.resolve("denied"); }
+      };
+      const grants=await Promise.all([permission(window.DeviceMotionEvent),permission(window.DeviceOrientationEvent)]);
+      requesting=false;
+      if (stop) return;
+      if (grants[0] === "granted") addEventListener("devicemotion",onMotion);
+      if (grants[1] === "granted") addEventListener("deviceorientation",onOrient);
+      listening=grants.some(x=>x === "granted");
+
+    };
+    const needsPermission = [window.DeviceMotionEvent,window.DeviceOrientationEvent].some(Type=>Type && typeof Type.requestPermission === "function");
+    // Selecting the mode provides iOS's required user gesture. A saved default
+    // mode waits for the first interaction within the vocabulary page instead.
+    box.addEventListener("click", enable);
+    if (!needsPermission || (navigator.userActivation && navigator.userActivation.isActive)) enable();
+    return () => {
+      stop=true; cancelAnimationFrame(raf);
+      box.removeEventListener("click",enable);
+      f.removeEventListener("pointermove",onPointer);
+      removeEventListener("devicemotion",onMotion); removeEventListener("deviceorientation",onOrient);
+      if (engine && M) { M.Composite.clear(engine.world,false); M.Engine.clear(engine); }
+    };
   }
   /* ---- active recall ---- */
   function recall(w, done) {

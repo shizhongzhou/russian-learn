@@ -59,7 +59,7 @@ const hhmm = t => { const d = new Date(t); return `${String(d.getHours()).padSta
 function chrome3(active, { tool = false, bar = true } = {}) {
   const v = Pet.view();
   const appbar = document.getElementById("appbar");
-  appbar.hidden = !bar || !v.profile;
+  appbar.hidden = !bar || !v.profile || active === "";
   appbar.querySelector(".brand-mark").innerHTML = LOGO;
   appbar.querySelector(".brand-name").textContent = "宠物俄语通";
   appbar.querySelector(".brand").setAttribute("aria-label", "宠物俄语通 主页");
@@ -67,7 +67,7 @@ function chrome3(active, { tool = false, bar = true } = {}) {
     ? `<a class="tool" href="#/dict">${ic3(I3.translate)}<span>查词 / 翻译</span></a>`
     : resChips(v);
   const tabs = document.getElementById("tabbar");
-  tabs.hidden = !v.profile;
+  tabs.hidden = !v.profile || active === "";
   const labels = { home: "主页", learn: "学习", meow: "宠物", account: "账户" };
   tabs.querySelectorAll("a").forEach(a => {
     a.querySelector("span").textContent = labels[a.dataset.tab];
@@ -137,20 +137,21 @@ route = function () {
     case "messages": tab = "home"; pageMessages(p1); title = "消息"; break;
     case "activity": tab = "meow"; pageActivity(); title = "动态记录"; break;
     case "records": tab = "account"; pageRecords(); title = "学习记录"; break;
-    case "favs": tab = "account"; pageFavs(); title = "我的收藏"; break;
+    case "favs": location.replace("#/memo/mine"); return;
+    case "growth": return pagePetGrowth();
     case "partner": tab = "account"; pagePartner(); title = "我的伙伴"; break;
     case "settings": tab = "account"; roam = false; pageSettings3(); title = "设置"; break;
     case "dict": tab = "home"; roam = false; pageDict(p1 || "tr"); title = "查词与翻译"; break;
     case "admin": tab = "account"; roam = false; pageAdmin(); break;
     case "desk": tab = "account"; pageDesk(); break;
     case "account": tab = "account"; pageAccount3(); title = "账户"; break;
-    default: tab = "home"; tool = true; pageHome3();
+    default: tab = "home"; tool = false; pageHome3();
   }
   document.title = title ? `${title} · 宠物俄语通` : "宠物俄语通";
   const BAR = ["home", "learn", "ladder", "lv", "shadow", "pet", "meow", "nest", "dress", "shop", "travel", "friends", "messages", "account", ""];
   document.body.classList.toggle("nobar", !BAR.includes(p0 || "home") || !!LEVELS[p0]);
   chrome3(tab, { tool, bar: !(NOBAR.includes(p0) || LEVELS[p0]) });
-  Roam.set(tab !== "" && !["play","shadow","pet","meow","photo","selfie","welcome"].includes(p0));
+  Roam.set(tab !== "" && !["play","shadow","pet","meow","nest","partner","growth","photo","selfie","welcome"].includes(p0));
   window.scrollTo(0, 0);
   app.focus({ preventScroll: true });
 };
@@ -172,35 +173,25 @@ function pageHome3() {
   const box = h(`<div class="page h3">
     <section class="hhero">
       <div class="txt"><h1>${zh}</h1><p lang="ru">${ru}</p></div>
-      <button class="art pet-play-target" type="button" aria-label="让宠物来玩球">${sparks()}<img class="yarn" src="img/item/ball.webp" alt="毛线球"></button>
+      <button class="art pet-play-target" type="button" aria-label="让宠物来玩球">${sparks()}</button>
       <span class="status"><i></i>${esc(doing)} · 刚刚更新</span>
     </section>
     ${v.sick ? `<a class="alert danger" href="#/vet"><b>${esc(petName())}生病了</b><span>${v.treated ? `康复中 ${v.recoverDays.length}/3 天` : "带它去宠物医院 →"}</span></a>` : ""}
     <nav class="quick2">
-      <a class="on" href="#/play">${ic3(I3.feather)}<span>逗${isDog(v.cat.breed) ? "狗" : "猫"}棒</span></a>
+      <a class="on" href="#/dict">${ic3(I3.translate)}<span>查词／翻译</span></a>
       <a href="#/records">${ic3(I3.clock)}<span>学习记录</span></a>
-      <a href="#/favs">${ic3(I3.star)}<span>我的收藏</span></a>
-      <a href="#/memo/mine">${ic3("M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2M9 7h6")}<span>单词本</span></a>
+      <a href="#/memo/mine">${ic3("M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2M9 7h6")}<span>单词本</span></a><a href="#/rank/friends">${ic3("M8 3h8v7a4 4 0 0 1-8 0zM8 5H4v3a4 4 0 0 0 4 4M16 5h4v3a4 4 0 0 1-4 4M12 14v6M8 21h8")}<span>好友排行</span></a>
     </nav>
     <a class="card cont2" href="${lp ? `#/${lp.lv}/${lp.tab}` : `#/lv/${lv}`}"><span class="grow"><small>继续学习</small><b>${lv} · ${esc(LV_COURSE[lv])}</b><span>${lp ? esc(lp.name) : "对话与场景课"}</span></span>
       <span class="bookem" aria-hidden="true">📚</span><span class="circ">${GO}</span></a>
     <section class="card stats2"><h2>学习数据</h2><div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
     <a class="card plan2" href="#/quiz/${v.lastLevel}"><span class="cal">${ic3("M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h2M12 14h2M16 14h2M8 17h2")}</span>
       <span class="grow"><b>每日计划</b><span><em>${v.daily.correct}</em> / ${v.goal}　${v.daily.done ? "今日已完成" : "今日目标"}</span></span><span class="circ">${GO}</span></a>
-    <section class="card friends2"><div class="sec-t"><h2>好友</h2><a href="#/friends">全部 ›</a></div><div class="fl"><p class="hint">加载中…</p></div>
-      <button class="btn big lime" id="addF">${ic3(I3.plus)} 添加好友</button></section>
   </div>`);
   app.append(box);
   box.querySelector(".pet-play-target").onclick = () => Roam.playAt(box.querySelector(".hhero"));
-  box.querySelector("#addF").onclick = () => addFriendSheet(() => route());
-  const fl = box.querySelector(".fl");
-  if (!Cloud.enabled()) { fl.innerHTML = `<p class="hint">联网后可以加好友</p>`; return; }
-  Cloud.call("friendList").then(r => {
-    const n = r.incoming.length;
-    fl.innerHTML = (n ? `<a class="newreq" href="#/friends/new">${ic3(I3.bell)}<b>有 ${n} 个新的好友申请</b>${GO}</a>` : "") +
-      (r.friends.length ? `<div class="avs">${r.friends.slice(0, 6).map(p => `<a href="#/friend/${encodeURIComponent(p.uid)}" title="${esc(p.nick)}">${avatarPet(p.breed, p.stage, 46)}<small>${esc(p.nick)}</small></a>`).join("")}</div>`
-        : `<p class="hint">还没有好友。把好友码 <b>${r.myCode || "—"}</b> 发给同学，一起养宠物学俄语。</p>`);
-  }).catch(() => { fl.innerHTML = `<p class="hint">登录后可以加好友、送礼物</p>`; });
+
+
 }
 const LV_COURSE = { A1: "零基础入门", A2: "基础进阶", B1: "中级提升", B2: "中高级", C1: "高级", C2: "精通" };
 const sparks = () => `<svg class="sparks" viewBox="0 0 60 60" aria-hidden="true"><path d="M30 4v12M14 12l6 9M46 12l-6 9M4 30h11" /></svg>`;
@@ -557,19 +548,44 @@ function pagePet3() {
       <div class="stagewrap">${sparks()}<button aria-label="摸摸${esc(petName())}">${petPic(220)}</button></div>
       <section class="card bars"><div class="head"><span class="star">✨</span><b>${esc(say)}</b><span>刚刚更新</span></div>
         ${row("饱腹", v.full, "#F29A4A")}${row("水分", v.drink, "#4E9BE8")}${row("心情", v.happy, "#8C7BE8")}${row("健康", v.health, v.health < 40 ? "#F06A5D" : "#58C27D")}</section>
+      <a class="card pet-growth-entry" href="#/growth"><span>🌱</span><span class="grow"><b>陪伴成长</b><small>${fmt(v.growth)} 经验 · ${esc(v.stageName)}</small></span><span>${GO}</span></a>
+      <section class="pet-study-care"><span class="care-book" aria-hidden="true">📖</span><div><h3>学习，就是照顾它</h3><p>学一点俄语，为它赚食物、水和成长经验。每天一起进步，也一起慢慢长大。</p></div><a class="btn big" href="#/learn">和它一起学习 →</a></section>
       <div class="acts"><button id="feed"><img src="img/item/bowl.webp" alt="">喂食</button><button id="petit"><span class="e">✋</span>抚摸</button><a class="ab" href="#/play"><img src="img/item/wand.webp" alt="">玩耍</a></div>
+      <section class="pet-toys"><h2>玩具和小乐趣</h2><div class="pet-toy-grid"${v.cat.breed==="orange"?' style="grid-template-columns:repeat(4,minmax(0,1fr))"':""}><button type="button" id="toy-ball"><span aria-hidden="true">🧶</span><b>毛线球</b></button><button type="button" id="toy-fish"><span aria-hidden="true">🐟</span><b>小鱼抱枕</b></button><button type="button" id="toy-rest"><span aria-hidden="true">↗</span><b>陪我坐会儿</b></button>${v.cat.breed==="orange"?'<button type="button" id="toy-run"><span aria-hidden="true">🐾</span><b>跑一跑</b></button>':""}</div></section>
       <div class="big2"><a class="dark" href="#/nest">${ic3(I3.home)}小窝<small>布置温馨的家</small></a><a class="lime" href="#/travel">${ic3(I3.globe)}旅游<small>带它去看世界</small></a></div>`;
+    mountPetFriends(box);
+    Roam.mountScene(box.querySelector(".stagewrap"));
+    box.querySelector("#toy-ball").onclick=()=>Roam.playBall();
+    box.querySelector("#toy-fish").onclick=()=>Roam.playFish();
+    box.querySelector("#toy-rest").onclick=()=>Roam.rest();
+    const runButton=box.querySelector("#toy-run");if(runButton)runButton.onclick=()=>{box.querySelector(".stagewrap").scrollIntoView({behavior:"smooth",block:"center"});Roam.action("run");};
     const tmp = ms => { flash = 1; box.querySelector(".stagewrap button").classList.add("hop"); setTimeout(() => { flash = null; if (document.body.contains(box)) draw(); }, ms); };
     box.querySelector("#feed").onclick = () => {
+      if(feedScene.busy || document.querySelector(".feed-ov"))return;
       const S2 = Pet.state, f = S2.food >= 1, w = S2.water >= 1;
       if (!f && !w) { Pet.toast("小鱼干和水都用完了，去学习赚一些吧", "warn"); return; }
       if (f) Pet.feed(); if (w) Pet.giveWater();
       logEvent("feed", `${petName()}吃饱喝足${f ? "，饱腹 +8" : ""}${w ? "，水分 +10" : ""}`);
       feedScene(f ? "kibble" : "water", draw);
     };
-    box.querySelector("#petit").onclick = box.querySelector(".stagewrap button").onclick = () => { meowSafe(v.sick ? "sick" : "pet"); Pet.pet(); logEvent("pet", `摸了摸${petName()}，心情变好了`); tmp(900); };
+    box.querySelector("#petit").onclick = () => Roam.pet();
   }
   draw();
+}
+
+let _petFriendLoad = null;
+function mountPetFriends(container) {
+  const card=h(`<section class="card pet-social"><header><span class="social-mark">${ic3(I3.paw)}</span><span class="grow"><h2>宠物好友</h2><p>让小伙伴们一起玩耍</p></span><a href="#/friends" class="social-all">全部好友 ${GO}</a></header><div class="social-body"><p class="hint">正在读取好友…</p></div><div class="social-actions"><button class="btn lime" data-add-friend>${ic3(I3.plus)}添加好友</button><a class="btn ghost" href="#/friends/new">好友申请</a></div></section>`);
+  container.append(card);
+  card.querySelector("[data-add-friend]").onclick=()=>addFriendSheet(()=>{_petFriendLoad=null;route();});
+  const body=card.querySelector(".social-body");
+  if(!Cloud.enabled()){body.innerHTML=`<p class="hint">登录并联网后，就能添加好友、拜访彼此的宠物。</p>`;return;}
+  if(!_petFriendLoad || Date.now()-_petFriendLoad.at>30000)_petFriendLoad={at:Date.now(),promise:Cloud.call("friendList")};
+  _petFriendLoad.promise.then(r=>{
+    if(!document.body.contains(card))return;
+    body.innerHTML=`<div class="friend-code"><span>我的好友码</span><b>${esc(r.myCode||"—")}</b><button type="button" class="btn ghost small" data-copy-code>复制</button></div>`+(r.friends.length?`<div class="social-friends">${r.friends.slice(0,4).map(p=>`<a href="#/friend/${encodeURIComponent(p.uid)}">${avatarPet(p.breed,p.stage,42)}<b>${esc(p.nick)}</b></a>`).join("")}</div>`:`<p class="social-empty">把好友码分享给同学，一起照顾宠物吧。</p>`);
+    body.querySelector("[data-copy-code]").onclick=async()=>{if(!r.myCode)return;try{await navigator.clipboard.writeText(r.myCode);Pet.toast("好友码已复制","good");}catch{Pet.toast("好友码："+esc(r.myCode));}};
+  }).catch(()=>{if(document.body.contains(card))body.innerHTML=`<p class="hint">暂时无法读取好友，登录后可再试。</p><button class="btn ghost" data-login>登录账号</button>`;const login=body.querySelector("[data-login]");if(login)login.onclick=()=>loginSheet(()=>{_petFriendLoad=null;route();});});
 }
 
 /* ---------- 小窝 ---------- */
@@ -674,6 +690,18 @@ function pageTrip(id) {
     ${enough ? `<button class="btn big lime" id="fly">${ic3(I3.plane)} 出发去${c.zh}</button>` : `<a class="btn big" href="#/learn">去学习攒小鱼干 ›</a>`}
     ${S.trips[id] ? `<a class="btn big ghost" href="#/photo/${id}">看看在${c.zh}的照片</a>` : ""}</div>`);
   app.append(box);
+  const globe=box.querySelector(".globe"), cities=Object.keys(CITY), current=cities.indexOf(id);
+  const chooseCity=direction=>{location.hash=`#/trip/${cities[(current+direction+cities.length)%cities.length]}`;};
+  const nav=h(`<nav class="globe-controls" aria-label="切换旅行城市"><button class="btn ghost" data-city-prev aria-label="上一个城市">‹ 上一个</button><span>${current+1} / ${cities.length}</span><button class="btn ghost" data-city-next aria-label="下一个城市">下一个 ›</button></nav>`);
+  box.querySelector(".globewrap").append(nav);
+  nav.querySelector("[data-city-prev]").onclick=()=>chooseCity(-1);nav.querySelector("[data-city-next]").onclick=()=>chooseCity(1);
+  globe.setAttribute("tabindex","0");globe.setAttribute("aria-label",`当前${c.zh}，左右拖动或按方向键切换城市`);
+  let dragStart=null;
+  globe.onpointerdown=e=>{dragStart={id:e.pointerId,x:e.clientX};globe.setPointerCapture(e.pointerId);globe.classList.add("dragging");};
+  globe.onpointermove=e=>{if(!dragStart||dragStart.id!==e.pointerId)return;const dx=e.clientX-dragStart.x;globe.style.transform=`rotate(${Math.max(-16,Math.min(16,dx*.08))}deg)`;};
+  const finish=e=>{if(!dragStart||dragStart.id!==e.pointerId)return;const dx=e.clientX-dragStart.x;dragStart=null;globe.classList.remove("dragging");globe.style.transform="";if(e.type!=="pointercancel"&&Math.abs(dx)>32)chooseCity(dx<0?1:-1);};
+  globe.onpointerup=finish;globe.onpointercancel=finish;
+  globe.onkeydown=e=>{if(e.key==="ArrowLeft"||e.key==="ArrowRight"){e.preventDefault();chooseCity(e.key==="ArrowRight"?1:-1);}};
   const fly = box.querySelector("#fly");
   if (fly) fly.onclick = () => {
     if (!Pet.spend(c.price, 0)) return;
@@ -744,7 +772,7 @@ function pageAlbum() {
 /* ---------- 好友 · 新朋友 ---------- */
 function avatarPet(breed, stage = 2, size = 54) { return `<span class="av">${petImg(PETS[breed] ? breed : "orange", { stage, size })}</span>`; }
 function pageFriends3(tab = "list") {
-  const box = h(`<div class="page">${head3("好友", "#/home")}<div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "new"}" data-t="list">好友</button><button role="tab" aria-selected="${tab === "new"}" data-t="new">新朋友<span class="tbadge" id="nb" hidden></span></button></div><div class="fb3"><p class="empty3">加载中…</p></div></div>`);
+  const box = h(`<div class="page">${head3("好友", "#/pet")}<div class="seg" role="tablist"><button role="tab" aria-selected="${tab !== "new"}" data-t="list">好友</button><button role="tab" aria-selected="${tab === "new"}" data-t="new">新朋友<span class="tbadge" id="nb" hidden></span></button></div><div class="fb3"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
   box.querySelectorAll("[data-t]").forEach(b => b.onclick = () => location.hash = `#/friends/${b.dataset.t}`);
   const body = box.querySelector(".fb3");
@@ -816,7 +844,7 @@ function pageAccount3() {
   const box = h(`<div class="page acc3">
     <a class="me" href="#/settings"><span class="ava">${petPic(92, { stage: 1 })}</span><span class="grow"><b>${esc(v.profile.nick)}</b><span class="online"><i></i>在线</span></span>${GO}</a>
     <section class="card stats2"><h2>学习数据</h2><div class="trio"><div><b>${v.studyDays}</b><small>学习天数</small></div><div><b>${acc}%</b><small>正确率</small></div><div><b>${fmt(v.totalCorrect)}</b><small>答对题数</small></div></div></section>
-    <nav class="rows">${R("#/records", I3.clock, "学习记录")}${R("#/partner", I3.paw, "我的伙伴", `<span class="mini">${petPic(40)}</span>`)}${R("#/favs", I3.folder, "我的收藏")}</nav>
+    <nav class="rows">${R("#/records", I3.clock, "学习记录")}${R("#/partner", I3.paw, "我的伙伴", `<span class="mini">${petPic(40)}</span>`)}${R("#/memo/mine", I3.cards, "单词本")}</nav>
     <nav class="rows">${R("#/settings", I3.cog, "设置")}</nav>
     <div class="sec-t"><h2>最近互动</h2></div><div class="rows" id="recent"><p class="empty3">加载中…</p></div></div>`);
   app.append(box);
@@ -825,7 +853,7 @@ function pageAccount3() {
   const rc = box.querySelector("#recent");
   if (!Cloud.enabled()) { rc.innerHTML = `<p class="empty3">联网后显示好友动态</p>`; return; }
   Cloud.call("friendList").then(r => {
-    rc.innerHTML = r.friends.slice(0, 3).map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>${p.lastActive ? `离线 · ${ago(p.lastActive)}在线` : "离线"}</small></span><a class="chat" href="#/friend/${encodeURIComponent(p.uid)}" aria-label="去看看">${ic3(I3.chat)}</a></div>`).join("") || `<a class="fr" href="#/home"><span class="grow"><b>还没有好友</b><small>在主页点「添加好友」</small></span>${GO}</a>`;
+    rc.innerHTML = r.friends.slice(0, 3).map(p => `<div class="fr">${avatarPet(p.breed, p.stage)}<span class="grow"><b>${esc(p.nick)}</b><small>${p.lastActive ? `离线 · ${ago(p.lastActive)}在线` : "离线"}</small></span><a class="chat" href="#/friend/${encodeURIComponent(p.uid)}" aria-label="去看看">${ic3(I3.chat)}</a></div>`).join("") || `<a class="fr" href="#/home"><span class="grow"><b>还没有好友</b><small>在宠物页面点「添加好友」</small></span>${GO}</a>`;
   }).catch(() => { rc.innerHTML = `<a class="fr" href="#/settings"><span class="grow"><b>登录后可以加好友</b></span>${GO}</a>`; });
 }
 
@@ -934,7 +962,7 @@ function pageFavs() {
 function petPicker(cur, onPick, kind) {
   kind = SHOW_DOGS ? kind : "cat";
   return `${SHOW_DOGS ? `<div class="pills" style="margin-bottom:8px"><button data-kind="cat" aria-pressed="${kind === "cat"}">🐱 猫咪</button><button data-kind="dog" aria-pressed="${kind === "dog"}">🐶 狗狗</button></div>` : ""}
-    <div class="breeds" role="radiogroup" aria-label="品种">${PET_KEYS[kind].map(k => `<button role="radio" aria-checked="${k === cur}" data-b="${k}">${petImg(k, { stage: 2, size: 58 })}<span>${PETS[k].short}</span></button>`).join("")}</div>`;
+    <div class="breeds" role="radiogroup" aria-label="品种">${PET_KEYS[kind].map(k => `<button role="radio" aria-checked="${k === cur}" data-b="${k}">${petImg(k, { stage: 1, size: 58 })}<span>${PETS[k].short}</span></button>`).join("")}</div>`;
 }
 function pagePartner() {
   const S = Pet.state; let kind = petOf(S.cat.breed).kind;
@@ -942,8 +970,8 @@ function pagePartner() {
   app.append(box);
   function draw() {
     const v = Pet.view(), b = S.cat.breed;
-    box.querySelector(".pp").innerHTML = `<section class="card" style="text-align:center"><div style="display:flex;justify-content:center;align-items:flex-end;gap:12px;min-height:150px">${[1, 2, 4].map(st => petImg(b, { stage: st, size: 130 })).join("")}</div>
-        <p class="hint" style="margin:6px 0 0">幼年 → 少年 → 成年：学得越多，${esc(petName())}长得越大</p></section>
+    box.querySelector(".pp").innerHTML = `<section class="card" style="text-align:center"><div style="display:flex;justify-content:center;align-items:flex-end;gap:12px;min-height:150px">${petImg(b, {stage:1,size:130})}</div>
+        <p class="hint" style="margin:6px 0 0">${esc(PETS[b].name)} · 幼年伙伴</p></section>
       <section class="card"><label class="field"><span>名字</span><input id="cname" maxlength="10" value="${esc(S.cat.name)}"></label>
         <div class="pills" style="margin-top:8px"><button data-sex="m" aria-pressed="${S.cat.sex !== "f"}">♂ 男孩</button><button data-sex="f" aria-pressed="${S.cat.sex === "f"}">♀ 女孩</button></div></section>
       <section class="card welcome">${petPicker(b, null, kind)}<p class="hint">换品种不会影响成长值和已解锁的东西。</p></section>`;
@@ -951,7 +979,7 @@ function pagePartner() {
     P.querySelector("#cname").onchange = e => { S.cat.name = e.target.value.trim() || S.cat.name; Pet.save(); Pet.toast(`以后就叫它「${esc(S.cat.name)}」啦`, "good"); };
     P.querySelectorAll("[data-sex]").forEach(x => x.onclick = () => { S.cat.sex = x.dataset.sex; Pet.save(); draw(); });
     P.querySelectorAll("[data-kind]").forEach(x => x.onclick = () => { kind = x.dataset.kind; draw(); });
-    P.querySelectorAll("[data-b]").forEach(x => x.onclick = () => { S.cat.breed = x.dataset.b; Pet.save(); Roam.set(true); draw(); });
+    P.querySelectorAll("[data-b]").forEach(x => x.onclick = () => { S.cat.breed = x.dataset.b; Pet.save(); Roam.set(false); draw(); });
   }
   draw();
 }
@@ -987,7 +1015,7 @@ function pageDict(tab = "tr") {
         <div class="two2"><button class="btn soft" id="cp">${ic3(I3.cards)} 复制</button><button class="btn soft" id="fv">${ic3(I3.plus)} ${fav(r.w) ? "已在生词本" : "加入生词本"}</button></div></section>`;
       res.querySelector("#say").onclick = e => playOne(e.currentTarget, r.w);
       res.querySelector("#cp").onclick = async () => { try { await navigator.clipboard.writeText(`${r.w.replace(/́/g, "")} ${r.zh}`); Pet.toast("已复制", "good"); } catch { Pet.toast(r.w); } };
-      res.querySelector("#fv").onclick = e => { if (!fav(r.w)) toggleFav(r.w, r.zh, r.lv); e.currentTarget.lastChild.textContent = " 已在生词本"; Pet.toast("已加入生词本（我的收藏）", "good"); recent(); };
+      res.querySelector("#fv").onclick = e => { if (!fav(r.w)) toggleFav(r.w, r.zh, r.lv); e.currentTarget.lastChild.textContent = " 已在生词本"; Pet.toast("已加入单词本", "good"); recent(); };
       remember(r);
     }, 280); };
     q.focus();
@@ -1010,7 +1038,7 @@ function pageDict(tab = "tr") {
           <div class="two2"><button class="btn soft" id="cp">${ic3(I3.cards)} 复制</button><button class="btn soft" id="nb">${ic3(I3.plus)} 加入生词本</button></div></section>`;
         const say = out.querySelector("#say"); if (say) say.onclick = e => playOne(e.currentTarget, from === "ru" ? text : r.text);
         out.querySelector("#cp").onclick = async () => { try { await navigator.clipboard.writeText(r.text); Pet.toast("已复制", "good"); } catch {} };
-        out.querySelector("#nb").onclick = () => { toggleFav(from === "ru" ? text : r.text, from === "ru" ? r.text : text, ""); Pet.toast("已加入生词本（我的收藏）", "good"); };
+        out.querySelector("#nb").onclick = () => { toggleFav(from === "ru" ? text : r.text, from === "ru" ? r.text : text, ""); Pet.toast("已加入单词本", "good"); };
       };
     };
     draw();
@@ -1031,46 +1059,58 @@ async function translate3(text, from) {
 /* ---------- welcome: choose a cat or a dog ---------- */
 function pageWelcome3() {
   const S = Pet.state;
-  let previewStage = 1;
   let step = 1, nick = S.profile ? S.profile.nick : "", breed = PETS[S.cat.breed] ? S.cat.breed : "orange", kind = petOf(breed).kind, name = S.profile ? (S.cat.name || "") : "", sex = S.cat.sex || "m";
   const box = h(`<section class="welcome page"></section>`);
   app.append(box);
   function draw() {
     if (step === 1) {
       const logged = Cloud.enabled() && Cloud.user() && !Cloud.user().is_anonymous;
-      box.innerHTML = `<div style="text-align:center;margin-top:10px">${petImg("orange", { stage: 1, size: 150 })}${petImg("british", { stage: 1, size: 136 })}</div>
-        <h1 class="display" style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:40px">${LOGO}</span>宠物俄语通</h1>
-        <p class="hint" style="font-size:15px">学俄语，养一只猫或狗。你学得越多，它吃得越饱、长得越大；不学习它会饿、会生病。</p>
-        ${Cloud.enabled() ? logged ? `<p class="badge ok">已登录：${esc(Cloud.label().text)}</p>` : `<button class="btn big" id="login">手机号 / 邮箱登录</button><p class="hint">已有账号？登录后自动取回你的宠物和学习进度。</p><div class="wl-or"><span>或者先体验一下</span></div>` : ""}
-        <label class="field"><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周" value="${esc(nick)}"></label>
-        <button class="btn big ${Cloud.enabled() && !logged ? "ghost" : "lime"}" id="go">${Cloud.enabled() && !logged ? "游客开始" : "下一步"}</button>`;
-      const lg = box.querySelector("#login");
-      if (lg) lg.onclick = () => loginSheet(() => { if (!Pet.state.profile) { Pet.toast("登录成功！起个昵称，再选一只宠物", "good"); draw(); } });
+      box.innerHTML = `<div class="welcome-pets" aria-hidden="true">${petImg("orange", { stage: 1, size: 128 })}${petImg("british", { stage: 1, size: 128 })}</div>
+        <h1 class="display welcome-title"><span style="width:40px;height:40px">${LOGO}</span>宠物俄语通</h1>
+        <p class="hint" style="font-size:15px">每天学一点俄语，和你的小伙伴一起成长。</p>
+        ${Cloud.enabled() ? logged ? `<p class="badge ok">已登录：${esc(Cloud.label().text)}</p>` : `<div class="welcome-auth-actions"><button class="btn big" id="login">登录已有账号</button><button class="btn big ghost" id="register">注册新账号</button></div><p class="hint welcome-account-note">登录后，会自动恢复你的宠物和学习进度。</p>` : ""}
+        <label class="field" ${Cloud.enabled()&&!logged?"hidden":""}><span>你的昵称</span><input id="nick" maxlength="12" autocomplete="nickname" placeholder="例如：小周" value="${esc(nick)}"></label>
+        <button class="btn big lime" id="go" ${Cloud.enabled()&&!logged?"hidden":""}>下一步</button>`;
+      const afterAuthentication = outcome => {
+        const user = outcome?.user || outcome;
+        if(Cloud.restoring())return;
+        if(Pet.state.profile){location.replace("#/home");return;}
+        nick=nick || user?.nickname || user?.username || "同学";step=2;draw();
+      };
+      const lg = box.querySelector("#login"), rg = box.querySelector("#register");
+      if(lg)lg.onclick=()=>loginSheet(afterAuthentication,{mode:"login"});
+      if(rg)rg.onclick=()=>loginSheet(afterAuthentication,{mode:"register"});
       const inp = box.querySelector("#nick");
-      box.querySelector("#go").onclick = () => { nick = inp.value.trim() || "同学"; step = 2; draw(); };
+      box.querySelector("#go").onclick = () => {
+        nick = inp.value.trim() || "同学";
+        if (!Cloud.user() || Cloud.user().is_anonymous) { loginSheet(()=>{ if(Cloud.restoring())return; if(Pet.state.profile)location.hash="#/home"; else {step=2;draw();} }); return; }
+        step=2;draw();
+      };
       inp.onkeydown = e => { if (e.key === "Enter") box.querySelector("#go").click(); };
     } else {
       box.innerHTML = `<p class="hint">第 2 步 / 共 2 步</p><h1 class="display small">选一只陪你学俄语的宠物</h1>
-        <section class="card" style="text-align:center"><div style="min-height:150px;display:flex;align-items:flex-end;justify-content:center">${petImg(breed, { stage: previewStage, size: previewStage === 1 ? 118 : 160 })}</div>
-          <div class="pills growth-preview">${[1,2,3].map(n=>`<button data-preview="${n}" aria-pressed="${previewStage===n}">${["","幼年","少年","成年"][n]}</button>`).join("")}</div><b style="font-size:18px">${esc(name) || "（还没起名字）"}</b><p class="hint" style="margin:2px 0 0">${PETS[breed].name} · ${PETS[breed].desc}</p></section>
+        <section class="card" style="text-align:center"><div style="min-height:150px;display:flex;align-items:flex-end;justify-content:center">${petImg(breed, { stage: 1, size: 140 })}</div>
+          <b style="font-size:18px">${esc(name) || "（还没起名字）"}</b><p class="hint" style="margin:2px 0 0">${PETS[breed].name} · ${PETS[breed].desc}</p></section>
         <section class="card">${petPicker(breed, null, kind)}</section>
         <section class="card"><label class="field"><span>给它起个名字</span><input id="cname" maxlength="10" value="${esc(name)}" placeholder="输入它的名字"></label>
           <div class="pills" style="margin-top:8px"><button data-sex="m" aria-pressed="${sex === "m"}">♂ 男孩</button><button data-sex="f" aria-pressed="${sex === "f"}">♀ 女孩</button></div></section>
         <p class="hint">每只宠物都从幼年开始，学得越多会长成少年、成年。</p>
         <button class="btn big lime" id="done">就选它，开始学习</button><button class="btn ghost" id="back">上一步</button>`;
-      box.querySelectorAll("[data-preview]").forEach(b => b.onclick=()=>{previewStage=+b.dataset.preview;draw();});
       box.querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { kind = b.dataset.kind; breed = PET_KEYS[kind][0]; draw(); });
       box.querySelectorAll("[data-b]").forEach(b => b.onclick = () => { breed = b.dataset.b; draw(); });
       box.querySelectorAll("[data-sex]").forEach(b => b.onclick = () => { sex = b.dataset.sex; draw(); });
       const ci = box.querySelector("#cname");
       ci.oninput = () => { name = ci.value.trim(); };
       box.querySelector("#back").onclick = () => { step = 1; draw(); };
-      box.querySelector("#done").onclick = () => {
+      box.querySelector("#done").onclick = async () => {
+        if(box.querySelector("#done").disabled)return;
         name = ci.value.trim();
         if (!name) { ci.focus(); ci.placeholder = "先给它起个名字吧"; ci.classList.add("need"); return; }
         S.profile = S.profile || { nick, created: Date.now() }; S.profile.nick = nick || S.profile.nick;
         S.cat = { breed, name, sex }; S.lastStudy = Date.now(); S.lastTick = Date.now();
+        box.querySelector("#done").disabled=true;
         Pet.save(); logEvent("grow", `${name}来到你家啦！`);
+        Cloud.push(true).catch(()=>{});
         location.hash = "#/home";
         setTimeout(() => Pet.toast(`<b>${esc(name)} 来到你家啦！</b><br>答对题就能给它赚小鱼干`, "big"), 400);
       };
@@ -1106,3 +1146,13 @@ function addFriendSheet(after) {
 }
 const LV_TITLE = { A1: "零基础入门", A2: "基础进阶", B1: "独立表达", B2: "流利交流", C1: "高级运用", C2: "接近母语" };
 const LV_SUB = { A1: "从字母开始，学会打招呼和自我介绍", A2: "打好基础，掌握日常交流能力", B1: "能独立应对工作、旅行和生活", B2: "流利讨论观点，读懂一般报刊", C1: "专业话题、谈判辩论都不在话下", C2: "学术、法律、文学，接近母语水平" };
+
+async function mountHomeFriendRank(container,full=false) {
+ const card=h(`<section class="card home-friend-rank"><div class="rank-head"><h2>好友排行榜</h2><a href="#/rank/friends">查看全部 ›</a></div><p class="hint">本周答对题数</p><div class="rank-body"><p class="hint">正在读取好友数据…</p></div></section>`);if(full)container.append(card);else container.prepend(card);const body=card.querySelector(".rank-body");
+ if(!Cloud.enabled()){body.innerHTML='<p class="hint">登录后，和好友一起学习上榜。</p>';return;}
+ try{const r=await Cloud.call("friendList");if(!document.body.contains(card))return;const v=Pet.view(),me={uid:Cloud.user()?.id||"me",nick:"我",weekCorrect:0};const d=new Date(Date.now()+8*3600e3);d.setUTCHours(0,0,0,0);d.setUTCDate(d.getUTCDate()+3-((d.getUTCDay()+6)%7));const w1=new Date(Date.UTC(d.getUTCFullYear(),0,4)),wk=d.getUTCFullYear()+"-W"+String(1+Math.round(((d-w1)/864e5-3+((w1.getUTCDay()+6)%7))/7)).padStart(2,"0");me.weekCorrect=Pet.state.wk?.key===wk?Math.max(0,(Pet.state.totalCorrect||0)-Pet.state.wk.base):0;
+ const list=[...r.friends,me].sort((a,b)=>(b.weekCorrect||0)-(a.weekCorrect||0)||String(a.uid).localeCompare(String(b.uid)));body.innerHTML=list.slice(0,full?201:3).map((p,i)=>`<div class="rank-line"><span class="rank-no">${i+1}</span><b>${esc(p.nick||"好友")}</b><span class="rank-score">${fmt(p.weekCorrect||0)} 题</span></div>`).join("")+(r.friends.length?"":'<p class="hint">还没有好友，去宠物页面邀请同学一起学习吧。</p>');}
+ catch(e){if(document.body.contains(card))body.innerHTML='<p class="hint">好友排名暂时无法读取，稍后再试。</p>';}
+}
+
+function pagePetGrowth(){const v=Pet.view(),pct=v.nextAt?Math.min(100,v.growth/v.nextAt*100):100;const box=h(`<div class="page">${head3("陪伴成长","#/pet")}<section class="card" style="text-align:center">${petImg(v.cat.breed,{stage:v.shownStage,size:140})}<h2>${esc(petName())} · ${esc(v.stageName)}</h2><p>${fmt(v.growth)} 经验 · Lv.${v.level}</p><progress max="100" value="${pct}" style="width:100%"></progress><p class="hint">${v.nextAt?`再获得 ${fmt(v.nextAt-v.growth)} 经验，进入${esc(v.nextName)}`:"已经长大啦，继续陪它学习吧。"}</p></section><section class="card"><h2>一起慢慢长大</h2><p>完成学习、练习发音和每日任务，都会累积成长经验。已有的学习进度和经验会一直保留。</p><a class="btn lime big" href="#/learn">去学习</a></section></div>`);app.append(box);}

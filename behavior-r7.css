@@ -1,0 +1,24 @@
+/* Fixed viewport and complete silhouette. No pose changes its CSS dimensions. */
+.animal-r7.animal-v3{width:calc(var(--animal-unit,100px)*2.4)!important;height:calc(var(--animal-unit,100px)*1.35)!important;overflow:visible!important;outline:none!important;animation:none!important;transition:none!important}
+.animal-r7 canvas{display:block!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;transform:none!important;object-fit:contain!important;animation:none!important}
+.animal-r7[hidden],.animal-prop-r7[hidden]{display:none!important}
+.animal-prop-r7{width:46px!important;height:46px!important;min-height:0!important;border:0!important;padding:0!important;outline:none!important;background:transparent!important;touch-action:none;z-index:3!important;animation:none!important;transition:none!important}
+.animal-prop-r7 svg,.animal-prop-r7 img{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 100%}
+.animal-local{min-height:235px!important;overflow:visible!important}
+.feed-stage.feed-stable-r7{height:258px!important;overflow:hidden!important;isolation:isolate;background:linear-gradient(#f6f8f2 76%,#e5dccb 76%)!important}
+.feed-stable-r7 .feed-one-cat{position:absolute;inset:30px 16px 14px;display:block;z-index:1;animation:none!important;transform:none!important}
+.feed-stable-r7 canvas{display:block;width:100%;height:100%;object-fit:contain;transform:none!important;animation:none!important}
+.feed-stable-r7 .feed-dish{position:absolute!important;left:57%!important;bottom:16px!important;width:94px!important;height:72px!important;z-index:2!important;transform:translateX(-50%)!important;animation:none!important;transition:none!important}
+.feed-stable-r7 .feed-say{top:9px;z-index:3}
+.feed-stable-r7 .food{transition:opacity 2s linear}
+.feed-stable-r7 .falling,.feed-stable-r7 .tube,.feed-stable-r7 .can{display:none!important}
+.feed-stable-r7 .food>*{animation:none!important}
+/* Play keeps one complete HD animal at an invariant scale. No ellipse cutouts,
+   duplicate paw overlays, low-resolution atlas or source-video wand. */
+.play-r7 .pl-field{touch-action:none}
+.play-r7 .pl-cat{left:0!important;bottom:39px!important;width:240px!important;height:180px!important;max-width:none!important;max-height:none!important;transform-origin:50% 100%!important;animation:none!important;transition:none!important;pointer-events:none!important;overflow:visible!important}
+.play-r7 .pl-cat canvas{display:block!important;width:240px!important;height:180px!important;max-width:none!important;max-height:none!important;object-fit:contain;transform:none!important;animation:none!important;opacity:1!important}
+.play-r7 .pl-feather{position:absolute!important;left:-23px!important;top:-32px!important;width:46px!important;height:65px!important;touch-action:none;z-index:4!important;animation:none!important;transition:none!important;transform-origin:50% 28%;background:none!important;border:0!important;outline-offset:5px}
+.play-r7 .pl-feather img{display:block!important;width:46px!important;height:65px!important;object-fit:contain!important;pointer-events:none!important;animation:none!important;transform:none!important}
+.play-r7 .pbot .shake{width:100%;min-height:48px}
+.play-r7 .pl-say{pointer-events:none;z-index:5}

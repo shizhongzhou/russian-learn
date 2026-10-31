@@ -2,6 +2,23 @@
 
 学俄语，养一只猫。面向中文学习者的免费俄语学习 App（可添加到手机桌面）：<https://shizhongzhou.github.io/russian-learn/>
 
+## 2026-10-31 更新包（r10）
+
+- [安卓 APK](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMaoRussian-20261031-preview.apk)
+- [Xcode 工程包](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Xcode-20261031.zip)
+- [教材、高清宠物与模型资源包](https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Resources-20261031.zip)
+- [本轮更新与验证范围](UPDATE-20261031.md)
+
+宠物页新增小橘“跑一跑”：播放 5 秒原地跑步预览，动作以 60 Hz 采样；设备实际帧率取决于浏览器和硬件。保留已有蹭蹭动作，未经验证的自动眨眼保持关闭。新的睡眠、进食及其他连续动作仍需验收，以下历史玩法说明不代表这些新动画已完成。
+
+源码与大资源分开保存。从源码构建或部署前，先在仓库根目录运行：
+
+```sh
+python3 scripts/import-app-assets.py
+```
+
+脚本读取 `app-assets.json`，下载本轮 Release 资源包并校验压缩包、文件大小和逐文件 SHA-256，再还原模型、声音、教材及相关图片。`native/scripts/prepare-web.sh` 和网页发布流程也会执行还原；只检出源码不能保证资源齐全。APK 已通过签名校验，但未进行本轮真机安装；Xcode 工程包已检查内容，未进行本轮原生编译或真机运行。下载资产及云端发布是否就绪，以实际 Release 和部署结果为准。
+
 ## 内容
 
 | 等级 | 新增词汇 | 累计 |

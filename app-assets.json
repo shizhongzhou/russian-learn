@@ -1,32 +1,382 @@
 {
-  "version": "2026-10-29",
-  "url": "https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Resources-20261029.zip",
-  "sha256": "fde52588b476aa0611d9804edc48e79610e924fc6bc9f5a7fa3d3c22b2f93fee",
+  "version": "2026-10-31",
+  "url": "https://github.com/shizhongzhou/russian-learn/releases/download/ios-latest/MaoMao-Resources-20261031.zip",
+  "sha256": "4bb02ea20da94e7f9288f00828a33acd0ae07b7c51997c5f067f48b87c78c1d1",
   "files": [
     {
-      "path": "data/resources/res-3070709ae932.pdf",
-      "sha256": "4a28ecea6dfcf6384e8b2dfa96e710baa9a544a3ed989aac6879ca49818c1ac3",
-      "size": 101022175
+      "path": "audio/pets/orange/happy-source-v1.m4a",
+      "sha256": "4d1246616b8d84d5f39c7935165a57021e017a78f99e3c71627fa760cc170ac6",
+      "size": 54776
     },
     {
-      "path": "data/resources/res-4b81fcbebf23.pdf",
-      "sha256": "f734455ebcf02e518e125b47a3bff192f6e81e35369502a6c136c37c7935c8f2",
-      "size": 29775261
+      "path": "audio/pets/orange/meow-source-v1.m4a",
+      "sha256": "2c7f85ffd4b843a4ff0a88f88d1c0e77da9f911e404270219285aaf9f86b6f71",
+      "size": 32405
     },
     {
-      "path": "data/resources/res-5d2d872e1375.pdf",
-      "sha256": "d49c406b7da2052c1e3153e563a2e2326e4eafeee1a313e2dda142da8ab7245c",
-      "size": 51457467
+      "path": "data/resources/res-3070709ae932.pdf.part000",
+      "sha256": "59a432a692371e0d383f93621faa2bed938de8c0b79d850929f7c802c59a79c3",
+      "size": 4194304
     },
     {
-      "path": "data/resources/res-63185500e858.pdf",
-      "sha256": "f869b624f12733e36b276cedfd7228621dd623aefb9d3c9aa7e27a8832f07b7f",
-      "size": 35590063
+      "path": "data/resources/res-3070709ae932.pdf.part001",
+      "sha256": "d33d2c1bcf1c57c62f0acf4f2f48e5122aa308fb6f7ed29c0c26aa26f15f3036",
+      "size": 4194304
     },
     {
-      "path": "data/resources/res-f24200c5d451.pdf",
-      "sha256": "7cee484aa01725829cbe84f8691cb12eed10ff23841a03102b8b7516e6c7f916",
-      "size": 73388067
+      "path": "data/resources/res-3070709ae932.pdf.part002",
+      "sha256": "1e5d5d5a88f10d0c9bb3fdcb2cac9ccfb788466cce0f14288c25c15fcf02b5cc",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part003",
+      "sha256": "bdc250ca3146a9fcd7a1c0a958edf58eedfba956a3e50cb8ccf18fabd12f972b",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part004",
+      "sha256": "cef38b6c1a90b335cdbb3c12e636124d3c4b48a93c508d2417d8cbc1d9cfb710",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part005",
+      "sha256": "285d052e300f612583b909393212a57a4ec7151692d1a75006bfce7316d667ed",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part006",
+      "sha256": "b0785773650ea5dfb94e6c9ebd38bdf394de1cf85c71cc55e3ef8c93cdf40e6c",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part007",
+      "sha256": "a003dcc70f1e8ba7e45736e82bb7a6ceba2d2df7f57796b2a2104a17cf781f23",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part008",
+      "sha256": "7d410b01858b673db1bef87c1e19b06495816959f75bfe67ca20ca6ffa363e80",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part009",
+      "sha256": "25c5e0efdfa7484b4344362c96ab8af92d634bf7d68a3877f3c9933f8a9d903f",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part010",
+      "sha256": "813f0be4ac4cdbce02b88f8c416b84ff995401c5d4c51fea9b6ccbe16fe4f0e7",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part011",
+      "sha256": "6bc30ce4651c8b3f52781faf8aed1f366e1e0a529ac17ee641faa7ee516ba0b0",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part012",
+      "sha256": "c0b17a0e7707e5d8f64a494dbd0c7dde01f5156d44a9859c11f3348e4e7deb26",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part013",
+      "sha256": "9dc5cf6bfe68f3eb587d63dd9c18bffc96f7c3db70efb3b58adf4f45cfaa924f",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part014",
+      "sha256": "846f5145df23a14cf11699515e7804bb858034814ac31acd4474d2d4525ac7f6",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part015",
+      "sha256": "7cb5f2246ccf021cb4a782434a94af28d6d49be3b33053ac329b9816622737ff",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part016",
+      "sha256": "47011a6595b304e79921b85e6a6ebed1585a9f8aaeb152cd7df004e6d377d6a3",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part017",
+      "sha256": "9ffe4ca434649ea1e6ea1d55edc6c5a2bedaba553ba6a6cf1d754e49cdb4e4de",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part018",
+      "sha256": "062791cc80b18f72cf79fbc2773406178df129f0b996d12f3c5c24acdb903dbd",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part019",
+      "sha256": "1009ac30d144a0babcd0e037c6d0d72d50961d29c39a6fa78f22869a0a1136ad",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part020",
+      "sha256": "c4215719a2aac89a01a8f0f899802cc8679d935f9115cf277c03ca1b95b26569",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part021",
+      "sha256": "0defb7c1ab70e1de0080646fd12925be3cdad626923e6cf0bb91a0bed554e1e5",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part022",
+      "sha256": "05c25a37568326bea5c40d8b241ef969956f15c717c4ca4346b270f76aae54cc",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part023",
+      "sha256": "1922768cf8935d0c24eb96e9de0ba0651fa73361146290708f3a936a4f6ae102",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-3070709ae932.pdf.part024",
+      "sha256": "80c9c6af11b15d5503d051ec8764ffb6c8090741aa964745483debbd152924fa",
+      "size": 358879
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part000",
+      "sha256": "e24e3c84ef05c745e25dbc6bf1f8dfb2e7c6f224cf010930269386573ae646d7",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part001",
+      "sha256": "1700bd1f78bc644fccac15d0e263556554c20d3014818f973fa331479da466a1",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part002",
+      "sha256": "3488072bc233d9771c53b9ec6d2655978d6cab806f95b2fa15d2fae436ca3e8a",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part003",
+      "sha256": "4ebdebacb4777d1654befb03a02a964ab43136c2877f247e1c82dccfbc338ac1",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part004",
+      "sha256": "15d5d3423f9a47c261816c11783b4dd134c56a7525b0e84edb8588273fb7a32b",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part005",
+      "sha256": "3ac99d259f160f8a9d28c2c8f4f1f6bd191bdee20f49c2191b4e2aab520dc381",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part006",
+      "sha256": "49de57abf6b8d634bd866c759d582fbda7f9de8e9fa194ea16875b6e105b2ab3",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-4b81fcbebf23.pdf.part007",
+      "sha256": "2088b36d4958e05c8e9c8073b7d1457a5ae26a29902dcc993b16a4aa4f376c0d",
+      "size": 415133
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part000",
+      "sha256": "31f91d6c875065b3852358b0b5435997b696ac67a8a7b7735d4eb6b84ecfcb0e",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part001",
+      "sha256": "0908a678ffbacb5b6afc57e000d5f8733c85daac10acbeb7f30989733b35f489",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part002",
+      "sha256": "42e168a761d2c59a4abcf63515c5e6b0dfc8f54bf2c45dbba8f5a5b0ed17133e",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part003",
+      "sha256": "532867c32432965b24ecaadae8561e00e6753e1db9c4509ace8b5df03e133afd",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part004",
+      "sha256": "00e11cc2ec9d4304b46b904c87573858167dcbb1c11889eec67bfd317db7e356",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part005",
+      "sha256": "f3a0fc9f29647cace292a755bf53eb349600bd63d01cc1d212b420f18f391ae7",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part006",
+      "sha256": "be5bf6c2c86c10b8c2b7af36a22ec8c7e911c4c6122ac664b138f56147c9bab9",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part007",
+      "sha256": "92ce471bde6d21316e53133bb871949d76fca0d34c9326e3c65432b72550dfbe",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part008",
+      "sha256": "7454192fa92257e362da1ed2f9a50906066d5f1ef9fa1fb99807199c61cce55d",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part009",
+      "sha256": "548e9564618623777af2357721e77dcab2394edf5da13ba35beb491fedc99b74",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part010",
+      "sha256": "e4cacba831f2be622c3ccc163c5bcd6ef175cae552647f1cbc3f07e360ff584b",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part011",
+      "sha256": "cdaca77f673ddd18430f22b34285c2b999a3129a65ee116545ef6fdfa1b51085",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-5d2d872e1375.pdf.part012",
+      "sha256": "e5e4b39a783a789c6dfcddcddd04f68786c9d184b80e1f54090b2bc5909178cd",
+      "size": 1125819
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part000",
+      "sha256": "1dd719dbcd455335c761cb7576b7e0814f68ba19cac612024067dea036979c16",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part001",
+      "sha256": "ec84fd39468afddf7894226bf7fd412e4c52ed676877a63fc0c92169775f7d03",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part002",
+      "sha256": "078f2dc4d1a00780656a4ca2f30e04c271e021f15b1a68418a13c4ebdc49a8ce",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part003",
+      "sha256": "2cc42e1850321ef05c8a2024c6354749a1e05507c56820142cb0d138cd1c57cc",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part004",
+      "sha256": "079c2b1f76b45c6916df47177f3b258b5ea815230c11e3848be87699f4af7163",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part005",
+      "sha256": "4eaa2ea5d51e99bf4cfc5c5dd483858de35e39203b01f859f058ed3a6f59ee4c",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part006",
+      "sha256": "a8b3a650142d4090b2fdabfafa7a65c40018dd6d889eadd028bb3e1eb47f7326",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part007",
+      "sha256": "7269b90425fbb238066a3430e8068c500440f0ecc5746631fa100505bf6ec6c9",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-63185500e858.pdf.part008",
+      "sha256": "c92d58b62b77c368909e897a3040c24a3e9eb4516b382cc300ad55abdfa469de",
+      "size": 2035631
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part000",
+      "sha256": "ea0b1b1d4ece0085d3dd0a1a2906ec993903ac092deaac032706e0e24cc9bad2",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part001",
+      "sha256": "8bc6369779db1f76bd0f34ab21b89fbb6c320a2246222b5e63cb8fa9233c71d4",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part002",
+      "sha256": "3b389c965cfcde081a3b000239c781fafcba58605592216e8d710a09d12dbff4",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part003",
+      "sha256": "2e41e1eab7883e6573d305e2216fc9e453a41622f38a3782e9faea1fb2884d2e",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part004",
+      "sha256": "81a3d2cb61732eb261f18899a7e7990398ff1a8c404739f06621f381aa2b8adb",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part005",
+      "sha256": "a923565f77c104bdfa5f337d75ecd9cdff1bf15f0fcb132a2e2a473e98ad7bf1",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part006",
+      "sha256": "f02bb350639d289797fa434b2e797ed15cb2bbf8477fc01cdb99cafe5e3beed9",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part007",
+      "sha256": "a0ad646b257d0926d123462a6d48cca6f5c207158827c2c06b0bf3071110c9da",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part008",
+      "sha256": "334e823f02056d317a714360159c992b63a6db26b2a0c823a39f452f5bd845b5",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part009",
+      "sha256": "1d32bcba3211ba41567a7fd9501272a1e6b3f71de96fd7b46fc4f1e9e9a36ece",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part010",
+      "sha256": "52335243bbe79084a973d3de34b74171cabafaae7e39168675c82a9e9c2a7f3f",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part011",
+      "sha256": "b925167d6a36b71d560837c3d9b2f0a9b91fa096c1d09344c4f4fdb625f2ed95",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part012",
+      "sha256": "557de5f0cdd357e9f0dbaa4a7d0583c93a025f07631dab4da8da7d2cd371c342",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part013",
+      "sha256": "83a05d2dfe3296a0757bb91fec430137377bf9e4c3e0450d7c23663524fedc92",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part014",
+      "sha256": "1d8c451a2ce569a1d8577ace6355dd6039d943f4b3ed68679c8218c654044a6c",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part015",
+      "sha256": "68c452ed0ffcae7abd5e8ed17d15709cf18d434e5d25b220b5e52e5fa5101837",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part016",
+      "sha256": "0e5cf7014260cf5251b90e63b4a0a192e5a4cc19dec8bb97dea77c5f182b8880",
+      "size": 4194304
+    },
+    {
+      "path": "data/resources/res-f24200c5d451.pdf.part017",
+      "sha256": "1902eead5b566ab6301a6f266a13b1c97b22e2c6a7949dbb930532b747d556c8",
+      "size": 2084899
     },
     {
       "path": "img/anim/orange/adult_lie.webp",
@@ -44,6 +394,96 @@
       "size": 316916
     },
     {
+      "path": "img/anim/orange/approved/adult-rest-alpha-poster.png",
+      "sha256": "f80419a712a75e4889562649995f32352f55086df2a8f760fe4e85cd3cb06bbe",
+      "size": 164576
+    },
+    {
+      "path": "img/anim/orange/approved/adult-rest-alpha.webp",
+      "sha256": "21074313f26485ccc96b919dcdade992fef2899fbb9a4dafef5108d0f2b06e9e",
+      "size": 223164
+    },
+    {
+      "path": "img/anim/orange/approved/adult-walk-alpha-poster.png",
+      "sha256": "8f58d8e6c925af6a8dbedc40d80295f18d8a1e8efd74399f573a173a2ea8e19e",
+      "size": 136912
+    },
+    {
+      "path": "img/anim/orange/approved/adult-walk-alpha.webp",
+      "sha256": "4c5eac4dd2a51350e5f030a7cbdec479e36241809e8a65942c9750a8aa8be885",
+      "size": 351700
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-idle-alpha-poster.png",
+      "sha256": "728150ed7411281d0dd7936841a5981b93ea2bf5065638fb339c33ad8365c6cb",
+      "size": 85679
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-idle-alpha.webp",
+      "sha256": "aa68dea716b2baf0315720b95b162a9f8e5de3d9ed62a626c0b0c1a93279ae12",
+      "size": 912048
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-stretch-alpha-poster.png",
+      "sha256": "9d2821f285a08663d87544da567a4cb3c1222de2f77587376438372a08674989",
+      "size": 64389
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-stretch-alpha.webp",
+      "sha256": "b03acf981666b3069333e466bcb8aa7a6ea3302a27bf40d0e6c874ce7830779c",
+      "size": 285000
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-turn-alpha-poster.png",
+      "sha256": "eb3921f4f7d380ec99e8e750b6477a1f4caaad4df94097c265776cb26f6b4711",
+      "size": 57714
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-turn-alpha.webp",
+      "sha256": "ca126e338820c99b8bb49b539fd2caf29390c738dc99870877fef2710ada7b88",
+      "size": 654794
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-walk-alpha-poster.png",
+      "sha256": "4e60ae5178bd4aa4b4387428d5386b70dbdd37d291bfdc75e986e943a797dece",
+      "size": 75173
+    },
+    {
+      "path": "img/anim/orange/approved/kitten-walk-alpha.webp",
+      "sha256": "534f9dcbef1417109fd27f9f07dd330d1bc162d71385ece065767f5dc40053b1",
+      "size": 467234
+    },
+    {
+      "path": "img/anim/orange/approved/manifest.js",
+      "sha256": "0e8346e641e75ba07c45ada8fc9d02c24dd9097fdc1d9e48a7d5ecbd9f489993",
+      "size": 2276
+    },
+    {
+      "path": "img/anim/orange/approved/manifest.json",
+      "sha256": "b2d94f35c00a564480e3d4dc5ebad7bfc707c84ea4d9515b5785131d14d27a88",
+      "size": 2586
+    },
+    {
+      "path": "img/anim/orange/approved/young-rest-alpha-poster.png",
+      "sha256": "e3a9859f84f34fff174cf8a0bf6a2a843821a041d4c878737916a6ba96826182",
+      "size": 167230
+    },
+    {
+      "path": "img/anim/orange/approved/young-rest-alpha.webp",
+      "sha256": "45963abc2078235c77cbd08b70af75879bac178b11c1a7d7fd406101fb20af3a",
+      "size": 318118
+    },
+    {
+      "path": "img/anim/orange/approved/young-walk-alpha-poster.png",
+      "sha256": "9ebf32a96923862cb63b5ebe798d24a6c114f5bf8e06cc70a108e7c13f2a0009",
+      "size": 107229
+    },
+    {
+      "path": "img/anim/orange/approved/young-walk-alpha.webp",
+      "sha256": "13573c58363eea862290cc691409ad7c0c0f0c1c5060fd4643370ceeca80f842",
+      "size": 658184
+    },
+    {
       "path": "img/anim/orange/ball.webp",
       "sha256": "ae30cb54c4ded4c4550f10c08f0c4f886bcd920ec2bc9eb566bf763d647c0c73",
       "size": 1617306
@@ -52,6 +492,186 @@
       "path": "img/anim/orange/can.webp",
       "sha256": "a25972f2b4b3c402efbcb7011dd5cc8a218cdb4d035e9c69c49f9d04adf33917",
       "size": 4003404
+    },
+    {
+      "path": "img/anim/orange/clean-v2/adult-atlas.webp",
+      "sha256": "2e2ce5b3fe029b8770d31440ac94e471d70ac8ccdb4e138a6bb9d6649c57472e",
+      "size": 1614886
+    },
+    {
+      "path": "img/anim/orange/clean-v2/adult-poster.png",
+      "sha256": "df415a6fb97c47889a49b547304c952b6758315928c0d816c91f2262c6d4a631",
+      "size": 56037
+    },
+    {
+      "path": "img/anim/orange/clean-v2/adult.webp",
+      "sha256": "120cee9d4a2bf38c376ced56c2afad60d9d5ed672d699a2dad8957d81052f479",
+      "size": 1701024
+    },
+    {
+      "path": "img/anim/orange/clean-v2/can-atlas.webp",
+      "sha256": "0c3a1831b4719e87dde35c696ebb80dc2a72054cfcf20ae8be5487df6021337f",
+      "size": 2020750
+    },
+    {
+      "path": "img/anim/orange/clean-v2/can-poster.png",
+      "sha256": "22c769257b83dd796e51e14fec78843f92230721556132117e4b6299bf3452f8",
+      "size": 69767
+    },
+    {
+      "path": "img/anim/orange/clean-v2/can.webp",
+      "sha256": "56aa5c65e1762b944a934326c92fd168e259ae64a0291064073e88ff4bac9cde",
+      "size": 2163086
+    },
+    {
+      "path": "img/anim/orange/clean-v2/charge.webp",
+      "sha256": "35ce9e55457895952e6f7e190e7ffefb337bc361e5fcc6d45dfb6c462fae3427",
+      "size": 383470
+    },
+    {
+      "path": "img/anim/orange/clean-v2/cuddle-atlas.webp",
+      "sha256": "6f9e16ec510424d82356eb0ab2b8206e9a2cee704d8e7449646e48091455efdd",
+      "size": 1899286
+    },
+    {
+      "path": "img/anim/orange/clean-v2/cuddle-poster.png",
+      "sha256": "943bec137b9bbdcdf12f1c06cbb34612e9ef58be7268d9e4c8d92f4bc831f5f3",
+      "size": 61078
+    },
+    {
+      "path": "img/anim/orange/clean-v2/cuddle.webp",
+      "sha256": "3edbcc2a37cad7b58da60167be52cfe3daadc00a9d6e79394634043a14e8df23",
+      "size": 2028856
+    },
+    {
+      "path": "img/anim/orange/clean-v2/eat-atlas.webp",
+      "sha256": "346ba799931a592bf8dbc64007dc6e8e91eb7108405117df12319e1597c22562",
+      "size": 2445532
+    },
+    {
+      "path": "img/anim/orange/clean-v2/eat-poster.png",
+      "sha256": "73c1e85139fc3ad8948590581cf9752815fd50b023180cf7e087d0babc504fd1",
+      "size": 90498
+    },
+    {
+      "path": "img/anim/orange/clean-v2/eat.webp",
+      "sha256": "2e67f3d9028288aff01efc6a5493349264caf80445b3553231622636f1192817",
+      "size": 2470440
+    },
+    {
+      "path": "img/anim/orange/clean-v2/land.webp",
+      "sha256": "3b709af2ddc47c64f08c06945c9d924d040a9bbb67cc4247bf1c85f1abbe39c8",
+      "size": 280310
+    },
+    {
+      "path": "img/anim/orange/clean-v2/manifest.js",
+      "sha256": "49d017d73a80fa80866808a440d7ea04c55a552a58c04db1e8c7425496eb7953",
+      "size": 3540
+    },
+    {
+      "path": "img/anim/orange/clean-v2/manifest.json",
+      "sha256": "7d61d7c082fc6b9d361b5312a513b051f6e7f239a730fba661fa072e3630d0d2",
+      "size": 4185
+    },
+    {
+      "path": "img/anim/orange/clean-v2/paw.webp",
+      "sha256": "fd21f999600cfd314eeb7860f21d9209d0ea126a3d038f8091d42b1b045ba711",
+      "size": 210052
+    },
+    {
+      "path": "img/anim/orange/clean-v2/play-atlas.webp",
+      "sha256": "e4537e3556be8d746f579956eaa9265905e4bba43f2631d51e58054665b6b496",
+      "size": 1395320
+    },
+    {
+      "path": "img/anim/orange/clean-v2/play-poster.png",
+      "sha256": "af4f339b50c69c26861e0159ddcd9a000d1fed71c85cc01b7aeab7aa91f33ab4",
+      "size": 45838
+    },
+    {
+      "path": "img/anim/orange/clean-v2/play.webp",
+      "sha256": "d6b9b31f7a6921ed96bea9b14e6d888c11c46bffe83be3be74d6f39ad9e664dc",
+      "size": 1435766
+    },
+    {
+      "path": "img/anim/orange/clean-v2/portrait-hd-v1.png",
+      "sha256": "05e9b52073133020c07e42cb54b1a57f522d837c0e5ec8be59a17f7d81190877",
+      "size": 341422
+    },
+    {
+      "path": "img/anim/orange/clean-v2/pounce.webp",
+      "sha256": "d3d30785adaab122268f6c184c4d26b5fdd70ae5c3684d315ec23c8f0d7b5897",
+      "size": 358608
+    },
+    {
+      "path": "img/anim/orange/clean-v2/run-atlas.webp",
+      "sha256": "7f014bbd669e21b1a38c34f84e003e4e876c8f778c88d23ee3ef862d9d0830a1",
+      "size": 2046442
+    },
+    {
+      "path": "img/anim/orange/clean-v2/run-loop.webp",
+      "sha256": "95367d9e0d5fd2d0e324464a04652847136e118a12dd39358696e7ac576ab6aa",
+      "size": 1240822
+    },
+    {
+      "path": "img/anim/orange/clean-v2/run-poster.png",
+      "sha256": "dd6d5a08b8060eaac2b5124694ad0810df5e17d92b83cb2d29060f6e1fdfea55",
+      "size": 63584
+    },
+    {
+      "path": "img/anim/orange/clean-v2/run.webp",
+      "sha256": "fd1563502515c230591160cb0f800dd4d7ea12d0d71a63128af5a9385812f487",
+      "size": 2090494
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sit-atlas.webp",
+      "sha256": "3bdcb89224518f245f71a0ef3574ef7c820e8064ab71271068f7657f1b3ba523",
+      "size": 2670110
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sit-poster.png",
+      "sha256": "d0807c6bfe2a0a2ee6e92cf354a20403632b3c92a145fb15611f81ca74fe1f73",
+      "size": 90023
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sit.webp",
+      "sha256": "393916eb56f592c08d07d24db718b394768ae78f8cde66d14e2f3f7b2d4fdfc5",
+      "size": 2779950
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sleep-atlas.webp",
+      "sha256": "d19d8183805c4f9fdfd2ac67d4303a5af3a894a14ed8557c67b4801d1b2c1c11",
+      "size": 1697734
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sleep-poster.png",
+      "sha256": "0694e7f6294753da1924cbd3755b6a314c4078f7b115746b9b8d111d82ab57c4",
+      "size": 56598
+    },
+    {
+      "path": "img/anim/orange/clean-v2/sleep.webp",
+      "sha256": "c0fbd969dd3299d27984bfab7d32e3e5ac35fffc24256dec70e9ea131f3666af",
+      "size": 1813370
+    },
+    {
+      "path": "img/anim/orange/clean-v2/walk-atlas.webp",
+      "sha256": "619686bdb79d39ec28dd4f48616012dac998bd80058f68162ec8e21d0fb8f698",
+      "size": 2179476
+    },
+    {
+      "path": "img/anim/orange/clean-v2/walk-loop.webp",
+      "sha256": "979da8e94a760489c4b99e8fa1c74d94e6b08a6b472697861d227c54a3d1e476",
+      "size": 315200
+    },
+    {
+      "path": "img/anim/orange/clean-v2/walk-poster.png",
+      "sha256": "a7ce799a64ccc08096a97594cd5f7edda4d7b13068367b322c55a65bf25152db",
+      "size": 59522
+    },
+    {
+      "path": "img/anim/orange/clean-v2/walk.webp",
+      "sha256": "b410412b1b3eb20f53fa7c05744aea9fd3540235dbff5b685c6c2208ab743598",
+      "size": 2234560
     },
     {
       "path": "img/anim/orange/cuddle.webp",
@@ -67,6 +687,166 @@
       "path": "img/anim/orange/eat_big.webp",
       "sha256": "26b84403e59896b50299d9a5e63400357967a8dd950f08cae1114f797f7ff0d7",
       "size": 4172194
+    },
+    {
+      "path": "img/anim/orange/generated/action-manifest.js",
+      "sha256": "8f126431dd710d6fafb9df0f22550c0fae796e6e88bb6257c9371e904a2d6861",
+      "size": 435
+    },
+    {
+      "path": "img/anim/orange/generated/climb-atlas-v1.webp",
+      "sha256": "b3cdda2d55c5403e8dd3b8b149f4ba9c93bc06a199c036965a6dc49a57f3a807",
+      "size": 2484324
+    },
+    {
+      "path": "img/anim/orange/generated/climb-atlas-v2.webp",
+      "sha256": "28537d3732168fd776dab1071c198cb7e4e72db57e581ca0bae8336d343ee5b0",
+      "size": 5069466
+    },
+    {
+      "path": "img/anim/orange/generated/climb-atlas-v3.webp",
+      "sha256": "2ec2a10eae04c561955fcf32eb205d27846364872208717ca2ac2c020494dcbc",
+      "size": 4267084
+    },
+    {
+      "path": "img/anim/orange/generated/climb-sheet-v1.png",
+      "sha256": "035739bdc2cac3bc2ee6e2cdfde730e8091f7f038ee4621978089ce382cd485b",
+      "size": 1793745
+    },
+    {
+      "path": "img/anim/orange/generated/climb-smooth-v1.webp",
+      "sha256": "0f41e7c5f3af2e9dec076ace2ab2e429281b12280f9b323125cd656c90ca7aed",
+      "size": 2603934
+    },
+    {
+      "path": "img/anim/orange/generated/climb-smooth-v3.webp",
+      "sha256": "b4b23e9cff3c1a8551cd2d5b55a7917503e84f63a65d3e230d1bb5a794bbfbe2",
+      "size": 5495088
+    },
+    {
+      "path": "img/anim/orange/generated/climb-smooth-v4.webp",
+      "sha256": "43b5a344ceb7f56839b5ba36bee9d77adbb47c4f1c1c9ab0b9e11f7e570577f0",
+      "size": 4652068
+    },
+    {
+      "path": "img/anim/orange/generated/groom-atlas-v1.webp",
+      "sha256": "da2bcf32b927a3e2a9d442049de3fa114e9e8a9303c10603c38524b41aaba74c",
+      "size": 2028380
+    },
+    {
+      "path": "img/anim/orange/generated/groom-atlas-v2.webp",
+      "sha256": "60616f618e3c2095be57d36f62325d1ac7a8603f24e2988ec1676386452a86dd",
+      "size": 3980792
+    },
+    {
+      "path": "img/anim/orange/generated/groom-atlas-v3.webp",
+      "sha256": "eb0cdc690c7cbf5eec8597b6ffeaa5fde4e00654715eb13d097e52476d85753f",
+      "size": 3744662
+    },
+    {
+      "path": "img/anim/orange/generated/groom-sheet-v1.png",
+      "sha256": "16ad23cb100769b1119b6bcf56d3d8a17bab68c9ad3ceaea15c4a3f7775eec5d",
+      "size": 1998960
+    },
+    {
+      "path": "img/anim/orange/generated/groom-smooth-v2.webp",
+      "sha256": "c5ba72574f184e8d4bfa6192193bddaaf5e053ed054f7fa5c3328ab3b1a3b7a6",
+      "size": 2090426
+    },
+    {
+      "path": "img/anim/orange/generated/groom-smooth-v3.webp",
+      "sha256": "3b07559cd477063e98a7789934fe753100a38bbb92500530625e73acb6ec4016",
+      "size": 4372754
+    },
+    {
+      "path": "img/anim/orange/generated/groom-smooth-v4.webp",
+      "sha256": "d4f51d801bffd97f5643562681cac84e43967e6b411c4b5c9514a5f76e1e37d4",
+      "size": 4170048
+    },
+    {
+      "path": "img/anim/orange/generated/groom-v1.webp",
+      "sha256": "5e5806d59235e02a8cd38ae2b3b946037f95672baed91530460eb8679f3b2e67",
+      "size": 612580
+    },
+    {
+      "path": "img/anim/orange/generated/paw-atlas-v1.webp",
+      "sha256": "3f9fcf503a7b58aa3390f84862e13ef5c69e687cf4661d3de283bb1e716e511f",
+      "size": 2215726
+    },
+    {
+      "path": "img/anim/orange/generated/paw-atlas-v2.webp",
+      "sha256": "a0088bf53f8498b6f77e235d2c7d5e8398877bb1b6fc7b5492a859500f668eaf",
+      "size": 4438202
+    },
+    {
+      "path": "img/anim/orange/generated/paw-atlas-v3.webp",
+      "sha256": "4faa5e4b96e8acebe71fb4e5b1e2d7680319c2808d86db8fc6c224a5ec826ba6",
+      "size": 3905542
+    },
+    {
+      "path": "img/anim/orange/generated/paw-poster-v1.png",
+      "sha256": "96dcf971f780bb3a33a6b67f7e5f052e0009cd89860e1fb06c3cde5122a2f349",
+      "size": 147834
+    },
+    {
+      "path": "img/anim/orange/generated/paw-sheet-v1.png",
+      "sha256": "b607786743481ff1043240444ef818de644d313ca7df3fbd3c38b34b0b3706c4",
+      "size": 1820655
+    },
+    {
+      "path": "img/anim/orange/generated/paw-smooth-v2.webp",
+      "sha256": "85a92955ca97805d4762e5c195b7b895833f73b47108de8f5c5a96d6e53a3ead",
+      "size": 2312146
+    },
+    {
+      "path": "img/anim/orange/generated/paw-smooth-v3.webp",
+      "sha256": "b8e0e2eea44d01a351fad457be20d5763e12dd0e99fb372d9c66393f7a9be3ff",
+      "size": 4893680
+    },
+    {
+      "path": "img/anim/orange/generated/paw-smooth-v4.webp",
+      "sha256": "6dee9f2d7aafb6a6bf3a85c0c297382aff29403ab64b48974f1333a066c9172c",
+      "size": 4367430
+    },
+    {
+      "path": "img/anim/orange/generated/paw-v1.webp",
+      "sha256": "4976d8744f5ed5f0f62ca20a829749e0e0b65e2f4dfd6ebef9dab890bddd97d5",
+      "size": 636372
+    },
+    {
+      "path": "img/anim/orange/generated/provenance.json",
+      "sha256": "9148a68e9235b3aa863ff2ae9f787cf8fa128ea5d29159e74c10609ee3b69e98",
+      "size": 284
+    },
+    {
+      "path": "img/anim/orange/generated/sleep-hold-v1.png",
+      "sha256": "5571b49668eefe779cab3c5fdef648aa1731a60087c7cd381aad02757a9c08cd",
+      "size": 60803
+    },
+    {
+      "path": "img/anim/orange/generated/sleep-hold-v2.png",
+      "sha256": "da0a50638d9d575ff093996dec82c84032c3248bc069901f665353ba486a385c",
+      "size": 469355
+    },
+    {
+      "path": "img/anim/orange/generated/sleep-states-sheet-v2.png",
+      "sha256": "8516db046ee9a37db7611a8151bb1769416caf6bf2a92106d842f2876fb51e5f",
+      "size": 1022986
+    },
+    {
+      "path": "img/anim/orange/generated/sleepy-glance-v1.png",
+      "sha256": "66f39a64ebe1c721df688436de460e6ade64783b28cf06210d5be42efeae622f",
+      "size": 65824
+    },
+    {
+      "path": "img/anim/orange/generated/sleepy-glance-v2.png",
+      "sha256": "98cc22ae944e6d6206f68670243ac24a0db51904352d88b7323874b3c2a5a9fb",
+      "size": 471352
+    },
+    {
+      "path": "img/anim/orange/generated/yarn-v1.png",
+      "sha256": "542c06f19c2f1349f513576193cf9404ad4abc3525d0272a994e3c06d404a1f8",
+      "size": 527502
     },
     {
       "path": "img/anim/orange/index.json",
@@ -727,6 +1507,91 @@
       "path": "img/pets/exact/white_portrait.png",
       "sha256": "f5c1c7ccfc6888dce2667d933e83db4e5109befa140567b0f173933c88b3a86e",
       "size": 53415
+    },
+    {
+      "path": "img/pets/hd/kittens-catalog-v1.png",
+      "sha256": "cde6867817c5d56d9035c708ca45c526be26dc9a50d1572e70af6fc2eb05c7e0",
+      "size": 1763766
+    },
+    {
+      "path": "img/pets/hd/kittens-transparent-r7.png",
+      "sha256": "8f2d270e25a5785e0df4a0c5331d3731399ebe709b51cca4460e774de6610bcb",
+      "size": 2070623
+    },
+    {
+      "path": "img/pets/hd/orange-model-r8.png",
+      "sha256": "125b1172a7305e0d2c5d6590784a8909ae9ec8cea785c1ac16fc913d7b16fc0f",
+      "size": 355077
+    },
+    {
+      "path": "img/pets/hd/tuxedo-kitten-v1.png",
+      "sha256": "328503f5a4eea5a16822f8f2b11b28be1cf2c047fb736706236e069542c14199",
+      "size": 2348290
+    },
+    {
+      "path": "img/pets/hd/tuxedo-transparent-r7.png",
+      "sha256": "d7ad7129c2e78b56c6dea422efd46501886f7ce31a7e2795705d9b619664d6bb",
+      "size": 2303905
+    },
+    {
+      "path": "models/orange-cat/orange-rigged.glb",
+      "sha256": "7fe8c41b61410bcef26dbaa4a30397afc5e95d811ccf2c3646c71dbe812860e1",
+      "size": 3593668
+    },
+    {
+      "path": "models/orange-cat/orange-tabby-clean-r9.glb",
+      "sha256": "dbec94868afadf1c3f5d2f28f8f2cde2eed5e755f9cfc71bdf49373d582a3d70",
+      "size": 21306420
+    },
+    {
+      "path": "models/orange-cat/orange-tabby-r10.glb",
+      "sha256": "6965beddd842cea209878ef3f36356029205f463afda7a6890992697cf1cad0f",
+      "size": 33852384
+    },
+    {
+      "path": "models/orange-cat/orange-tabby-r8-blink.glb",
+      "sha256": "d29c10f2bbe8979b310dd3cc55d431a69eabdce9523f8841793526f0e1d9f3cc",
+      "size": 15231004
+    },
+    {
+      "path": "models/orange-cat/orange-tabby-r8.glb",
+      "sha256": "5a9dc5f8b7f8e99687031b41ca7294f645cf07e975ba187e67c26034774f2ec4",
+      "size": 14747048
+    },
+    {
+      "path": "models/orange-cat/orange-zoo-run-r10.glb",
+      "sha256": "5936e53b35bf8a6476ab665a12fda324414766491cbabd93f2255e5ee51ef9c3",
+      "size": 24323096
+    },
+    {
+      "path": "models/orange-cat/poses/orange-eat.glb",
+      "sha256": "41eba524379a3f2bbee0ca89ed87c94344f961ffeba68c4d8d5bb1a3888af8e8",
+      "size": 1467828
+    },
+    {
+      "path": "models/orange-cat/poses/orange-sit.glb",
+      "sha256": "e9ca38e082486d9c45c9a9cada44d3ee0db16e7b08ebaf9e0a8ea6242a87ea8b",
+      "size": 1461196
+    },
+    {
+      "path": "models/orange-cat/poses/orange-sleep.glb",
+      "sha256": "9936a0ae097a9c4a755db87f13da42b1c6f89c91b40a613047be4ec61ce1af21",
+      "size": 1463584
+    },
+    {
+      "path": "models/orange-cat/textures/orange-basecolor.jpg",
+      "sha256": "342f784f0cce8120e535b4b65a164892b254c0566e54e905bd019587da33c54f",
+      "size": 2782788
+    },
+    {
+      "path": "models/orange-cat/textures/orange-normal.png",
+      "sha256": "a3c8591bf7be23f4c90b5f3f55870d36923ad0e32b4792ac7b80dcc687f58f5a",
+      "size": 545264
+    },
+    {
+      "path": "models/orange-cat/textures/orange-rm.jpg",
+      "sha256": "fc5e8535609aa75dfbef261dd7c93478d21169240070963aeecf04b977269896",
+      "size": 51933
     },
     {
       "path": "vendor/pdfjs/LICENSE",

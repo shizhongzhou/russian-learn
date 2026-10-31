@@ -10,49 +10,39 @@ const FOOD_ART = {
   s4: { name: "豪华罐头", dish: "#F2EEE8", rim: "#D6CEC2", food: () => `<path d="M-18 -6 Q-10 -18 0 -14 Q10 -20 18 -6 Q0 -2 -18 -6 Z" fill="#E59A8A"/><path d="M-8 -10 q4 -3 8 0 M4 -12 q3 -2 6 0" stroke="#C9776A" stroke-width="1.5" fill="none"/>
       <g class="can" transform="translate(44 -6)"><rect x="-14" y="-30" width="28" height="30" rx="4" fill="#D9534F"/><rect x="-14" y="-24" width="28" height="12" fill="#F6E7D3"/><path d="M-7 -18 q6 -5 12 0 q-6 5 -12 0 Z M5 -18 l4 -3 v6 Z" fill="#5C93C9"/><ellipse cx="0" cy="-30" rx="14" ry="4" fill="#C9C9CF"/><path d="M-12 -31 Q-20 -46 -6 -50" fill="none" stroke="#B9B9C0" stroke-width="3"/><ellipse cx="0" cy="-30" rx="11" ry="2.6" fill="#E59A8A"/></g>` },
 };
-function feedScene(kind = "kibble", onDone) {
-  const S = Pet.state, v = Pet.view(), art = FOOD_ART[kind] || FOOD_ART.kibble;
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const ov = document.createElement("div");
-  ov.className = "feed-ov"; ov.setAttribute("role", "dialog"); ov.setAttribute("aria-label", `${S.cat.name}在吃${art.name}`);
-  ov.innerHTML = `<div class="feed-card">
-    <div class="feed-stage">
-      <svg class="feed-dish" viewBox="-60 -70 120 90" aria-hidden="true">
-        <ellipse cx="0" cy="12" rx="40" ry="5" fill="#000" opacity=".12"/>
-        <path d="M-30 -4 H30 Q27 12 0 12 Q-27 12 -30 -4 Z" fill="${art.dish}"/><ellipse cx="0" cy="-4" rx="30" ry="6" fill="${art.rim}"/>
-        <g class="food">${art.food()}</g>
-        ${art.drop ? `<g class="falling">${[0, 1, 2, 3, 4].map(k => `<ellipse style="--d:${k * 0.09}s;--x:${(k - 2) * 7}px" cx="0" cy="-60" rx="4.5" ry="3.6" fill="#C9874A"/>`).join("")}</g>` : ""}
-      </svg>
-      <div class="feed-cat walking">${catSideSVG({ breed: v.cat.breed, stage: v.shownStage, size: 170 })}</div>
-      <div class="feed-say" hidden></div>
-    </div>
-    <p class="feed-cap">${esc(S.cat.name)}${kind === "water" ? "来喝水啦" : `来吃${art.name}啦`}</p>
-    <button class="btn ghost small feed-x">好的</button></div>`;
-  const roamWasOn=typeof Roam!=="undefined" && Roam.snapshot().on;
-  if(roamWasOn)Roam.set(false);
-  document.body.append(ov);
-  const cat = ov.querySelector(".feed-cat"), say = ov.querySelector(".feed-say"), cap = ov.querySelector(".feed-cap");
-  const close = () => { ov.classList.add("out"); setTimeout(() => ov.remove(), 260); if(roamWasOn)Roam.set(true); onDone && onDone(); };
-  ov.querySelector(".feed-x").onclick = close;
-  ov.onclick = e => { if (e.target === ov) close(); };
-  const T = reduce ? 0 : 1;
-  setTimeout(() => {
-    cat.className = "feed-cat eating";
-    const pose = kind === "s4" ? "can" : kind === "s2" ? "treat" : kind === "water" ? "sit" : "eat";
-    cat.innerHTML = petImg(v.cat.breed, { stage:v.shownStage, size:170, pose });
-    if(v.cat.breed === "orange" && kind !== "water") ov.querySelector(".feed-dish").hidden = true;
-    ov.querySelector(".food").classList.add("eaten");
-    say.hidden = false; say.textContent = kind === "water" ? "吧嗒吧嗒～" : kind === "s4" ? "啊呜啊呜，罐头好香！" : "啊呜啊呜～";
-    if (S.settings.meow) meowFor("eat");
-  }, 1300 * T + 50);
-  setTimeout(() => {
-    cat.className = "feed-cat done";
-    cat.innerHTML = catSVG({ breed: v.cat.breed, stage: v.shownStage, mood: "cheer", size: 150 });
-    say.textContent = kind === "water" ? "喝饱啦，谢谢你！" : "好吃！最喜欢你了";
-    cap.textContent = kind === "water" ? "水分补满了一些" : "吃饱饱，心情变好了";
-    if (S.settings.meow) meowFor("pet");
-  }, 3700 * T + 100);
-  setTimeout(() => { if (document.body.contains(ov)) close(); }, 6000 * T + 600);
+async function feedScene(kind = "kibble", onDone) {
+  if(feedScene.busy || document.querySelector(".feed-ov"))return false;
+  feedScene.busy=true;
+  const v=Pet.view(),art=FOOD_ART[kind]||FOOD_ART.kibble;
+  try {await PetArt.load(v.cat.breed,v.shownStage);} catch (_) {
+    feedScene.busy=false;Pet.toast("宠物图片暂未加载，请刷新后再试");onDone?.();return false;
+  }
+  const ov=h(`<div class="feed-ov" role="dialog" aria-modal="true" aria-label="${esc(v.cat.name)}在${kind==="water"?"喝水":"吃饭"}"><div class="feed-card"><div class="feed-stage feed-stable-r7"><div class="feed-one-cat"><canvas width="768" height="576" aria-hidden="true"></canvas></div><svg class="feed-dish" viewBox="-60 -70 120 90" aria-hidden="true"><ellipse cx="0" cy="12" rx="37" ry="4" fill="#202b22" opacity=".12"/><path d="M-30 -4H30Q27 12 0 12Q-27 12 -30 -4Z" fill="${art.dish}"/><ellipse cx="0" cy="-4" rx="30" ry="6" fill="${art.rim}"/><g class="food">${art.food()}</g></svg><div class="feed-say">${kind==="water"?"慢慢喝水～":"开饭啦，慢慢吃～"}</div></div><p class="feed-cap">${esc(v.cat.name)}${kind==="water"?"来喝水啦":"正在吃"+art.name}</p><button class="btn ghost small feed-x">好的</button></div></div>`);
+  const canvas=ov.querySelector("canvas"),ctx=canvas.getContext("2d"),dish=ov.querySelector(".feed-dish");
+  PetArt.draw(ctx,v.cat.breed,v.shownStage,{x:120,y:70,width:500,height:500,align:"bottom"});
+  const previous3D=Roam.capture?.()||(typeof Pet3D!=="undefined"?Pet3D.lastFrames.scene:null);
+  if(previous3D){const desiredRatio=768/576,sourceWidth=previous3D.height*desiredRatio;ctx.clearRect(0,0,768,576);ctx.drawImage(previous3D,(previous3D.width-sourceWidth)/2,0,sourceWidth,previous3D.height,0,0,768,576);}
+  Roam.suspend(true);document.body.append(ov);
+  let closed=false,mealActor=null,mealRaf=0,started=false;const timers=[];
+  const close=()=>{if(closed)return;closed=true;timers.forEach(clearTimeout);cancelAnimationFrame(mealRaf);mealActor?.destroy();ov.remove();feedScene.busy=false;Roam.suspend(false);onDone?.();};
+  ov.querySelector(".feed-x").onclick=close;ov.onclick=e=>{if(e.target===ov)close();};
+  const food=ov.querySelector(".food");
+  const startMeal=()=>{if(started||closed)return;started=true;
+    timers.push(setTimeout(()=>{if(!closed){food.style.opacity=".5";ov.querySelector(".feed-say").textContent=kind==="water"?"喝一点，歇一下～":"吃一点，歇一下～";}},2400));
+    timers.push(setTimeout(()=>{if(!closed){food.style.opacity=".16";ov.querySelector(".feed-say").textContent=kind==="water"?"喝好啦，谢谢你～":"吃好啦，谢谢你～";ov.querySelector(".feed-cap").textContent="吃饱喝足后，陪它安静休息一会儿";ov.dataset.phase="rest";}},6500));
+  };
+  if(v.cat.breed==="orange"&&typeof Pet3D!=="undefined"&&Pet3D.mountActor){
+    dish.style.display="none";ov.querySelector(".feed-say").textContent="食物准备中，陪它等一会儿～";
+    (async()=>{try{
+      const pose=kind==="water"?"sit":"eat";
+      const actor=await Pet3D.mountActor(ov.querySelector(".feed-one-cat"),{breed:"orange",pose,fill:320/432,bottom:.008,
+        onPose:(name,renderer)=>{if(!closed){canvas.style.visibility="hidden";dish.style.display=renderer.asset.gltf.extras?.contains_original_bowl?"none":"";}},
+        onFallback:()=>{if(!closed){canvas.style.visibility="visible";dish.style.display="";}}});
+      if(closed){actor.destroy();return;}mealActor=actor;ov.dataset.renderer="3d";ov.querySelector(".feed-say").textContent=kind==="water"?"慢慢喝水～":"开饭啦，慢慢吃～";
+      const frame=now=>{if(closed)return;const ok=actor.draw({now,pose,mode:actor.hasEmbeddedBowl?"idle":"look",gaze:actor.hasEmbeddedBowl?undefined:[0,.65],reduce:false});canvas.style.visibility=ok?"hidden":"visible";dish.style.display=ok&&actor.hasEmbeddedBowl?"none":"";mealRaf=requestAnimationFrame(frame);};mealRaf=requestAnimationFrame(frame);startMeal();
+    }catch{if(!closed){dish.style.display="";canvas.style.visibility="visible";ov.querySelector(".feed-say").textContent=kind==="water"?"慢慢喝水～":"开饭啦，慢慢吃～";startMeal();}}})();
+  }else startMeal();
+  return true;
 }
 
 /* ---------- boot ---------- */

@@ -1,0 +1,6 @@
+/* A separate canvas preserves the ready HD 2D fallback during GL initialization
+   and after context loss. Only the orange-cat renderer mounts this surface. */
+.pet-model3d-canvas{position:absolute!important;inset:0!important;display:block!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;background:transparent!important;opacity:1!important;pointer-events:none!important;object-fit:contain!important;transform:none!important;animation:none!important;border:0!important;z-index:1}
+.pet-model3d-canvas[hidden]{display:none!important}
+.animal-r7 .animal-message{z-index:3}
+.play-r7 .pl-cat .pet-model3d-canvas{width:240px!important;height:180px!important}

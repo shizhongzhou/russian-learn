@@ -14,69 +14,108 @@ function cloudCard() {
     const synced = st.syncedAt ? new Date(st.syncedAt).toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "";
     sec.innerHTML = `<div class="row"><h2>云端账号</h2><span class="pill ${L.state === "user" ? "green" : ""}">${L.state === "user" ? "已登录" : L.state === "guest" ? "游客" : "未连接"}</span></div>
       <p class="hint">${esc(L.text)}${synced ? ` · 上次同步 ${synced}` : ""}</p>
-      ${L.state === "user" && Cloud.user() ? `<p class="hint uid">用户 ID：<span>${esc(Cloud.user().id)}</span></p>` : ""}
+      ${L.state === "user" && (Cloud.user()?.username || Cloud.user()?.user_metadata?.username) ? `<p class="hint">登录用户名：${esc(Cloud.user().username || Cloud.user().user_metadata?.username || "")}</p>` : ""}
       ${L.state === "off" ? "" : L.state === "user"
-        ? `<div class="row2"><button class="btn ghost" id="syncNow">立即同步</button><button class="btn ghost" id="logout">退出登录</button></div>`
+        ? `<div class="row2"><button class="btn ghost" id="syncNow">立即同步</button><button class="btn ghost" id="logout">退出登录</button></div><div class="row2"><button class="btn ghost" id="username">设置登录用户名</button><button class="btn ghost" id="passwordSetup">设置 / 找回密码</button></div>`
         : `<button class="btn big" id="login">登录 / 注册</button><p class="hint">登录后换手机、网页和 App 都是同一只猫。</p>`}
       ${L.state === "off" ? "" : `<div class="cloud-links"><a href="#/rank">排行榜 ›</a><a href="#/friends">好友 ›</a><a href="#/admin" id="adminLink" hidden>管理后台 ›</a></div>`}`;
     const q = s => sec.querySelector(s);
-    if (q("#login")) q("#login").onclick = loginSheet;
+    if (q("#login")) q("#login").onclick = () => loginSheet();
+    if(q("#username"))q("#username").onclick=()=>loginUsernameSheet(draw);
+    if(q("#passwordSetup"))q("#passwordSetup").onclick=()=>{loginSheet(draw,{mode:"reset"});};
     if (q("#syncNow")) q("#syncNow").onclick = async () => { await Cloud.push(true); Pet.toast(Cloud.status().err || "已同步", Cloud.status().err ? "warn" : "good"); draw(); };
-    if (q("#logout")) q("#logout").onclick = async () => { await Cloud.logout(); Pet.toast("已退出登录，本机进度还在"); draw(); };
+    if (q("#logout")) q("#logout").onclick = async () => { await Cloud.logout(); Pet.toast("已退出登录，本机进度已保留"); location.hash="#/welcome"; };
     if (Cloud.enabled()) Cloud.call("whoami").then(r => { const a = q("#adminLink"); if (a && r.admin) a.hidden = false; }).catch(() => {});
   }
   Cloud.onChange(() => { if (document.body.contains(sec)) draw(); });
   draw();
   return sec;
 }
-function loginSheet(onDone) {
+function loginSheet(onDone, options = {}) {
+  if(loginSheet.current)return loginSheet.current;
   const apple = IS_NATIVE && !!capPlugin("SignInWithApple") && /iphone|ipad|mac/i.test(navigator.userAgent);
-  const box = h(`<div class="cloud-pick" role="dialog" aria-modal="true" aria-label="登录"><div class="cp-card login">
-    <div class="row"><h2>登录 / 注册</h2><button class="iconbtn" id="x" aria-label="关闭">×</button></div>
-    <div class="seg" role="tablist"><button role="tab" aria-selected="true" data-k="phone">手机号</button><button role="tab" aria-selected="false" data-k="email">邮箱</button></div>
-    <label class="field"><span id="lbl">手机号</span><input id="who" inputmode="tel" autocomplete="tel" placeholder="13800138000"></label>
-    <div class="row2"><label class="field grow"><span>验证码</span><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 位数字"></label><button class="btn ghost" id="send">获取验证码</button></div>
-    <button class="btn big" id="go" disabled>登录</button>
-    ${apple ? `<button class="btn big apple" id="apple"> 通过 Apple 登录</button>` : ""}
-    <p class="hint" id="msg">没有账号会自动注册。登录后，本机的猫咪会同步到账号里。</p>
-  </div></div>`);
+  const box = h(`<div class="cloud-pick auth-access" role="dialog" aria-modal="true" aria-labelledby="auth-title"><div class="cp-card login"></div></div>`);
   document.body.append(box);
-  const $ = s => box.querySelector(s), msg = $("#msg");
-  let kind = "phone", pending = null, cd = 0, timer;
-  $("#x").onclick = () => { clearInterval(timer); box.remove(); };
-  box.querySelectorAll("[data-k]").forEach(b => b.onclick = () => {
-    kind = b.dataset.k; box.querySelectorAll("[data-k]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
-    $("#lbl").textContent = kind === "phone" ? "手机号" : "邮箱";
-    const w = $("#who"); w.value = ""; w.inputMode = kind === "phone" ? "tel" : "email"; w.autocomplete = kind === "phone" ? "tel" : "email";
-    w.placeholder = kind === "phone" ? "13800138000" : "name@example.com"; pending = null; $("#go").disabled = true;
-  });
-  $("#send").onclick = async () => {
-    const who = $("#who").value.trim();
-    if (kind === "phone" ? !/^1\d{10}$/.test(who) : !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(who)) { msg.textContent = kind === "phone" ? "请输入 11 位手机号" : "邮箱格式不对"; return; }
-    if (cd > 0) return;
-    msg.textContent = "正在发送…";
-    try {
-      pending = await Cloud.sendCode(kind, who);
-      msg.textContent = `验证码已发送到 ${who}`; $("#go").disabled = false; $("#code").focus();
-      cd = 60; $("#send").disabled = true;
-      timer = setInterval(() => { cd--; $("#send").textContent = cd > 0 ? `${cd} 秒` : "重新发送"; if (cd <= 0) { clearInterval(timer); $("#send").disabled = false; } }, 1000);
-    } catch (e) { msg.textContent = e.message; }
-  };
-  $("#go").onclick = async () => {
-    const code = $("#code").value.trim();
-    if (!/^\d{4,6}$/.test(code)) { msg.textContent = "请输入收到的验证码"; return; }
-    $("#go").disabled = true; msg.textContent = "登录中…";
-    try { await Cloud.verifyCode(pending, code); clearInterval(timer); box.remove(); if (onDone) onDone(); else Pet.toast("登录成功，猫咪已同步", "good"); }
-    catch (e) { msg.textContent = e.message; $("#go").disabled = false; }
-  };
-  if ($("#apple")) $("#apple").onclick = async () => {
-    msg.textContent = "正在通过 Apple 登录…";
-    try { await Cloud.appleLogin(); box.remove(); if (onDone) onDone(); else Pet.toast("登录成功，猫咪已同步", "good"); } catch (e) { msg.textContent = e.message; }
-  };
+  const card=box.querySelector(".login");
+  let mode=["register","reset"].includes(options.mode)?options.mode:"login",method=options.method==="password"?"password":"otp",identityKind="phone",pending=null,requestKey="",busy=false,closed=false,retrySync=false;
+  const cooldowns=new Map();let clock;
+  function close(){closed=true;clearInterval(clock);box.remove();loginSheet.current=null;}
+  function entered(){
+    if(closed)return;
+    const outcome={user:Cloud.user(),mode,newAccount:!Pet.state.profile};
+    close();
+    if(typeof onDone==="function")onDone(outcome);
+    else if(!Cloud.restoring()){if(Pet.state.profile)location.hash="#/home";else location.hash="#/welcome";Pet.toast(mode==="register"?"账号已验证，可以选择你的宠物了":"登录成功，已恢复你的进度","good");}
+  }
+  function draw(){
+    pending=null;requestKey="";busy=false;retrySync=false;
+    const register=mode==="register",reset=mode==="reset",passwordOnly=mode==="login"&&method==="password",needsPassword=register||reset||passwordOnly;
+    card.innerHTML=`<header class="auth-heading"><div><h2 id="auth-title">${register?"注册新账号":reset?"找回 / 设置密码":"欢迎回来"}</h2><p>${register?"先验证手机号或邮箱，再领养你的宠物。":reset?"验证账号本人后，设置新的登录密码。":"登录后继续你的宠物和学习进度。"}</p></div><button type="button" class="iconbtn" data-auth-close aria-label="关闭登录窗口">×</button></header>
+      <nav class="auth-modes" aria-label="账号操作"><button type="button" data-auth-mode="login" aria-current="${mode==="login"?"page":"false"}">登录</button><button type="button" data-auth-mode="register" aria-current="${register?"page":"false"}">注册新账号</button></nav>
+      ${mode==="login"?`<div class="auth-methods" role="tablist" aria-label="登录方式"><button type="button" role="tab" aria-selected="${method==="otp"}" data-auth-method="otp">验证码登录</button><button type="button" role="tab" aria-selected="${passwordOnly}" data-auth-method="password">账号密码登录</button></div>`:""}
+      <form class="auth-form" novalidate>
+      ${register?`<label class="field"><span>登录用户名</span><input id="auth-username" autocomplete="username" maxlength="24" placeholder="5–24 位，以字母开头"></label>`:""}
+      ${!passwordOnly?`<div class="auth-identities" role="group" aria-label="验证方式"><button type="button" data-auth-identity="phone" aria-pressed="${identityKind==="phone"}">手机号</button><button type="button" data-auth-identity="email" aria-pressed="${identityKind==="email"}">邮箱</button></div>`:""}
+      <label class="field"><span>${passwordOnly?"用户名 / 手机号 / 邮箱":identityKind==="phone"?"手机号":"邮箱地址"}</span><input id="auth-account" ${passwordOnly?'autocomplete="username"':identityKind==="phone"?'inputmode="tel" autocomplete="tel"':'type="email" autocomplete="email"'} placeholder="${passwordOnly?"输入登录账号":identityKind==="phone"?"中国大陆手机号，或 +国家区号 手机号":"name@example.com"}"></label>
+      ${needsPassword?`<label class="field"><span>${reset?"新密码":"密码"}</span><input id="auth-password" type="password" minlength="8" maxlength="64" autocomplete="${passwordOnly?"current-password":"new-password"}" placeholder="${passwordOnly?"输入密码":"8–64 位，请勿与其他账号共用"}"></label>`:""}
+      ${register||reset?`<label class="field"><span>确认密码</span><input id="auth-confirm" type="password" autocomplete="new-password" maxlength="64" placeholder="再次输入密码"></label>`:""}
+      ${!passwordOnly?`<div class="auth-code-row"><label class="field"><span>验证码</span><input id="auth-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="输入收到的验证码"></label><button class="btn ghost" type="button" id="auth-send">获取验证码</button></div>`:""}
+      <p class="auth-message" id="auth-message" role="status" aria-live="polite"></p>
+      <button class="btn big" id="auth-submit" type="submit">${register?"注册并进入":reset?"保存新密码并登录":"登录并进入"}</button></form>
+      ${mode==="login"?`<div class="auth-links"><button type="button" data-auth-forgot>忘记密码？</button><button type="button" data-auth-register>还没有账号？注册新账号</button></div>`:reset?`<button class="auth-back" type="button" data-auth-login>返回登录</button><p class="hint auth-footnote">只有已注册的账号可以找回密码。新用户请选择“注册新账号”。</p>`:`<p class="hint auth-footnote">如果该手机号或邮箱已注册，验证后会登录原账号，不会修改原密码。</p><button class="auth-back" type="button" data-auth-login>已有账号？直接登录</button>`}
+      ${apple&&mode==="login"?`<button class="btn big apple" type="button" data-auth-apple>通过 Apple 登录</button>`:""}`;
+    const q=s=>card.querySelector(s),message=q("#auth-message"),account=q("#auth-account"),submit=q("#auth-submit");
+    q("[data-auth-close]").onclick=close;
+    card.querySelectorAll("[data-auth-mode]").forEach(b=>b.onclick=()=>{if(busy)return;mode=b.dataset.authMode;draw();});
+    card.querySelectorAll("[data-auth-method]").forEach(b=>b.onclick=()=>{if(busy)return;method=b.dataset.authMethod;draw();});
+    card.querySelectorAll("[data-auth-identity]").forEach(b=>b.onclick=()=>{if(busy||identityKind===b.dataset.authIdentity)return;identityKind=b.dataset.authIdentity;draw();});
+    for(const selector of ["[data-auth-login]","[data-auth-register]","[data-auth-forgot]"]){const b=q(selector);if(b)b.onclick=()=>{if(busy)return;mode=selector.includes("register")?"register":selector.includes("forgot")?"reset":"login";draw();};}
+    function fields(){
+      const value=account.value.trim(),password=q("#auth-password")?.value||"",username=q("#auth-username")?.value.trim()||"";
+      if(passwordOnly){if(!value||!password)throw new Error("请输入账号和密码");return {value,password};}
+      const to=Cloud.accountTarget(value,identityKind);
+      if(register||reset){if(password.length<8||password.length>64)throw new Error("密码需为 8–64 位");if(password!==q("#auth-confirm").value)throw new Error("两次输入的密码不一致");}
+      if(register&&!/^[A-Za-z][A-Za-z0-9_.-]{4,23}$/.test(username))throw new Error("用户名需以字母开头，共 5–24 位，可用字母、数字、下划线和短横线");
+      return {value:to.value,kind:to.kind,password,username};
+    }
+    function key(f){return JSON.stringify([mode,f.kind||"",f.value,f.username||"",register?f.password:""]);}
+    function lock(value){busy=value;submit.disabled=value;card.querySelectorAll('[data-auth-mode],[data-auth-method],[data-auth-identity],[data-auth-login],[data-auth-register],[data-auth-forgot]').forEach(b=>b.disabled=value);if(q("#auth-send"))q("#auth-send").disabled=value||remaining()>0;}
+    function remaining(){let f;try{f=Cloud.accountTarget(account.value.trim(),identityKind);}catch{return 0;}return Math.max(0,Math.ceil(((cooldowns.get(f.kind+":"+f.value)||0)-Date.now())/1000));}
+    function showCooldown(){const b=q("#auth-send");if(!b)return;const n=remaining();b.textContent=n?`${n} 秒后重发`:"获取验证码";b.disabled=busy||n>0;}
+    clearInterval(clock);if(!passwordOnly)clock=setInterval(showCooldown,1000);
+    if(q("#auth-send"))q("#auth-send").onclick=async()=>{
+      if(busy||remaining()>0)return;
+      let f;try{f=fields();}catch(e){message.textContent=e.message;return;}
+      lock(true);message.textContent="正在发送验证码…";
+      try{
+        const challenge=register?await Cloud.sendRegistrationCode({kind:f.kind,target:f.value,username:f.username,password:f.password}):reset?await Cloud.sendPasswordCode(f.value):await Cloud.sendCode(f.kind,f.value);
+        if(closed)return;
+        pending=challenge;requestKey=key(f);cooldowns.set(f.kind+":"+f.value,Date.now()+60000);message.textContent=`验证码已发送到 ${f.value}`;q("#auth-code").focus();
+      }catch(e){if(!closed)message.textContent=e.message||"验证码没有发送成功，请重试";}finally{if(!closed){lock(false);showCooldown();}}
+    };
+    q(".auth-form").onsubmit=async e=>{
+      e.preventDefault();if(busy)return;
+      if(retrySync){lock(true);message.textContent="正在重新读取学习进度…";try{await Cloud.resumeSignIn();if(!closed)entered();}catch(error){if(!closed){message.textContent=error.message;lock(false);}}return;}
+      let f;try{f=fields();}catch(error){message.textContent=error.message;return;}
+      const code=q("#auth-code")?.value.trim()||"";
+      if(!passwordOnly){if(!pending){message.textContent="请先获取验证码";return;}if(requestKey!==key(f)){pending=null;requestKey="";message.textContent="账号、用户名或注册密码已修改，请重新获取验证码";return;}if(!/^\d{4,6}$/.test(code)){message.textContent="请输入收到的 4–6 位验证码";return;}}
+      lock(true);message.textContent=register?"正在验证并注册…":reset?"正在验证并保存新密码…":"正在登录…";
+      try{
+        if(passwordOnly)await Cloud.passwordLogin(f.value,f.password);
+        else if(reset)await Cloud.finishPasswordSetup(pending,code,f.password);
+        else await Cloud.verifyCode(pending,code);
+        if(!closed)entered();
+      }catch(error){if(!closed){message.textContent=error.message||"没有完成，请检查后重试";if(error.code==="AUTH_SYNC_PENDING"){retrySync=true;submit.textContent="重试恢复进度";}lock(false);}}
+    };
+    // Never submit merely because a code was typed: users can review their account first.
+    if(q("[data-auth-apple]"))q("[data-auth-apple]").onclick=async()=>{if(busy)return;lock(true);message.textContent="正在通过 Apple 登录…";try{await Cloud.appleLogin();if(!closed)entered();}catch(e){if(!closed){message.textContent=e.message;lock(false);}}};
+  }
+  draw();loginSheet.current={close};return loginSheet.current;
 }
 
 /* ---------- leaderboard ---------- */
 function pageRank(by) {
+  if(by==="friends"){const box=h(`<div class="page"><header class="subhead">${SOC_BACK("#/home","返回主页")}<h1>好友学习排名</h1></header></div>`);app.append(box);mountHomeFriendRank(box,true);return;}
   const tabs = [["week", "本周答对"], ["streak", "连续学习"], ["growth", "成长值"], ["words", "单词量"]];
   by = tabs.some(t => t[0] === by) ? by : "week";
   const box = h(`<div class="page rank"><header class="subhead">${SOC_BACK("#/home", "返回主页")}<h1 class="display small grow">排行榜</h1></header>
@@ -158,4 +197,9 @@ function pageAdmin() {
     const q = body.querySelector("#q");
     q.onchange = async () => { const x = await Cloud.call("adminFind", { q: q.value }).catch(e => ({ users: [] })); body.querySelector("#rows").innerHTML = x.users.map(urow).join(""); };
   }).catch(e => body.innerHTML = `<p class="empty">${esc(e.message)}</p>`);
+}
+
+function loginUsernameSheet(after){
+ const box=h(`<div class="cloud-pick" role="dialog" aria-modal="true" aria-label="设置登录用户名"><div class="cp-card"><h2>设置登录用户名</h2><label class="field"><span>用户名</span><input id="login-username" autocomplete="username" minlength="5" maxlength="24" value="${esc((Cloud.user()?.username || Cloud.user()?.user_metadata?.username)||"")}" placeholder="5–24 位字母或数字"></label><p class="hint">用户名用于账号密码登录；宠物名字和学习昵称不会改变。</p><p class="hint" id="username-error" role="status"></p><button class="btn big" id="save-username">保存用户名</button><button class="btn ghost big" id="cancel-username">取消</button></div></div>`);document.body.append(box);
+ box.querySelector("#cancel-username").onclick=()=>box.remove();box.querySelector("#save-username").onclick=async()=>{const button=box.querySelector("#save-username");button.disabled=true;try{await Cloud.setLoginUsername(box.querySelector("#login-username").value.trim());box.remove();after?.();Pet.toast("登录用户名已保存","good");}catch(e){box.querySelector("#username-error").textContent=e.message;button.disabled=false;}};
 }

@@ -1,0 +1,9 @@
+
+/models/
+/audio/
+/data/resources/
+/img/anim/
+/img/pets/exact/
+/img/pets/hd/
+/vendor/pdfjs/
+**/__pycache__/

@@ -108,7 +108,11 @@ async function pageReader(id) {
   try {
     lib = await loadPdfJs();
     let source;
-    if (meta.url) source = { url: meta.url, disableAutoFetch: true, disableStream: true, rangeChunkSize: 262144 };
+    if (meta.url && typeof PDF_PARTS!=="undefined" && PDF_PARTS[meta.url]) {
+      const m=PDF_PARTS[meta.url],cache=new Map(),range=new lib.PDFDataRangeTransport(m.size,new Uint8Array(0));
+      range.requestDataRange=async(begin,end)=>{try{const out=new Uint8Array(end-begin);for(let i=Math.floor(begin/m.chunkSize);i<=Math.floor((end-1)/m.chunkSize);i++){if(!cache.has(i))cache.set(i,fetch(m.parts[i]).then(r=>{if(!r.ok)throw Error("PDF part");return r.arrayBuffer()}).then(b=>new Uint8Array(b)));const data=await cache.get(i),a=Math.max(begin,i*m.chunkSize),b=Math.min(end,i*m.chunkSize+data.length);out.set(data.subarray(a-i*m.chunkSize,b-i*m.chunkSize),a-begin);}range.onDataRange(begin,out);}catch(e){msg.textContent="教材加载失败，请检查网络后重新打开。";}};
+      source={range,disableAutoFetch:true,disableStream:true,rangeChunkSize:262144};
+    } else if (meta.url) source = { url: meta.url, disableAutoFetch: true, disableStream: true, rangeChunkSize: 262144 };
     else {
       const rec = await BookDB.get(id);
       if (!rec) { msg.textContent = "这本书的文件找不到了，请重新导入。"; return; }

@@ -1,195 +1,197 @@
 "use strict";
-/* Shared motion controller for all 33 breeds and all growth stages. Video-backed
-   poses are used only when the matching stage is available. Other breeds retain
-   their own stage artwork, with low-amplitude secondary motion. */
-const Roam = (() => {
-  let el, img, bubble, body, ball, on = false, x = 24, y = 0, facing = 1;
-  let surface = null, nextSurface = null, poseTimer = 0;
-  let frame = 0, behaviorTimer = 0, bubbleTimer = 0, plan = null, drag = null, pageCtl = null, custom = null, generation = 0, poseName = "sit";
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-  const profile = () => {
-    const v = Pet.view(), stage = artStage(v.shownStage), dog = isDog(v.cat.breed);
-    const calm = ["british", "persian", "ragdoll", "bernese", "frenchie"].includes(v.cat.breed);
-    return { stage, dog, height: Math.round((dog ? 96 : 92) * petK(v.shownStage)), walk: (stage === 1 ? 51 : stage === 2 ? 61 : 48) * (dog ? 1.12 : 1) * (calm ? .8 : 1), run: stage === 1 ? 116 : stage === 2 ? 138 : 104, rest: stage === 1 ? 2200 : stage === 2 ? 2900 : 4100 };
-  };
-  function bounds() {
-    const tab = document.getElementById("tabbar"), viewport = window.visualViewport;
-    const width = viewport ? viewport.width : innerWidth, height = viewport ? viewport.height : innerHeight;
-    const floor = Math.min(height - 8, tab && !tab.hidden ? tab.getBoundingClientRect().top : height - 8);
-    const page=app.getBoundingClientRect(), left=Math.max(10,page.left+8), right=Math.min(width-10,page.right-8)-(el?el.offsetWidth:100);
-    return { left, right:Math.max(left,right), top:110, floor };
+/* One HD animal, one ground plane, and one owner for every interaction.
+   Low-resolution auto-looping videos are intentionally not used as idle states. */
+const PET_PROP = {
+  ball:'<img src="img/anim/orange/generated/yarn-v1.png" alt="毛线球" draggable="false">',
+  fish:'<svg preserveAspectRatio="xMidYMax meet" viewBox="0 0 94 62" role="img" aria-label="小鱼抱枕"><ellipse cx="43" cy="55" rx="35" ry="4" fill="#23374b" opacity=".10"/><path d="M18 31Q42 2 72 26L89 15V48L71 37Q42 63 18 31Z" fill="#8db8cf" stroke="#5c8fa8" stroke-width="2"/><path d="M32 19Q41 31 32 43M44 14Q55 31 44 48" stroke="#c1d9df" stroke-width="2" fill="none"/><circle cx="25" cy="27" r="3" fill="#314858"/><circle cx="24" cy="26" r="1" fill="white"/><path d="M18 32Q22 37 26 33" fill="none" stroke="#577d91" stroke-width="1.5"/></svg>',
+  food:'<svg preserveAspectRatio="xMidYMax meet" viewBox="0 0 76 56" aria-label="猫粮碗"><ellipse cx="38" cy="48" rx="32" ry="5" fill="#26311a" opacity=".12"/><path d="M8 22h60l-7 22Q38 54 15 44z" fill="#c9744e"/><ellipse cx="38" cy="22" rx="30" ry="10" fill="#8a4d2c"/><g fill="#c49357"><circle cx="23" cy="22" r="4"/><circle cx="33" cy="17" r="4"/><circle cx="44" cy="23" r="4"/><circle cx="53" cy="19" r="4"/><circle cx="32" cy="25" r="4"/></g></svg>',
+  water:'<svg preserveAspectRatio="xMidYMax meet" viewBox="0 0 76 56" aria-label="水碗"><ellipse cx="38" cy="48" rx="32" ry="5" fill="#26311a" opacity=".12"/><path d="M8 22h60l-7 22Q38 54 15 44z" fill="#5f94b9"/><ellipse cx="38" cy="22" rx="30" ry="10" fill="#acd9e6"/><path d="M19 22q15-6 30 0" fill="none" stroke="#f4ffff" stroke-width="2"/></svg>'
+};
+const PetBehaviorMemory = (() => { try { return JSON.parse(sessionStorage.getItem("mm_behavior_r7") || "{}"); } catch (_) { return {}; } })();
+function rememberPetBehavior(key, snapshot) {
+  PetBehaviorMemory[key] = snapshot;
+  try { sessionStorage.setItem("mm_behavior_r7", JSON.stringify(PetBehaviorMemory)); } catch (_) {}
+}
+/* Wall-clock nap deadlines survive route changes, visibility changes and reloads. */
+class PetBehaviorModel {
+  constructor({ now=()=>Date.now(), random=Math.random, memory=null }={}) {
+    this.now=now;this.random=random;this.state="observe";this.elapsed=0;this.duration=30;
+    this.energy=.8;this.napUntil=0;this.lastNapAt=0;this.lastCare=0;this.lastToyAt=0;
+    if(memory) { this.energy=Number.isFinite(memory.energy)?memory.energy:.8;this.lastNapAt=memory.lastNapAt||0;this.lastCare=memory.lastCare||0;this.lastToyAt=memory.lastToyAt||0;
+      if(memory.napUntil>this.now()) {this.napUntil=memory.napUntil;this.enter("sleep",(this.napUntil-this.now())/1000);} }
   }
-  function platforms() {
-    const b = bounds(), w = el.offsetWidth;
-    return [...app.querySelectorAll(".hhero,.cont2,.stats2,.plan2,.card.resource-entry")].filter(node => {
-      const r=node.getBoundingClientRect(), yy=node.matches(".hhero")?r.bottom-5:r.top+1;return yy>110+profile().height && yy<b.floor-45 && r.width>w+30;
-    });
+  enter(state,duration=30){this.state=state;this.elapsed=0;this.duration=duration;}
+  nap(){this.lastNapAt=this.now();this.napUntil=this.now()+(180+this.random()*180)*1000;this.enter("settle",1.5);}
+  touch(){if(this.napUntil>this.now()){this.enter("drowsy",2.5);return false;}this.enter("pet",6);return true;}
+  toy(kind){this.napUntil=0;this.lastToyAt=this.now();this.enter(kind==="fish"?"cuddle":"play",kind==="fish"?24:32);}
+  rest(){this.napUntil=0;this.enter("rest",90);}
+  step(dt){
+    const step=Math.min(.05,Math.max(0,dt));this.elapsed+=step;
+    if(!["sleep","settle","drowsy","rest"].includes(this.state))this.energy=Math.max(.15,this.energy-step/1200);
+    if(this.state==="sleep") { if(this.now()>=this.napUntil){this.napUntil=0;this.energy=Math.min(1,this.energy+.4);this.enter("observe",45);}return; }
+    if(this.state==="drowsy") {if(this.elapsed>=this.duration)this.enter("sleep",Math.max(1,(this.napUntil-this.now())/1000));return;}
+    if(this.state==="settle"){if(this.elapsed>=this.duration)this.enter("sleep",Math.max(1,(this.napUntil-this.now())/1000));return;}
+    if(this.elapsed<this.duration)return;
+    if(["play","cuddle","pet","rest","recover"].includes(this.state)){this.enter("observe",30+this.random()*20);return;}
+    // A settled animal rests for a while; it does not alternate yawn/lie every few seconds.
+    if(this.state==="observe" && this.energy<.3 && this.now()-this.lastNapAt>1200000)this.nap();
+    else this.enter("observe",30+this.random()*25);
   }
-  function surfacePoint(node) {
-    const b = bounds(); if (!node || !document.body.contains(node)) return { x:clamp(x,b.left,b.right), y:b.floor };
-    const r=node.getBoundingClientRect();
-    return { x:clamp(x, Math.max(b.left,r.left+12), Math.min(b.right,r.right-el.offsetWidth-12)), y:node.matches(".hhero") ? r.bottom-5 : r.top+1 };
+  snapshot(){return {at:this.now(),state:this.state,energy:this.energy,napUntil:this.napUntil,lastNapAt:this.lastNapAt,lastCare:this.lastCare,lastToyAt:this.lastToyAt};}
+}
+class PetToyPhysics {
+  constructor(){this.x=0;this.y=0;this.v=0;this.spin=0;this.dragging=false;this.rolls=0;}
+  roll(velocity){this.v=velocity;this.rolls++;}
+  step(dt,left,right){
+    if(this.dragging)return;
+    dt=Math.min(.05,Math.max(0,dt));this.x+=this.v*dt;this.spin+=this.v*dt/24;this.v*=Math.exp(-1.8*dt);
+    if(this.x<left){this.x=left;this.v=Math.abs(this.v)*.45;}else if(this.x>right){this.x=right;this.v=-Math.abs(this.v)*.45;}
+    if(Math.abs(this.v)<.35)this.v=0;
   }
-  function ensure() {
-    if (el) return;
-    el = h(`<button type="button" class="roam2 natural-pet" aria-label="摸摸你的宠物"><span class="rb" hidden></span><span class="rp"><img alt="" draggable="false"></span><span class="pet-ground" aria-hidden="true"></span></button>`);
-    document.body.append(el); body = el.querySelector(".rp"); img = el.querySelector("img"); img.onerror=()=>{const v=Pet.view(),fallback=petFallbackSrc(v.cat.breed,v.shownStage);if(img.getAttribute("src")!==fallback)img.src=fallback;}; bubble = el.querySelector(".rb");
-    ball = h(`<span class="roam-ball" aria-hidden="true" hidden></span>`); document.body.append(ball);
-    el.onpointerdown = e => {
-      if (e.button && e.button !== 0) return;
-      clearTimeout(behaviorTimer); stopMove();
-      drag = { id: e.pointerId, sx: e.clientX, sy: e.clientY, ox: x, oy: y, moved: false };
-      el.setPointerCapture(e.pointerId);
-    };
-    el.onpointermove = e => {
-      if (!drag || drag.id !== e.pointerId) return;
-      const dx = e.clientX - drag.sx, dy = e.clientY - drag.sy;
-      if (!drag.moved && Math.hypot(dx, dy) < 7) return;
-      if (!drag.moved) { drag.moved = true; setPose("look"); el.classList.add("held"); }
-      const b = bounds(); x = clamp(drag.ox + dx, b.left, b.right); y = clamp(drag.oy + dy, 110, b.floor); place();
-    };
-    el.onpointerup = e => release(e, false);
-    el.onpointercancel = e => release(e, true);
-    addEventListener("resize", fit);
-    addEventListener("scroll", fit, { passive:true });
-    if (window.visualViewport) { visualViewport.addEventListener("resize", fit); visualViewport.addEventListener("scroll", fit); }
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) { clearTimeout(behaviorTimer); stopMove(); ball.hidden = true; }
-      else if (on) { fit(); rest(); }
-    });
-    reduced.addEventListener("change", () => { if (on) { stopMove(); rest(); } });
+}
+const PetSleepArt={};
+class NaturalPetScene {
+  constructor(host,{floating=false}={}){
+    this.host=host;this.floating=floating;this.dead=false;this.suspended=false;this.raf=0;this.last=0;this.version=0;this.sprite=null;this.face=1;this.pose="sit";this.x=0;this.y=0;this.moving=false;this.runPreview=null;this.propKind="ball";this.toy=new PetToyPhysics();this.pendingContact=false;this.contactAt=0;this.smallClock=0;this.smallNext=1.5;this.smallAction=null;this.smallIndex=0;
+    const v=Pet.view();this.key=v.cat.breed;this.stage=v.shownStage;this.memoryKey=this.key+"/"+artStage(this.stage);
+    this.model=new PetBehaviorModel({memory:PetBehaviorMemory[this.memoryKey]});
+    this.el=h('<button type="button" class="animal-v3 animal-r7" aria-label="摸摸宠物" hidden><span class="animal-shadow"></span><canvas width="768" height="432" aria-hidden="true"></canvas><span class="animal-message" hidden></span></button>');
+    this.canvas=this.el.querySelector("canvas");this.ctx=this.canvas.getContext("2d");this.bubble=this.el.querySelector(".animal-message");
+    this.prop=h('<button type="button" class="animal-prop animal-prop-r7" aria-label="和宠物玩球" hidden></button>');host.append(this.prop,this.el);this.setProp("ball");
+    this.el.onclick=()=>this.touch();this.prop.onclick=()=>{if(this.suppressClick){this.suppressClick=false;return;}return this.propKind==="fish"?this.playFish():this.playBall();};
+    this.bindToyDrag();this.resize=()=>this.fit();window.addEventListener("resize",this.resize);this.fit(true);
+    this.visibility=()=>{this.last=0;if(!document.hidden&&!this.raf)this.raf=requestAnimationFrame(t=>this.tick(t));};document.addEventListener("visibilitychange",this.visibility);
+    this.scroll=()=>{if(this.floating){this.y=this.bounds().floor;this.toy.y=this.y;this.render();}};if(floating)window.addEventListener("scroll",this.scroll,{passive:true});
+    this.ready=PetArt.load(this.key,this.stage).then(sprite=>{if(this.dead)return;this.sprite=sprite;this.el.hidden=this.suspended;this.prop.hidden=this.suspended;this.drawAnimal();this.threeReady=this.prepare3D();return sprite;}).catch(()=>{if(!this.dead)this.say("宠物图片暂未加载，请刷新重试");});
+    if(this.key==="orange"&&!PetSleepArt.image){const im=new Image();im.src="img/anim/orange/generated/sleep-hold-v2.png";PetSleepArt.ready=im.decode().then(()=>PetSleepArt.image=im).catch(()=>null);}
+    this.raf=requestAnimationFrame(t=>this.tick(t));
   }
-  function fit() {
-    if (!el || !on || drag) return;
-    stopMove(); const b=bounds(); let point=surfacePoint(surface);
-    if(point.y<110+profile().height || point.y>b.floor) {surface=null;point=surfacePoint(null);}
-    x=point.x;y=point.y;place();schedule();
+  get state(){return this.model.state;}
+  get elapsed(){return this.model.elapsed;}
+  bounds(){
+    const unit=this.floating?100:Math.min(142,this.host.clientWidth*.36);this.unit=unit;
+    if(!this.floating){const left=unit*.58+8,right=Math.max(left,this.host.clientWidth-unit*.58-8);return {left,right,floor:Math.max(unit+18,this.host.clientHeight-18)};}
+    const r=app.getBoundingClientRect(),tab=document.getElementById("tabbar"),floor=tab&&!tab.hidden?tab.getBoundingClientRect().top:innerHeight-8;
+    const left=Math.max(unit*.58,r.left+unit*.58),right=Math.max(left,Math.min(innerWidth-unit*.58,r.right-unit*.58));return {left,right,floor};
   }
-  function release(e, cancelled) {
-    if (!drag || drag.id !== e.pointerId) return;
-    const moved = drag.moved; drag = null; el.classList.remove("held");
-    if (cancelled) { fit(); return rest(); }
-    if (moved) {
-      surface = null; const b = bounds(); move(x, b.floor, "land");
-    } else { meowSafe("pet"); Pet.pet(); logEvent("pet", `摸了摸${petName()}`); say(profile().dog ? "汪！再摸摸～" : "呼噜呼噜～"); hop(12); }
+  fit(initial=false){const b=this.bounds();this.x=initial?(b.left+b.right)*.5:Math.max(b.left,Math.min(b.right,this.x));this.y=b.floor;if(initial){this.toy.x=Math.max(b.left-15,this.x-this.unit*.65);this.toy.y=this.y;}this.render();}
+  setProp(kind){this.propKind=kind;this.prop.innerHTML=PET_PROP[kind]||PET_PROP.ball;this.prop.setAttribute("aria-label",kind==="fish"?"抱抱小鱼玩具":kind==="food"?"食物碗":kind==="water"?"水碗":"和宠物玩球");}
+  touch(){
+    this.cancelGo();this.version++;const awake=this.model.touch();if(awake){Pet.pet();this.say("靠过来，陪你一会儿～");}else this.say("嗯…让我再睡一会儿…");
+    this.persist();this.drawAnimal();return awake;
   }
-  function place() {
-    if (!el) return;
-    el.style.transform = `translate3d(${x.toFixed(2)}px,${(y - el.offsetHeight).toFixed(2)}px,0)`;
-    const p = profile(); el.style.setProperty("--h", p.height + "px");
-    // Depth is subtle and grounded; pets stay within the lower part of the page.
-    const b = bounds(), depth = 1;
-    el.style.setProperty("--depth", depth.toFixed(3));
+  playBall(){
+    this.cancelGo();this.version++;this.model.toy("ball");this.setProp("ball");const b=this.bounds();this.face=this.x<(b.left+b.right)*.5?1:-1;
+    // Put the user-placed ball within the nearest front paw's actual reach.
+    const projected=this.projectedPaws(),paw=projected.length?(this.face>0?Math.max(...projected.map(p=>p.x)):Math.min(...projected.map(p=>p.x))):this.x+this.face*this.unit*.28;
+    const destination=projected.length?paw+this.face*26:this.x+this.face*(this.unit*.28+22);this.toy.x=Math.max(b.left-18,Math.min(b.right+18,destination));this.toy.y=this.y;
+    this.toy.roll(-this.face*14);this.pendingContact=true;this.contactAt=.55;this.say("小球到爪边啦，轻轻拨一下～");this.persist();this.render();return true;
   }
-  function setPose(p) {
-    if (!img) return;
-    const v = Pet.view(), key = v.cat.breed, src = reduced.matches ? null : animSrc(key, p, v.shownStage);
-    const wanted = src || petSrc(key, v.shownStage), token = ++generation;
-    poseName = p;
-    el.dataset.pose = p; el.classList.toggle("video-motion", !!src); el.classList.toggle("still-motion", !src);
-    el.style.setProperty("--stride", (profile().stage === 1 ? .38 : profile().dog ? .52 : .64) + "s");
-    const clip=src ? src.split("/").pop().replace(".webp", "") : "";
-    el.style.setProperty("--sprite-height", (ORANGE_FRAME_HEIGHT[clip] || 100) + "%");
-    const meta = src ? ANIM_OK[clip] : null;
-    const direction = meta && meta.dir || 1;
-    body.style.setProperty("--face", facing * direction);
-    if (img.getAttribute("src") === wanted) { place(); return; }
-    const next = new Image(); next.src = wanted;
-    next.decode().then(() => {
-      if (token !== generation) return;
-      img.src = wanted; el.classList.remove("pose-blend"); void el.offsetWidth; el.classList.add("pose-blend"); place();
-    }).catch(() => { if (token === generation) img.src = petSrc(key, v.shownStage); });
+  playFish(){
+    this.cancelGo();this.version++;this.model.toy("fish");this.setProp("fish");this.toy.v=0;this.toy.spin=0;this.toy.x=this.x+this.unit*.2;this.toy.y=this.y;this.pendingContact=false;this.say("把小鱼抱枕放在爪边，陪它玩一会儿～");this.persist();this.render();return true;
   }
-  function stopMove() { if (frame) cancelAnimationFrame(frame); frame = 0; plan = null; if (el) el.classList.remove("moving"); }
-  function schedule(delay) { clearTimeout(behaviorTimer); if (on && !document.hidden) behaviorTimer = setTimeout(choose, delay == null ? profile().rest + Math.random() * 3600 : delay); }
-  function say(text, duration = 2400) { if (!on || !bubble || !text) return; bubble.textContent = text; bubble.hidden = false; clearTimeout(bubbleTimer); bubbleTimer = setTimeout(() => bubble.hidden = true, duration); }
-  function rest() {
-    if (!on) return;
-    el.classList.remove("moving");
-    const v = Pet.view(); const r=Math.random(); setPose(v.sick || v.full < 20 ? "sleep" : r < .25 ? "sleep" : r < .45 ? "lie" : r < .7 ? "look" : "sit");
-    ball.hidden = true; schedule();
+  rest(){this.cancelGo();this.model.rest();this.toy.v=0;this.say("就在这里安静陪你～");this.persist();this.render();return true;}
+  enter(state,duration=30){this.cancelGo();if(state==="sleep"||state==="yawn"){this.model.nap();}else this.model.enter(state,duration);this.persist();}
+  setPose(pose){this.pose=pose;/* HD renderer owns the complete body; no image-size swap. */}
+  playAt(){return this.playBall();}
+  // Explicit run preview only. No idle policy calls it automatically.
+  // Slow requests never select the running asset.
+  cancelGo(){this.runPreview=null;this.moving=false;}
+  async previewRun(seconds=5){
+    if(this.dead||this.suspended||this.key!=="orange"||typeof Pet3D==="undefined"||!Pet3D.poseURLs.run||(typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches))return false;
+    if(!this.three){await this.ready;await this.threeReady;if(this.dead||this.suspended||!this.three)return false;}
+    if(this.runPreview){this.runPreview.elapsed=0;if(this.runPreview.active){this.runPreview.startedAt=performance.now();this.runPreview.until=this.runPreview.startedAt+this.runPreview.duration*1000;}return true;}
+    this.cancelGo();const preview={ready:false,active:false,elapsed:0,duration:Math.max(.5,Math.min(10,seconds)),token:++this.version};this.runPreview=preview;
+    try{const asset=await Pet3D.preloadPose("run");if(this.dead||this.runPreview!==preview)return false;if(!asset||!Pet3D.math.clipFor(asset,"run")){this.runPreview=null;return false;}
+      preview.ready=true;this.render();await this.three.setPose("run");if(this.dead||this.runPreview!==preview)return false;
+      if(this.three.poseName!=="run"||!this.three.active){this.runPreview=null;this.render();return false;}preview.active=true;preview.startedAt=performance.now();preview.until=preview.startedAt+preview.duration*1000;this.render();return true;
+    }catch{if(this.runPreview===preview){this.runPreview=null;this.render();}return false;}
   }
-  // Integral of an eased trapezoid velocity profile: acceleration, cruise, braking.
-  function travel(t) {
-    const r = .2, area = 1 - r;
-    if (t < r) return (t / 2 - r / (2 * Math.PI) * Math.sin(Math.PI * t / r)) / area;
-    if (t > 1 - r) return 1 - travel(1 - t);
-    return (t - r / 2) / area;
+  async go(destination,{mode="run",speed=(this.unit||100)*2}={}){
+    // Compatibility entry only: this release has no new traversal or pathfinding.
+    if(!Number.isFinite(destination)||!Number.isFinite(speed)||mode!=="run"||speed<(this.unit||100)*1.4)return false;
+    return this.previewRun(5);
   }
-  function move(tx, ty, kind = "walk") {
-    if (!on || document.hidden) return;
-    clearTimeout(behaviorTimer); clearTimeout(poseTimer); stopMove();
-    const b = bounds(), p = profile(); tx = clamp(tx, b.left, b.right); ty = clamp(ty, b.top, b.floor);
-    const distance = Math.hypot(tx - x, ty - y);
-    if (reduced.matches) return rest();
-    if (distance < 8 && kind !== "hop" && kind !== "land") return rest();
-    const nextFacing = Math.abs(tx - x) > 8 ? Math.sign(tx - x) : facing;
-    const turning = nextFacing !== facing; facing = nextFacing;
-    let speed = kind === "run" ? p.run : p.walk;
-    // No adult run footage exists: keep its walking clip at a matching walking speed.
-    if (Pet.view().cat.breed === "orange" && p.stage > 1) speed = Math.min(speed, 64);
-    const dur = kind === "hop" ? 520 : kind === "land" ? 360 : kind === "jump" ? clamp(Math.sqrt(2*Math.abs(ty-y)/950)*1000+Math.abs(tx-x)*1.2,650,1400) : Math.max(900, distance / speed * 1000);
-    const bend = 0;
-    plan = { fx:x, fy:y, tx, ty, bend, elapsed: turning ? -170 : 0, previous:0, duration:dur, kind, jumping: kind === "hop" || kind === "jump", arc:kind === "jump" ? Math.min(42,Math.abs(ty-y)*.18+18) : 15 };
-    setPose(kind === "run" || kind === "hop" || kind === "jump" ? "run" : kind === "land" ? "look" : "walk");
-    el.classList.add("moving"); frame = requestAnimationFrame(step);
-  }
-  function step(now) {
-    frame = 0;
-    if (!on || !plan || drag || document.hidden) return;
-    const m = plan;
-    if (!m.previous) m.previous = now;
-    m.elapsed += Math.min(40, now - m.previous); m.previous = now;
-    const t = clamp(m.elapsed / m.duration, 0, 1), u = travel(t);
-    x = m.fx + (m.tx - m.fx) * u;
-    y = m.fy + (m.ty - m.fy) * u + Math.sin(Math.PI * u) * m.bend;
-    if (m.jumping) y -= Math.sin(Math.PI * t) * m.arc;
-    place();
-    if (t < 1) frame = requestAnimationFrame(step);
-    else { x=m.tx; y=m.ty; surface=nextSurface; nextSurface=null; stopMove(); place(); rest(); }
-  }
-  function hop(height = 16) { if (!on) return; if (reduced.matches) return setPose("look"); move(x, y, "hop"); if (plan) plan.arc = Math.min(26, height); }
-  function choose() {
-    if (!on || document.hidden || drag || plan) return;
-    const v = Pet.view(), p = profile();
-    if (v.sick || reduced.matches) return rest();
-    const b = bounds(), r = Math.random();
-    if (r < .42) return rest();
-    const candidates=platforms();
-    nextSurface = r > .72 && candidates.length ? pickOne(candidates) : (surface && r < .7 ? surface : null);
-    const target=surfacePoint(nextSurface);
-    let tx=b.left+Math.random()*(b.right-b.left), ty=target.y;
-    if(nextSurface){const rr=nextSurface.getBoundingClientRect();tx=clamp(tx,Math.max(b.left,rr.left+12),Math.min(b.right,rr.right-el.offsetWidth-12));}
-    if (r > .88) {
-      ball.hidden = false; ball.style.left = (tx + el.offsetWidth * .5) + "px"; ball.style.top = (ty - 10) + "px";
-      say(p.dog ? "接住小球！" : "发现一个小球～", 1700);
+  platforms(){return [];}
+  say(text){this.bubble.textContent=text;this.bubble.hidden=false;clearTimeout(this.msgTimer);this.msgTimer=setTimeout(()=>{if(!this.dead)this.bubble.hidden=true;},3000);}
+  persist(){rememberPetBehavior(this.memoryKey,this.model.snapshot());}
+  projectedPaws(){if(!this.three?.active)return[];const u=this.unit||100;return ['fore_paw.L','fore_paw.R'].map(name=>this.three.projectNode(name)).filter(Boolean).map(p=>({x:this.x-u*1.2+p.x,y:this.y-u*1.35+p.y}));}
+  update(dt){
+    // This explicit preview pauses the previous state and its toys, then resumes
+    // it unchanged. It never changes x/y, starts a sound, or schedules roaming.
+    if(this.runPreview?.active){this.runPreview.elapsed=Math.max(0,(performance.now()-this.runPreview.startedAt)/1000);if(performance.now()>=this.runPreview.until)this.runPreview=null;return;}
+    this.smallClock+=dt;
+    if(["observe","rest"].includes(this.state)&&this.smallClock>=this.smallNext){
+      const actions=[{mode:"look",duration:5},{mode:"tail",duration:4},{mode:"ear",duration:2},{mode:"tilt",duration:4},{mode:"paw",duration:3},{mode:"up",duration:4},{mode:"curious",duration:5},{mode:"tap",duration:2}],action=actions[this.smallIndex++%actions.length];
+      this.smallAction={...action,until:this.smallClock+action.duration,token:++this.version};this.smallNext=this.smallClock+Math.max(action.duration+.8,4+Math.random()*6);
     }
-    move(tx, ty, Math.abs(ty-y)>6 ? "jump" : r > .78 && p.stage < 3 ? "run" : "walk");
+    const before=this.state;this.model.step(dt);if(before!==this.state)this.persist();const b=this.bounds();
+    if(this.pendingContact&&this.elapsed>=this.contactAt){const projected=this.projectedPaws(),paws=projected.length?projected:[{x:this.x+this.face*this.unit*.28,y:this.y-8}];
+      const touching=paws.some(p=>Math.hypot(this.toy.x-p.x,this.toy.y-23-p.y)<=29);
+      if(this.propKind==="ball"&&touching){this.pendingContact=false;this.toy.roll(this.face*100);this.model.energy=Math.max(.1,this.model.energy-.015);}
+      else if(this.elapsed>3)this.pendingContact=false;
+    }
+    if(this.propKind==="ball")this.toy.step(dt,b.left-18,b.right+18);
+    if(this.state==="observe" && this.model.now()-this.model.lastCare>900000){const v=Pet.view();if(v.full<30||v.drink<30){const food=v.full<=v.drink;this.setProp(food?"food":"water");this.toy.x=this.x-this.unit*.6;this.toy.y=this.y;}}
   }
+  async prepare3D(){
+    if(this.key!=="orange"||typeof Pet3D==="undefined"||this.three||this.threeLoading)return;
+    this.threeLoading=true;
+    try{const pose=["sleep","drowsy","settle"].includes(this.state)?"sleep":this.state==="rest"?"sit":"rigged";const renderer=await Pet3D.mountActor(this.el,{breed:this.key,pose,fill:320/432,bottom:.008,captureKey:"scene",onFallback:()=>{this.canvas.style.visibility="visible";}});
+      if(this.dead){renderer?.destroy();return;}this.three=renderer;this.smallClock=0;this.smallNext=1.5;this.smallAction=null;this.drawAnimal();
+    }catch{this.threeFailed=true;/* The complete HD canvas remains visible on unsupported/lost WebGL. */}
+    finally{this.threeLoading=false;}
+  }
+  drawAnimal(){
+    if(!this.sprite||this.dead)return;
+    const sleepState=["sleep","drowsy","settle"].includes(this.state);
+    if(this.three){const idleMode=this.smallAction&&this.smallClock<this.smallAction.until?this.smallAction.mode:"idle";
+      const running=!!this.runPreview?.ready,pose=running?"run":sleepState?"sleep":this.state==="rest"?"sit":"rigged";
+      const mode=running?"run":sleepState?"idle":this.state==="pet"?"rub":this.state==="cuddle"?"paw":this.state==="play"?(this.elapsed<3?"paw":"look"):idleMode;
+      const gaze=!running&&this.propKind==="ball"&&this.state==="play"?[Math.max(-1,Math.min(1,(this.toy.x-this.x)/(this.unit||100))),.55]:undefined;
+      const ok=this.three.draw({now:performance.now(),pose,mode,gaze,token:this.state+"/"+this.version,reduce:typeof matchMedia==="function"&&matchMedia("(prefers-reduced-motion: reduce)").matches});
+      this.canvas.style.visibility=ok?"hidden":"visible";if(ok){const actual=this.three.poseName||"rigged";this.pose=actual==="rigged"?(sleepState?"rest":mode):actual;this.el.dataset.modelPose=actual;return;}
+    }
+    // During a route's GPU setup, retain the last complete 3D body rather than
+    // flashing the old two-dimensional sleep cutout between 3D poses.
+    if(this.key==="orange"&&!this.threeFailed&&!this.three&&typeof Pet3D!=="undefined"&&Pet3D.lastFrames.scene){this.ctx.clearRect(0,0,768,432);this.ctx.drawImage(Pet3D.lastFrames.scene,0,0,768,432);return;}
+    const ctx=this.ctx;ctx.clearRect(0,0,768,432);
+    const sleeping=sleepState&&this.key==="orange"&&PetSleepArt.image&&(typeof Pet3D==="undefined"||this.threeFailed);
+    if(sleeping){const im=PetSleepArt.image,w=350,h=w*im.naturalHeight/im.naturalWidth;ctx.drawImage(im,384-w/2,432-h,w,h);this.pose="sleep";return;}
+    this.pose=this.state==="play"?"look":this.state==="cuddle"?"cuddle":"sit";
+    const e=this.elapsed,lean=this.state==="pet"?Math.sin(Math.min(1,e/1.5)*Math.PI)*.025:this.state==="cuddle"?Math.sin(Math.min(1,e/2)*Math.PI)*.02:this.state==="play"&&e<1.2?this.face*Math.sin(e/1.2*Math.PI)*.025:0;
+    ctx.save();ctx.translate(384,432);ctx.rotate(lean);PetArt.draw(ctx,this.key,this.stage,{x:-210,y:-320,width:420,height:320,align:"bottom"});ctx.restore();
+  }
+  render(){
+    if(this.dead)return;if(!this.suspended)this.drawAnimal();const u=this.unit||100;this.el.style.setProperty("--animal-unit",u+"px");this.el.style.transform=`translate3d(${(this.x-u*1.2).toFixed(2)}px,${(this.y-u*1.35).toFixed(2)}px,0)`;
+    const hidden=this.suspended||!this.sprite;this.el.hidden=hidden;this.prop.hidden=hidden;
+    const angle=this.propKind==="ball"?this.toy.spin:0;this.prop.style.transform=`translate3d(${(this.toy.x-23).toFixed(2)}px,${(this.toy.y-46).toFixed(2)}px,0) rotate(${angle.toFixed(2)}rad)`;
+    this.el.dataset.state=this.state;this.el.dataset.quality=this.sprite?.quality||"loading";
+  }
+  bindToyDrag(){
+    let pointer=null,lastX=0,lastAt=0,velocity=0,moved=0;
+    this.prop.onpointerdown=e=>{pointer=e.pointerId;this.prop.setPointerCapture?.(pointer);this.toy.dragging=true;this.pendingContact=false;moved=0;lastX=e.clientX;lastAt=performance.now();velocity=0;};
+    this.prop.onpointermove=e=>{if(pointer!==e.pointerId)return;const now=performance.now(),dx=e.clientX-lastX,b=this.bounds();moved+=Math.abs(dx);velocity=dx/Math.max(.016,(now-lastAt)/1000);this.toy.x=Math.max(b.left-18,Math.min(b.right+18,this.toy.x+dx));lastX=e.clientX;lastAt=now;this.render();};
+    const finish=e=>{if(pointer!==e.pointerId)return;pointer=null;this.toy.dragging=false;this.suppressClick=moved>4;clearTimeout(this.dragClickTimer);this.dragClickTimer=setTimeout(()=>this.suppressClick=false,250);if(this.propKind==="ball")this.toy.roll(Math.max(-180,Math.min(180,velocity)));};this.prop.onpointerup=finish;this.prop.onpointercancel=finish;
+  }
+  tick(t){this.raf=0;if(this.dead)return;if(document.hidden){this.last=0;return;}const dt=this.last?Math.min(.04,(t-this.last)/1000):0;this.last=t;if(!this.suspended)this.update(dt);this.render();this.raf=requestAnimationFrame(n=>this.tick(n));}
+  destroy(){if(this.dead)return;this.persist();this.dead=true;this.cancelGo();this.three?.destroy();cancelAnimationFrame(this.raf);clearTimeout(this.msgTimer);clearTimeout(this.dragClickTimer);window.removeEventListener("resize",this.resize);window.removeEventListener("scroll",this.scroll);document.removeEventListener("visibilitychange",this.visibility);this.el.remove();this.prop.remove();}
+}
+const Roam=(()=>{
+  let scene=null,local=null,leave=null,root=null,suspended=false;
+  const valid=s=>s&&!s.dead&&s.host?.isConnected!==false&&document.body.contains(s.host);
+  const active=()=>{if(local&&!valid(local)){local.destroy();local=null;}if(scene&&!valid(scene)){scene.destroy();scene=null;}return valid(local)?local:valid(scene)?scene:null;};
+  const stopFloating=()=>{if(scene){scene.destroy();scene=null;}if(root){root.remove();root=null;}};
   return {
-    set(want) {
-      ensure(); const v = Pet.view(), active = !!(want && v.profile && Pet.state.settings.roam !== false);
-      on = active; el.hidden = !on; ball.hidden = true; custom = null;
-      if (!on) { clearTimeout(poseTimer); clearTimeout(behaviorTimer); clearTimeout(bubbleTimer); bubble.hidden = true; generation++; stopMove(); return; }
-      stopMove(); const b = bounds(); x = clamp(x, b.left, b.right); surface=null;nextSurface=null;y=b.floor;
-      place(); rest();
-    },
-    playAt(node) {
-      if(!on)return;
-      const b=bounds();nextSurface=node;
-      const r=node.getBoundingClientRect();
-      if(surfacePoint(node).y<110+profile().height || surfacePoint(node).y>b.floor) {nextSurface=null;node=null;}
-      const target=surfacePoint(node); move(node ? clamp(r.right-el.offsetWidth-25,b.left,b.right) : x,target.y,"jump");
-      poseTimer=setTimeout(()=>{if(!on||!document.body.contains(node))return;setPose("ball");say("陪我玩一会儿～");schedule(5500);},plan?plan.duration+200:200);
-    },
-    action(p,duration=3000) {if(!on)return;clearTimeout(behaviorTimer);stopMove();setPose(p);clearTimeout(poseTimer);poseTimer=setTimeout(rest,duration);},
-    say, hop, lines(value) { custom = value; },
-    cheer(text) { if (on) { hop(20); if (text) say(text); } },
-    stopPage() { if (pageCtl) { pageCtl(); pageCtl = null; } },
-    onLeave(fn) { pageCtl = fn; },
-    // Used by the in-app motion preview and automated motion checks.
-    preview(kind) { const b=bounds(); move(x < (b.left+b.right)/2 ? b.right : b.left, b.floor, kind); },
-    snapshot() { return { on, x, y, pose:poseName, moving:!!plan, stage:profile().stage, breed:Pet.view().cat.breed }; }
+    set(want){stopFloating();const v=Pet.view();if(!want||!v.profile||Pet.state.settings.roam===false||valid(local))return;root=h('<div class="animal-world" aria-label="宠物活动区域"></div>');document.body.append(root);scene=new NaturalPetScene(root,{floating:true});scene.suspended=suspended;scene.render();},
+    mountScene(host){if(local){local.destroy();local=null;}stopFloating();if(!host)return;host.classList.add("animal-local");const old=[...host.querySelectorAll("button")].find(b=>!b.classList.contains("animal-v3")&&!b.classList.contains("animal-prop"));const next=local=new NaturalPetScene(host);next.suspended=suspended;next.render();next.ready.then(()=>{if(old&&local===next&&next.sprite)old.hidden=true;});},
+    playBall(){return active()?.playBall()||false;},playFish(){return active()?.playFish()||false;},rest(){return active()?.rest()||false;},
+    playAt(){return this.playBall();},
+    go(destination,options){return active()?.go(destination,options)||false;},
+    action(p,d=3000){const s=active();if(!s)return false;if(p==="run")return s.previewRun(5);if(p==="ball")return s.playBall();if(p==="cuddle")return s.playFish();if(["sleep","lie","yawn"].includes(p)){s.model.nap();s.persist();return true;}if(p==="sit")return s.rest();s.enter("observe",d/1000);return true;},
+    capture(){return active()?.three?.capture()||null;},pet(){return active()?.touch();},say(t){active()?.say(t);},hop(){return active()?.touch();},cheer(t){active()?.say(t);},lines(){},
+    onLeave(fn){leave=fn;},stopPage(){if(leave){const fn=leave;leave=null;fn();}if(local){local.destroy();local=null;}},
+    preview(){return active()?.touch();},suspend(value){suspended=!!value;for(const s of [scene,local])if(s&&!s.dead){s.suspended=value;s.render();}},
+    snapshot(){const s=active();return s?{on:true,x:s.x,y:s.y,pose:s.pose,state:s.state,moving:!!s.moving,breed:s.key,quality:s.sprite?.quality||"loading",toy:s.propKind,toyX:s.toy.x,napUntil:s.model.napUntil}: {on:false};}
   };
 })();

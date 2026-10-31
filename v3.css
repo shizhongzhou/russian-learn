@@ -691,3 +691,49 @@ svg.sparks{position:absolute;width:56px;height:56px;fill:none;stroke:var(--lime-
 .classics .book .cover>span:last-child{font-size:34px}
 .classics .book small{text-align:left}.classics .book b{text-align:left}
 .classics .book{text-align:left;align-items:stretch}
+
+/* Video-inspired vocabulary desk: compact header, paper cards, open physics stage. */
+body:has(.memo3){background:#fafbf9}
+body:has(.memo3) #appbar,body:has(.memo3) #tabbar{display:none!important}
+body:has(.memo3) #app{padding-top:0;padding-bottom:0}
+.memo3{box-sizing:border-box;max-width:520px;margin:auto;min-height:100svh;height:100dvh;padding:24px 22px 18px;gap:18px;overflow:hidden;color:#24272b}
+.m3head small{font-size:12px;color:#555b60}
+.m3head h1{font-size:19px;font-weight:500;line-height:1.5;margin-top:7px}
+.m3head h1 b{font-size:22px;font-weight:750}
+.m3head .gear,.m3head .back{width:32px;height:32px;border:0;border-radius:50%;background:#25282d;color:#fff}
+.m3head .back{background:transparent}
+.m3head .gear svg{stroke:white;width:17px;height:17px}
+.m3week{gap:0;padding:0 2px}
+.m3week div,.m3week .today{background:transparent;border:0;color:inherit;padding:4px 0;gap:5px}
+.m3week small,.m3week .today small{color:#96999e;font-size:10px}
+.m3week b{display:grid;place-items:center;width:28px;height:28px;font-size:13px}
+.m3week .today b{border-radius:50%;background:#26292d;color:#fff}
+.m3week i{height:4px;font-size:12px;color:#777}
+.m3modes{gap:12px}.m3modes .seg{background:#f0f1ef;border:0;padding:3px;border-radius:25px;min-height:34px}
+.m3modes .seg button{font-size:12px;min-height:30px;padding:5px 8px;border-radius:22px}
+.m3modes .seg button[aria-selected=true]{background:#292c31;color:white;box-shadow:0 2px 4px #0001}
+.m3modes .aa{background:transparent;border:0;font-size:12px;min-height:36px;padding:0 3px}
+.m3stage{min-height:0;flex:1;overflow:visible;justify-content:center}
+.stack{height:min(330px,43dvh);margin:0 4px 16px;perspective:900px}
+.mcard{border-radius:20px;padding:24px;box-shadow:0 3px 3px #202d4010,0 12px 20px #202d4008;transition:transform .3s cubic-bezier(.2,.8,.2,1);touch-action:pan-y}
+.mcard.dragging{transition:none;cursor:grabbing}
+.mcard.d1{transform:translateY(10px) scale(.97);opacity:1}
+.mcard.d2{transform:translateY(20px) scale(.93);opacity:1}
+.mcard small{position:absolute;top:19px;left:20px;background:transparent;font-size:11px;padding:0;font-weight:500}
+.mcard span{font-size:31px;font-weight:650}
+.mcard em{position:absolute;bottom:17px;left:20px;right:20px;border-top:1px solid #27303a20;padding-top:12px;text-align:left;font-size:11px}
+.m3stage>.hint{font-size:11px;color:#96999e;margin:15px 0 0}
+.fall{height:100%;min-height:200px;border:0;background:transparent;border-radius:0;flex:1}
+.fw,.fw:nth-child(n){background:transparent;border:0;border-radius:3px;padding:3px 5px;font-weight:500;color:#40536b}
+.shakebtn{top:4px;right:0;font-size:11px;padding:7px 10px;background:#eff0ee;color:#5c6269}.shakebtn svg{stroke:currentColor;width:15px;height:15px}
+.m3foot{flex:none;min-height:42px}.m3voice{background:#292c31;width:42px;height:42px}.m3voice svg{stroke:#fff}.m3search{background:transparent;border:0;width:32px;height:32px}.m3search svg{width:18px;height:18px}.m3foot .m3tip{font-size:10px;line-height:1.5;padding:0 9px;color:#8c9297}
+.cloud{background:transparent!important;border:0!important;min-height:0!important;height:100%!important;flex:1}
+.cw{color:#40536b!important;background:transparent!important;font-weight:500!important;animation:memoWordIn .45s both}
+@keyframes memoWordIn{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.cw{animation:none}.mcard{transition:none}}
+@media(max-height:650px){.memo3{padding-top:12px;gap:10px}.stack{height:35dvh}.m3head h1{font-size:17px}.m3week div{gap:1px}}
+
+body:has(.memo3){padding:0;overflow:hidden}
+body:has(.memo3) #app{padding:0;margin:0 auto;width:100%;max-width:520px}
+body:has(.memo3) .animal-world,body:has(.memo3) .roam{display:none!important}
+.memo3{width:100%;padding-top:max(24px,env(safe-area-inset-top));padding-bottom:max(18px,env(safe-area-inset-bottom))}

@@ -7,12 +7,14 @@ python3 "$ROOT/scripts/import-app-assets.py"
 rm -rf www && mkdir -p www
 cp "$ROOT"/index.html "$ROOT"/*.js "$ROOT"/*.css "$ROOT"/manifest.webmanifest www/
 cp -R "$ROOT"/data "$ROOT"/icons "$ROOT"/img www/
-[ -d "$ROOT"/vendor ] && cp -R "$ROOT"/vendor www/
+for directory in vendor models audio; do
+  if [ -d "$ROOT/$directory" ]; then cp -R "$ROOT/$directory" www/; fi
+done
 rm -f www/sw.js   # service workers don't run inside the app's web view
 # load the Capacitor runtime (for native plugins) before the app scripts
 if [ -f node_modules/@capacitor/core/dist/capacitor.js ]; then
   cp node_modules/@capacitor/core/dist/capacitor.js www/capacitor.js
-  perl -0pi -e 's#<script src="cat.js"></script>#<script src="capacitor.js"></script>\n<script src="cat.js"></script>#' www/index.html
+  perl -0pi -e 's#(<script src="cat\.js(?:\?[^\"]*)?"></script>)#<script src="capacitor.js"></script>\n$1#' www/index.html
 fi
 ls node_modules/@capacitor/core/dist/ || true
 echo "web assets ready: $(du -sh www | cut -f1)"

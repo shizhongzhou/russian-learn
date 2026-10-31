@@ -20,11 +20,16 @@ async function memoPool(src) {
   const S = Pet.state;
   if (LEVELS[src]) return (await getJSON(`data/words_${src}.json`)).map((r, i) => ({ lv: src, i, r }));
   let items;
-  if (src === "mine") items = Object.keys(S.wrongWords || {}).map(k => k.split(":")).map(([lv, i]) => [lv, +i]);
+  if (src === "mine") items = Object.keys(S.wrongWords || {}).filter(k=>LEVELS[k.split(":")[0]]).map(k => k.split(":")).map(([lv, i]) => [lv, +i]);
   else { DICTS = DICTS || await getJSON("data/dicts.json"); items = (DICTS[src.slice(2)] || { items: [] }).items; }
   const lvs = [...new Set(items.map(x => x[0]))], rows = {};
   await Promise.all(lvs.map(async lv => rows[lv] = await getJSON(`data/words_${lv}.json`)));
-  return items.map(([lv, i]) => ({ lv, i, r: rows[lv][i] })).filter(x => x.r);
+  const pool=items.map(([lv,i])=>({lv,i,r:rows[lv][i]})).filter(x=>x.r);
+  if(src === "mine"){
+    const seen=new Set(pool.map(x=>x.r[0].replace(/́/g, "").toLowerCase()));
+    for(const f of S.fav||[]){const key=String(f.w||"").replace(/́/g, "").toLowerCase();if(!key||seen.has(key))continue;seen.add(key);pool.push({lv:"saved",i:sha1hex(key).slice(0,12),r:[f.w,f.zh||"", "", "", ""]});}
+  }
+  return pool;
 }
 async function pageMemo(src) {
   const S = Pet.state;
